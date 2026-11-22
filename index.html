@@ -42,7 +42,6 @@
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzvobWMdW_reX803Sn0lldJZF0VfSVkr0tWI1oDAr8urJK3hZ0964mAcxqaq1W27VA-Jg/exec";
     const GITHUB_PAGES_URL = "https://fuyu-beautiful.github.io/Fuyu-beautiful/";
-    const LOW_BALANCE_THRESHOLD = 500;
 
     const urlParams = new URLSearchParams(window.location.search);
     const PORTAL_CID = urlParams.get("cid") || "";
@@ -186,7 +185,6 @@
       </div>
       <div class="flex gap-1.5 shrink-0">
         <button onclick="refreshAdminData()" class="whitespace-nowrap px-2.5 py-1.5 text-xs bg-white border border-[#EAE2D6] rounded-lg hover:bg-[#F5EFE6]">🔄 刷新</button>
-        <button onclick="switchTab('catalog')" class="whitespace-nowrap px-2.5 py-1.5 text-xs bg-white border border-[#EAE2D6] rounded-lg hover:bg-[#F5EFE6]">📋 價目</button>
       </div>
     </header>
 
@@ -228,13 +226,17 @@
       </div>
 
       <div class="xl:col-span-5 card-warm rounded-2xl p-4 sm:p-5">
-        <div class="flex justify-between items-center mb-3.5">
+        <div class="flex justify-between items-center mb-2.5">
           <div>
             <h3 class="font-bold text-base sm:text-lg" id="selectedDateLabel">今日排程</h3>
             <p class="text-xs text-[#8C735B]">點「已報到」完成結帳；誤按點回「尚未到來」自動退回</p>
           </div>
           <button onclick="openBookingModal()" class="btn-primary whitespace-nowrap text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl">+ 新增預約</button>
         </div>
+
+        <!-- 當日排程時段重疊醒目警示區 -->
+        <div id="dayOverlapBanner" class="hidden mb-3 px-3.5 py-2.5 rounded-xl bg-red-50 border-2 border-red-300 text-xs text-red-800 space-y-1"></div>
+
         <div id="dayBookingsList" class="space-y-3 max-h-[620px] overflow-y-auto pr-1"></div>
       </div>
     </div>
@@ -261,9 +263,11 @@
         <div class="inline-flex bg-[#EFE9DF] p-1 rounded-xl">
           <button onclick="switchFinanceSubTab('register')" id="finSubBtn-register" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold bg-white text-[#3D352E] shadow-2xs">登記營運支出</button>
           <button onclick="switchFinanceSubTab('details')" id="finSubBtn-details" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-medium text-[#735D48]">收支明細</button>
+          <button onclick="switchFinanceSubTab('compare')" id="finSubBtn-compare" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-medium text-[#735D48]">⚖️ 收支比較</button>
         </div>
       </div>
 
+      <!-- 當月現金流與儲值金概覽 -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div class="card-warm rounded-2xl p-4">
           <p class="text-xs text-[#735D48]" id="statIncomeLabel">本月現金實收</p>
@@ -283,21 +287,17 @@
         </div>
       </div>
 
-      <!-- 優化版：近 6 個月現金實收 vs 營運支出橫向對照 -->
-      <div class="card-warm rounded-2xl p-4 sm:p-5">
-        <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
-          <div>
-            <h3 class="font-bold text-sm sm:text-base text-[#3D352E]">📊 近 6 個月現金實收 vs 營運支出對照</h3>
-            <p class="text-xs text-[#8C735B]">點選任一月份可直接切換下方收支明細；紅字為實收、綠字為支出</p>
-          </div>
-          <div class="flex items-center gap-3 text-xs">
-            <span class="flex items-center gap-1 font-medium income-red"><span class="w-2.5 h-2.5 rounded-xs bg-[#DC2626] inline-block"></span>現金實收</span>
-            <span class="flex items-center gap-1 font-medium expense-green"><span class="w-2.5 h-2.5 rounded-xs bg-[#16A34A] inline-block"></span>營運支出</span>
-          </div>
+      <!-- 整年總計列（依上方選擇年份） -->
+      <div class="card-warm rounded-2xl px-4 py-3 bg-[#FDFBF7] flex flex-wrap justify-between items-center gap-3">
+        <div class="text-xs sm:text-sm font-bold text-[#3D352E]" id="yearTotalTitle">📅 2026 年全年總計</div>
+        <div class="flex flex-wrap items-center gap-4 text-xs sm:text-sm">
+          <div><span class="text-[#735D48]">全年實收：</span><strong class="income-red" id="yearStatIncome">$0</strong></div>
+          <div><span class="text-[#735D48]">全年支出：</span><strong class="expense-green" id="yearStatExpense">$0</strong></div>
+          <div><span class="text-[#735D48]">全年淨流：</span><strong id="yearStatNet">$0</strong></div>
         </div>
-        <div id="financeTrendBox" class="space-y-2.5"></div>
       </div>
 
+      <!-- 子分頁 3-1：登記營運支出 + 月度圓餅圖 -->
       <div id="finSub-register" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         <div class="lg:col-span-5 card-warm rounded-2xl p-5 h-fit">
           <h3 class="font-bold text-base mb-3 expense-green">+ 登記營運支出</h3>
@@ -337,7 +337,7 @@
         </div>
       </div>
 
-      <!-- 收支明細子分頁（含收入＋支出＋年/月篩選） -->
+      <!-- 子分頁 3-2：收支明細（含收入＋支出＋年/月篩選） -->
       <div id="finSub-details" class="hidden space-y-4">
         <div class="card-warm rounded-2xl p-5">
           <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
@@ -354,6 +354,18 @@
           </div>
           <div id="expenseDetailsList" class="space-y-2 text-sm max-h-[360px] overflow-y-auto"></div>
         </div>
+      </div>
+
+      <!-- 子分頁 3-3：⚖️ 收支比較（近 6 個月現金實收 vs 營運支出對照表） -->
+      <div id="finSub-compare" class="hidden card-warm rounded-2xl p-4 sm:p-5 space-y-3">
+        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-[#F3EFEA] pb-3">
+          <div>
+            <h3 class="font-bold text-sm sm:text-base text-[#3D352E]">⚖️ 近 6 個月現金實收 vs 營運支出比較</h3>
+            <p class="text-xs text-[#8C735B]" id="compareRangeSubtext">以目前所選年月往前推算 6 個月（紅字實收、綠字支出）</p>
+          </div>
+          <div class="text-xs font-bold text-[#3D352E]" id="compareSixMonthSummary">近6月合計</div>
+        </div>
+        <div id="financeCompareTableBox" class="overflow-x-auto"></div>
       </div>
     </div>
 
@@ -411,7 +423,9 @@
             <select id="bkEndTime" onchange="checkBookingOverlapPreview()" class="w-full border border-[#EAE2D6] rounded-xl px-2.5 py-2 bg-[#FAF7F2]"></select>
           </div>
         </div>
-        <div id="bkOverlapAlert" class="hidden px-3 py-2 rounded-xl bg-amber-50 border border-amber-300 text-xs text-amber-900 font-medium"></div>
+
+        <!-- 彈窗內時段重疊醒目警示 -->
+        <div id="bkOverlapAlert" class="hidden px-3.5 py-2.5 rounded-xl bg-red-50 border-2 border-red-300 text-xs text-red-800 font-bold"></div>
 
         <div class="bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl p-3 space-y-2.5">
           <div class="flex justify-between items-center">
@@ -449,7 +463,7 @@
               <option value="待現場確認">待現場確認</option>
             </select>
           </div>
-          <div id="bkBalanceWarning" class="hidden text-xs text-red-600 font-medium"></div>
+          <div id="bkBalanceWarning" class="hidden text-xs text-red-600 font-bold bg-red-50 border border-red-200 px-2.5 py-1.5 rounded-lg"></div>
         </div>
 
         <div class="grid grid-cols-2 gap-2.5">
@@ -622,7 +636,6 @@
         <div class="p-3 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6]">
           <p class="text-[11px] text-[#735D48]">儲值金</p>
           <p class="text-lg font-bold text-[#8C735B] mt-0.5" id="cdBalance">$0</p>
-          <p id="cdLowBalanceTag" class="hidden text-[10px] text-red-600 font-bold mt-0.5">低餘額提醒</p>
         </div>
         <div class="p-3 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6]">
           <p class="text-[11px] text-[#735D48]">累計來店</p>
@@ -968,11 +981,7 @@
       showToast(`已建立並存入試算表：「${title}」（共 3 堂）`);
     } catch (err) {
       hideLoading();
-      if (!Array.isArray(appData.packages)) appData.packages = [];
-      appData.packages.push(newPkg);
-      renderCustomersList();
-      openCustomerDetailModal(custId);
-      showToast("已暫存本機（請確認 Code.gs 已部署最新版本）：" + err.message);
+      showToast("寫入試算表失敗：" + err.message);
     }
   }
 
@@ -998,18 +1007,7 @@
       showToast("已從試算表刪除該筆三堂套票");
     } catch (err) {
       hideLoading();
-      if (Array.isArray(appData.packages)) {
-        appData.packages = appData.packages.filter(p => String(p.id) !== String(pkgId));
-      }
-      if (target.sourceBookingId) {
-        if (!Array.isArray(appData.deletedPackageSourceIds)) appData.deletedPackageSourceIds = [];
-        if (!appData.deletedPackageSourceIds.includes(String(target.sourceBookingId))) {
-          appData.deletedPackageSourceIds.push(String(target.sourceBookingId));
-        }
-      }
-      renderCustomersList();
-      openCustomerDetailModal(custId);
-      showToast("已移除（請確認 Code.gs 已部署最新版本）：" + err.message);
+      showToast("刪除套票失敗：" + err.message);
     }
   }
 
@@ -1169,7 +1167,8 @@
   function renderAllAdminViews() {
     syncFinanceYearMonthSelects();
     renderFinanceStats();
-    renderFinanceTrendComparison();
+    renderFinanceYearSummary();
+    renderFinanceCompareTable();
     renderExpenseMonthlyPieChart();
     renderExpenseMonthlyDetails();
     renderPendingRequests();
@@ -1184,26 +1183,25 @@
     return `${financeYear}-${String(financeMonth + 1).padStart(2, '0')}`;
   }
 
-  function calcMonthCashIncomeAndExpense(year, monthIdx) {
-    const ymPrefix = `${year}-${String(monthIdx + 1).padStart(2, '0')}`;
+  function calcPeriodCashIncomeAndExpense(prefix) {
     let income = 0;
     let expense = 0;
 
     (appData.bookings || []).forEach(b => {
       const isSettledVisit = (b.status === "已報到" || b.status === "已完成");
-      if (b.date.startsWith(ymPrefix) && isSettledVisit && (b.payMethod === "現金" || b.payMethod === "轉帳")) {
+      if (String(b.date || "").startsWith(prefix) && isSettledVisit && (b.payMethod === "現金" || b.payMethod === "轉帳")) {
         income += Number(b.finalPrice || 0);
       }
     });
 
     (appData.transactions || []).forEach(t => {
-      if (t.time.startsWith(ymPrefix) && t.type === "儲值入帳") {
+      if (String(t.time || "").startsWith(prefix) && t.type === "儲值入帳") {
         income += Number(t.cashReceived || 0);
       }
     });
 
     (appData.expenses || []).forEach(e => {
-      if (e.date.startsWith(ymPrefix)) {
+      if (String(e.date || "").startsWith(prefix)) {
         expense += Number(e.amount || 0);
       }
     });
@@ -1211,70 +1209,91 @@
     return { income, expense };
   }
 
-  function renderFinanceTrendComparison() {
-    const box = document.getElementById("financeTrendBox");
+  function calcMonthCashIncomeAndExpense(year, monthIdx) {
+    const ymPrefix = `${year}-${String(monthIdx + 1).padStart(2, '0')}`;
+    return calcPeriodCashIncomeAndExpense(ymPrefix);
+  }
+
+  function renderFinanceYearSummary() {
+    const yPrefix = `${financeYear}-`;
+    const { income: yIncome, expense: yExpense } = calcPeriodCashIncomeAndExpense(yPrefix);
+    const yNet = yIncome - yExpense;
+
+    document.getElementById("yearTotalTitle").textContent = `📅 ${financeYear} 年全年總計`;
+    document.getElementById("yearStatIncome").textContent = `$${yIncome.toLocaleString()}`;
+    document.getElementById("yearStatExpense").textContent = `$${yExpense.toLocaleString()}`;
+    const netEl = document.getElementById("yearStatNet");
+    netEl.textContent = `${yNet >= 0 ? '' : '-'}$${Math.abs(yNet).toLocaleString()}`;
+    netEl.className = yNet >= 0 ? "income-red" : "expense-green";
+  }
+
+  function renderFinanceCompareTable() {
+    const box = document.getElementById("financeCompareTableBox");
     if (!box) return;
 
-    const months = [];
+    const rows = [];
+    let sumInc = 0;
+    let sumExp = 0;
+
     for (let offset = -5; offset <= 0; offset++) {
       const d = new Date(financeYear, financeMonth + offset, 1);
       const y = d.getFullYear();
       const m = d.getMonth();
       const { income, expense } = calcMonthCashIncomeAndExpense(y, m);
-      months.push({
-        y,
-        m,
+      const net = income - expense;
+      sumInc += income;
+      sumExp += expense;
+      rows.push({
         ymLabel: `${y}/${String(m + 1).padStart(2, '0')}`,
         isCurrent: (y === financeYear && m === financeMonth),
         income,
         expense,
-        net: income - expense
+        net
       });
     }
 
-    const maxVal = Math.max(
-      1,
-      ...months.map(item => Math.max(item.income, item.expense))
-    );
+    const sumNet = sumInc - sumExp;
+    document.getElementById("compareRangeSubtext").textContent =
+      `統計區間：${rows[0].ymLabel} ～ ${rows[rows.length - 1].ymLabel}（紅字實收、綠字支出）`;
+    document.getElementById("compareSixMonthSummary").innerHTML =
+      `近6月合計：實收 <span class="income-red">$${sumInc.toLocaleString()}</span> / 支出 <span class="expense-green">$${sumExp.toLocaleString()}</span> / 淨流 <span class="${sumNet >= 0 ? 'income-red' : 'expense-green'}">${sumNet >= 0 ? '+' : '-'}$${Math.abs(sumNet).toLocaleString()}</span>`;
 
-    box.innerHTML = months.map(item => {
-      const incPct = Math.round((item.income / maxVal) * 100);
-      const expPct = Math.round((item.expense / maxVal) * 100);
-      const netText = `${item.net >= 0 ? '+' : '-'}$${Math.abs(item.net).toLocaleString()}`;
-      return `
-        <div onclick="jumpToSpecificFinanceMonth(${item.y}, ${item.m})" class="cursor-pointer rounded-xl border p-3 transition ${item.isCurrent ? 'bg-[#FDFBF7] border-[#8C735B] ring-1 ring-[#8C735B]/40' : 'bg-[#FAF7F2] border-[#EAE2D6] hover:bg-[#F5EFE6]'}">
-          <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
-            <div class="flex items-center gap-2">
-              <span class="text-xs sm:text-sm font-bold text-[#3D352E]">${item.ymLabel}</span>
-              ${item.isCurrent ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-[#8C735B] text-white font-medium">目前檢視</span>' : ''}
-            </div>
-            <span class="text-xs font-bold ${item.net >= 0 ? 'income-red' : 'expense-green'}">淨流 ${netText}</span>
-          </div>
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-            <div class="bg-white/90 rounded-lg px-2.5 py-1.5 border border-[#EAE2D6]/80">
-              <div class="flex justify-between items-center mb-1">
-                <span class="text-[#735D48] font-medium">現金實收</span>
-                <span class="font-bold income-red">$${item.income.toLocaleString()}</span>
-              </div>
-              <div class="h-2 bg-red-100 rounded-full overflow-hidden">
-                <div class="h-full bg-[#DC2626] rounded-full transition-all" style="width:${incPct}%"></div>
-              </div>
-            </div>
-
-            <div class="bg-white/90 rounded-lg px-2.5 py-1.5 border border-[#EAE2D6]/80">
-              <div class="flex justify-between items-center mb-1">
-                <span class="text-[#735D48] font-medium">營運支出</span>
-                <span class="font-bold expense-green">$${item.expense.toLocaleString()}</span>
-              </div>
-              <div class="h-2 bg-emerald-100 rounded-full overflow-hidden">
-                <div class="h-full bg-[#16A34A] rounded-full transition-all" style="width:${expPct}%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join("");
+    box.innerHTML = `
+      <table class="w-full text-xs sm:text-sm border-collapse">
+        <thead>
+          <tr class="bg-[#FAF7F2] border-b border-[#EAE2D6] text-[#735D48]">
+            <th class="text-left py-2.5 px-3 font-bold">月份</th>
+            <th class="text-right py-2.5 px-3 font-bold income-red">現金實收</th>
+            <th class="text-right py-2.5 px-3 font-bold expense-green">營運支出</th>
+            <th class="text-right py-2.5 px-3 font-bold">當月淨流</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r => {
+            const netStr = `${r.net >= 0 ? '+' : '-'}$${Math.abs(r.net).toLocaleString()}`;
+            return `
+              <tr class="border-b border-[#F3EFEA] ${r.isCurrent ? 'bg-[#FDFBF7] font-bold' : 'bg-white'}">
+                <td class="py-2.5 px-3 whitespace-nowrap">
+                  ${r.ymLabel}
+                  ${r.isCurrent ? '<span class="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-[#8C735B] text-white font-normal">所選月</span>' : ''}
+                </td>
+                <td class="py-2.5 px-3 text-right whitespace-nowrap font-bold income-red">$${r.income.toLocaleString()}</td>
+                <td class="py-2.5 px-3 text-right whitespace-nowrap font-bold expense-green">$${r.expense.toLocaleString()}</td>
+                <td class="py-2.5 px-3 text-right whitespace-nowrap font-bold ${r.net >= 0 ? 'income-red' : 'expense-green'}">${netStr}</td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+        <tfoot>
+          <tr class="bg-[#FAF7F2] border-t-2 border-[#EAE2D6] font-bold">
+            <td class="py-2.5 px-3 whitespace-nowrap">近 6 個月合計</td>
+            <td class="py-2.5 px-3 text-right whitespace-nowrap income-red">$${sumInc.toLocaleString()}</td>
+            <td class="py-2.5 px-3 text-right whitespace-nowrap expense-green">$${sumExp.toLocaleString()}</td>
+            <td class="py-2.5 px-3 text-right whitespace-nowrap ${sumNet >= 0 ? 'income-red' : 'expense-green'}">${sumNet >= 0 ? '+' : '-'}$${Math.abs(sumNet).toLocaleString()}</td>
+          </tr>
+        </tfoot>
+      </table>
+    `;
   }
 
   function jumpToSpecificFinanceMonth(y, m) {
@@ -1282,7 +1301,8 @@
     financeMonth = m;
     syncFinanceYearMonthSelects();
     renderFinanceStats();
-    renderFinanceTrendComparison();
+    renderFinanceYearSummary();
+    renderFinanceCompareTable();
     renderExpenseMonthlyPieChart();
     renderExpenseMonthlyDetails();
     renderFinanceHistory();
@@ -1303,14 +1323,16 @@
   function switchFinanceSubTab(subName) {
     document.getElementById("finSub-register").classList.toggle("hidden", subName !== "register");
     document.getElementById("finSub-details").classList.toggle("hidden", subName !== "details");
-    const regBtn = document.getElementById("finSubBtn-register");
-    const detBtn = document.getElementById("finSubBtn-details");
-    regBtn.className = (subName === "register")
-      ? "whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold bg-white text-[#3D352E] shadow-2xs"
-      : "whitespace-nowrap px-3 py-1 rounded-lg text-xs font-medium text-[#735D48]";
-    detBtn.className = (subName === "details")
-      ? "whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold bg-white text-[#3D352E] shadow-2xs"
-      : "whitespace-nowrap px-3 py-1 rounded-lg text-xs font-medium text-[#735D48]";
+    document.getElementById("finSub-compare").classList.toggle("hidden", subName !== "compare");
+
+    ["register", "details", "compare"].forEach(name => {
+      const btn = document.getElementById(`finSubBtn-${name}`);
+      if (btn) {
+        btn.className = (name === subName)
+          ? "whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold bg-white text-[#3D352E] shadow-2xs"
+          : "whitespace-nowrap px-3 py-1 rounded-lg text-xs font-medium text-[#735D48]";
+      }
+    });
   }
 
   function renderFinanceStats() {
@@ -1461,19 +1483,26 @@
     }
     banner.classList.remove("hidden");
     document.getElementById("pendingCountBadge").textContent = `${pendings.length} 筆待確認`;
-    document.getElementById("pendingList").innerHTML = pendings.map(b => `
-      <div class="bg-white rounded-xl p-3 border border-amber-200 flex flex-wrap justify-between items-center gap-2 text-sm">
-        <div>
-          <span class="font-bold text-[#3D352E]">${b.customerName}</span>
-          <span class="text-xs text-[#735D48] ml-2">${b.date} ${b.startTime}｜${b.service}</span>
-          ${b.note ? `<p class="text-xs text-amber-800 mt-0.5">備註：${b.note}</p>` : ''}
+    document.getElementById("pendingList").innerHTML = pendings.map(b => {
+      const conflicts = findOverlappingBookings(b.date, b.startTime, b.endTime, b.id);
+      const conflictHtml = conflicts.length > 0
+        ? `<div class="mt-1 text-xs font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-1 rounded">⚠️ 與 ${conflicts.map(c => `${c.startTime}-${c.endTime} ${c.customerName}`).join("、")} 時段重疊</div>`
+        : "";
+      return `
+        <div class="bg-white rounded-xl p-3 border border-amber-200 flex flex-wrap justify-between items-center gap-2 text-sm">
+          <div>
+            <span class="font-bold text-[#3D352E]">${b.customerName}</span>
+            <span class="text-xs text-[#735D48] ml-2">${b.date} ${b.startTime}｜${b.service}</span>
+            ${b.note ? `<p class="text-xs text-amber-800 mt-0.5">備註：${b.note}</p>` : ''}
+            ${conflictHtml}
+          </div>
+          <div class="flex gap-1.5">
+            <button onclick="quickStatus('${b.id}', '尚未到來')" class="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg">✓ 核准排入</button>
+            <button onclick="editBooking('${b.id}')" class="px-3 py-1 bg-stone-100 text-stone-700 text-xs rounded-lg">調整時段/項目</button>
+          </div>
         </div>
-        <div class="flex gap-1.5">
-          <button onclick="quickStatus('${b.id}', '尚未到來')" class="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg">✓ 核准排入</button>
-          <button onclick="editBooking('${b.id}')" class="px-3 py-1 bg-stone-100 text-stone-700 text-xs rounded-lg">調整時段/項目</button>
-        </div>
-      </div>
-    `).join("");
+      `;
+    }).join("");
   }
 
   function renderCalendar() {
@@ -1491,6 +1520,8 @@
         .filter(b => b.date === dateStr && b.status !== "取消")
         .sort((a, b) => a.startTime.localeCompare(b.startTime));
       const isSelected = dateStr === selectedDateStr;
+
+      const hasOverlapOnDay = dayBks.some(b => findOverlappingBookings(dateStr, b.startTime, b.endTime, b.id).length > 0);
 
       const visibleBks = dayBks.slice(0, 3);
       const itemsHtml = visibleBks.map(b => {
@@ -1510,7 +1541,10 @@
         <button onclick="selectDate('${dateStr}')" class="min-h-[92px] sm:min-h-[108px] rounded-xl border p-0.5 sm:p-1.5 flex flex-col justify-start items-center overflow-hidden transition ${isSelected ? 'border-[#8C735B] bg-[#FDFBF7] ring-2 ring-[#8C735B]/40' : 'border-[#EAE2D6] bg-white hover:bg-[#FAF7F2]'}">
           <div class="w-full flex justify-between items-baseline px-1 mb-1 whitespace-nowrap">
             <span class="text-xs sm:text-sm font-bold ${isSelected ? 'text-[#8C735B]' : 'text-[#3D352E]'}">${d}</span>
-            ${dayBks.length > 0 ? `<span class="text-[10px] text-[#8C735B]">${dayBks.length}筆</span>` : ''}
+            <span class="flex items-center gap-0.5">
+              ${hasOverlapOnDay ? '<span class="text-[10px] font-bold text-red-600" title="當日時段有重疊">⚠️</span>' : ''}
+              ${dayBks.length > 0 ? `<span class="text-[10px] text-[#8C735B]">${dayBks.length}筆</span>` : ''}
+            </span>
           </div>
           <div class="w-full space-y-1">${itemsHtml}</div>
           ${extraHtml}
@@ -1534,10 +1568,44 @@
 
   function renderDayBookings() {
     document.getElementById("selectedDateLabel").textContent = `${selectedDateStr} 預約排程`;
+    const overlapBanner = document.getElementById("dayOverlapBanner");
     const list = document.getElementById("dayBookingsList");
     const dayBks = appData.bookings
       .filter(b => b.date === selectedDateStr)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    const activeDayBks = dayBks.filter(b => b.status !== "取消");
+    const overlapMessages = [];
+    const seenPairs = new Set();
+
+    for (let i = 0; i < activeDayBks.length; i++) {
+      for (let j = i + 1; j < activeDayBks.length; j++) {
+        const a = activeDayBks[i];
+        const b = activeDayBks[j];
+        const s1 = timeToMinutes(a.startTime);
+        const e1 = Math.max(s1 + (Number(a.duration) || 30), timeToMinutes(a.endTime));
+        const s2 = timeToMinutes(b.startTime);
+        const e2 = Math.max(s2 + (Number(b.duration) || 30), timeToMinutes(b.endTime));
+        if (s1 < e2 && s2 < e1) {
+          const key = [a.id, b.id].sort().join("_");
+          if (!seenPairs.has(key)) {
+            seenPairs.add(key);
+            overlapMessages.push(`「${a.startTime}-${a.endTime} ${a.customerName}」與「${b.startTime}-${b.endTime} ${b.customerName}」時段重疊`);
+          }
+        }
+      }
+    }
+
+    if (overlapMessages.length > 0) {
+      overlapBanner.innerHTML = `
+        <div class="font-bold text-sm">⚠️ 當日時段重疊提醒（共 ${overlapMessages.length} 組）</div>
+        <ul class="list-disc pl-4 space-y-0.5">${overlapMessages.map(m => `<li>${m}</li>`).join("")}</ul>
+      `;
+      overlapBanner.classList.remove("hidden");
+    } else {
+      overlapBanner.innerHTML = "";
+      overlapBanner.classList.add("hidden");
+    }
 
     if (dayBks.length === 0) {
       list.innerHTML = `<div class="text-center py-10 text-xs text-[#8C735B]">本日尚無預約，點擊右上角「+ 新增預約」</div>`;
@@ -1550,13 +1618,14 @@
       const st = b.status;
       const typeInfo = getBookingTypeInfo(b);
       const isCheckedInAndSettled = (st === "已報到" || st === "已完成") && b.settled === "Y";
+      const selfConflicts = (st !== "取消") ? findOverlappingBookings(b.date, b.startTime, b.endTime, b.id) : [];
 
       const btnClass = (target) => st === target
         ? "bg-[#8C735B] text-white font-bold shadow-2xs"
         : "bg-white text-[#735D48] border border-[#EAE2D6] hover:bg-[#F5EFE6]";
 
       return `
-        <div class="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] space-y-2.5">
+        <div class="p-3.5 rounded-xl bg-[#FAF7F2] border ${selfConflicts.length > 0 ? 'border-red-400 ring-1 ring-red-300' : 'border-[#EAE2D6]'} space-y-2.5">
           <div class="flex justify-between items-start gap-2">
             <div>
               <div class="flex flex-wrap items-center gap-1.5">
@@ -1572,6 +1641,10 @@
             </div>
             <span class="text-xs font-bold px-2 py-0.5 rounded bg-white border border-[#EAE2D6] shrink-0">${st}</span>
           </div>
+
+          ${selfConflicts.length > 0
+            ? `<div class="px-2.5 py-1.5 rounded-lg bg-red-50 border border-red-200 text-xs font-bold text-red-700">⚠️ 時段重疊：與 ${selfConflicts.map(c => `${c.startTime}-${c.endTime} ${c.customerName}`).join("、")} 重疊</div>`
+            : ''}
 
           <div class="grid grid-cols-3 gap-1.5 text-xs">
             <button onclick="quickStatus('${b.id}', '尚未到來')" class="py-1.5 rounded-lg transition ${btnClass('尚未到來')}">尚未到來</button>
@@ -1629,7 +1702,6 @@
     }
 
     grid.innerHTML = filtered.map(c => {
-      const isLowBal = Number(c.balance || 0) < LOW_BALANCE_THRESHOLD;
       const pkgText = getCustomerRemainingSessionsText(c.id);
       return `
         <div class="card-warm rounded-2xl p-5 flex flex-col justify-between space-y-3">
@@ -1643,8 +1715,7 @@
                 <p class="text-xs text-[#8C735B] truncate">${c.contact || '未填聯絡方式'}</p>
               </div>
               <div class="text-right shrink-0 space-y-1">
-                <div class="text-xs font-bold ${isLowBal ? 'text-red-600' : 'text-[#8C735B]'}">儲值金 $${c.balance.toLocaleString()}</div>
-                ${isLowBal ? '<div class="text-[10px] font-bold text-red-600 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded inline-block">低餘額提醒</div>' : ''}
+                <div class="text-xs font-bold text-[#8C735B]">儲值金 $${c.balance.toLocaleString()}</div>
                 <div><span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#F5EFE6] text-[#735D48]">${c.promoTitle || '一般原價'}</span></div>
               </div>
             </div>
@@ -1687,14 +1758,10 @@
       .filter(b => b.status === "已報到" || b.status === "已完成")
       .reduce((sum, b) => sum + Number(b.finalPrice || 0), 0);
 
-    const isLowBal = Number(c.balance || 0) < LOW_BALANCE_THRESHOLD;
-
     document.getElementById("cdName").textContent = c.name;
     document.getElementById("cdPromo").textContent = c.promoTitle || "一般原價";
     document.getElementById("cdContact").textContent = `聯絡方式：${c.contact || '未填寫'}`;
     document.getElementById("cdBalance").textContent = `$${c.balance.toLocaleString()}`;
-    document.getElementById("cdBalance").className = `text-lg font-bold mt-0.5 ${isLowBal ? 'text-red-600' : 'text-[#8C735B]'}`;
-    document.getElementById("cdLowBalanceTag").classList.toggle("hidden", !isLowBal);
     document.getElementById("cdVisits").textContent = `${c.visitCount || 0} 次`;
     document.getElementById("cdTotalSpent").textContent = `$${totalSpent.toLocaleString()}`;
 
@@ -2079,12 +2146,10 @@
       return;
     }
 
-    const isLowBal = Number(cust.balance || 0) < LOW_BALANCE_THRESHOLD;
     const promo = cust.promoTitle ? `｜優惠：${cust.promoTitle}` : "";
     card.innerHTML = `
       <div>
-        儲值金：<strong class="${isLowBal ? 'text-red-600' : 'text-[#8C735B]'}">$${cust.balance.toLocaleString()}</strong>
-        ${isLowBal ? '<span class="ml-1 px-1.5 py-0.5 rounded bg-red-50 text-red-600 font-bold text-[10px]">低餘額提醒</span>' : ''}
+        儲值金：<strong class="text-[#8C735B]">$${cust.balance.toLocaleString()}</strong>
         ｜來店 ${cust.visitCount || 0} 次${promo}
       </div>
     `;
@@ -2182,11 +2247,9 @@
 
     if (!cust || !warnEl) return;
 
-    if (payMethod === "扣儲值金" && Number(cust.balance || 0) < finalPrice) {
-      warnEl.textContent = `⚠️ 儲值金餘額（$${Number(cust.balance || 0).toLocaleString()}）不足支付本次 $${finalPrice.toLocaleString()}，建議提醒續儲或改收現金/轉帳`;
-      warnEl.classList.remove("hidden");
-    } else if (Number(cust.balance || 0) < LOW_BALANCE_THRESHOLD) {
-      warnEl.textContent = `💡 提醒：此客戶儲值金目前僅 $${Number(cust.balance || 0).toLocaleString()}（低於 $${LOW_BALANCE_THRESHOLD}）`;
+    const currentBal = Number(cust.balance || 0);
+    if (payMethod === "扣儲值金" && currentBal > 0 && currentBal < finalPrice) {
+      warnEl.textContent = `⚠️ 儲值金餘額不足：此客戶原有儲值金 $${currentBal.toLocaleString()}，不足扣除本次 $${finalPrice.toLocaleString()}（尚差 $${(finalPrice - currentBal).toLocaleString()}），請提醒續儲或改付現金/轉帳`;
       warnEl.classList.remove("hidden");
     } else {
       warnEl.classList.add("hidden");
@@ -2233,7 +2296,7 @@
     const cust = appData.customers.find(c => c.id === custId);
     const servicesText = adminCart.length > 0 ? adminCart.map(formatAdminCartItemLabel).join(" + ") : "自訂服務";
     const totalDuration = adminCart.reduce((s, x) => s + x.duration, 0) || 60;
-    const origPrice = Number(document.getElementById("bkOriginalPrice").value || 0);
+    const itemTotalAmount = adminCart.reduce((s, x) => s + (x.isGift ? 0 : x.price), 0);
     const finalPrice = Number(document.getElementById("bkFinalPrice").value || 0);
     const dateVal = document.getElementById("bkDate").value;
     const startVal = document.getElementById("bkStartTime").value;
@@ -2246,6 +2309,13 @@
       const desc = conflicts.map(c => `${c.startTime}-${c.endTime} ${c.customerName}`).join("、");
       const ok = window.confirm(`此時段與「${desc}」重疊，確定仍要儲存預約嗎？`);
       if (!ok) return;
+    }
+
+    if (adminCart.length > 0 && finalPrice < itemTotalAmount) {
+      const okLower = window.confirm(
+        `本次實收金額 $${finalPrice.toLocaleString()} 低於項目金額 $${itemTotalAmount.toLocaleString()}（可能已給予優惠/折讓），是否確認儲存？`
+      );
+      if (!okLower) return;
     }
 
     let usedPackageId = document.getElementById("bkUsedPackageId").value;
@@ -2267,7 +2337,7 @@
       duration: totalDuration,
       category: adminCart.length > 1 ? "多項服務" : (document.getElementById("bkCategory").value || "除毛服務"),
       service: servicesText,
-      originalPrice: origPrice,
+      originalPrice: itemTotalAmount,
       finalPrice: finalPrice,
       payMethod: payMethodVal,
       usedPackageId,
