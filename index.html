@@ -779,9 +779,6 @@
     return { label: "其他", pillClass: "bg-[#F5EFE6] text-[#3D352E] border-[#EAE2D6]" };
   }
 
-  // =========================================================
-  // 三堂套票計算、多品項建立、刪除與試算表同步
-  // =========================================================
   function isThreeSessionServiceText(text) {
     return /三堂|三回|套票/.test(String(text || ""));
   }
@@ -1016,9 +1013,6 @@
     }
   }
 
-  // =========================================================
-  // 客人專屬查詢與多項預約邏輯
-  // =========================================================
   async function loadCustomerPortal(cid) {
     showLoading("正在讀取您的專屬會員資料...");
     try {
@@ -1147,9 +1141,6 @@
     }
   }
 
-  // =========================================================
-  // 闆娘管理後台邏輯
-  // =========================================================
   function loginAdmin() {
     const pwd = document.getElementById("adminPwdInput").value;
     if (!pwd) return showToast("請輸入管理密碼");
@@ -1189,9 +1180,6 @@
     renderCatalogManageList();
   }
 
-  // =========================================================
-  // 收支帳本 + 優化版近 6 個月實收 vs 支出橫向對照
-  // =========================================================
   function getFinanceYmPrefix() {
     return `${financeYear}-${String(financeMonth + 1).padStart(2, '0')}`;
   }
@@ -1628,9 +1616,6 @@
     copyToClipboard(msg, "已複製 LINE 預約確認訊息！");
   }
 
-  // =========================================================
-  // 客戶資料分頁
-  // =========================================================
   function renderCustomersList() {
     const kw = (document.getElementById("custSearchInput").value || "").trim().toLowerCase();
     const filtered = appData.customers.filter(c =>
