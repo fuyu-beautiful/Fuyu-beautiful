@@ -175,37 +175,26 @@
   </div>
 
   <div id="adminDashboardView" class="hidden max-w-6xl mx-auto px-3 sm:px-4 pt-4 sm:pt-5">
-    <header class="flex flex-wrap justify-between items-center gap-3 mb-4 pb-3 border-b border-[#EAE2D6]">
-      <div class="flex items-center gap-2.5">
-        <span class="brand-serif text-3xl font-bold text-[#8C735B]">Fy</span>
+    <header class="flex flex-wrap justify-between items-center gap-2 mb-3 pb-2.5 border-b border-[#EAE2D6]">
+      <div class="flex items-center gap-2">
+        <span class="brand-serif text-2xl sm:text-3xl font-bold text-[#8C735B]">Fy</span>
         <div>
-          <h1 class="font-bold text-lg leading-tight">馥語美學・營運與預約管家</h1>
-          <p class="text-xs text-[#8C735B]">南投草屯店｜營業時間 09:00 - 21:00｜服務人員：Ruby</p>
+          <h1 class="font-bold text-base sm:text-lg leading-tight">馥語美學・營運與預約管家</h1>
+          <p class="text-[11px] text-[#8C735B]">南投草屯店｜09:00 - 21:00｜Ruby</p>
         </div>
       </div>
-      <div class="flex gap-2">
-        <button onclick="refreshAdminData()" class="px-3 py-1.5 text-xs bg-white border border-[#EAE2D6] rounded-lg hover:bg-[#F5EFE6]">🔄 重新整理</button>
-        <button onclick="switchTab('catalog')" class="px-3 py-1.5 text-xs bg-white border border-[#EAE2D6] rounded-lg hover:bg-[#F5EFE6]">📋 價目與時長設定</button>
+      <div class="flex gap-1.5">
+        <button onclick="refreshAdminData()" class="px-2.5 py-1.5 text-xs bg-white border border-[#EAE2D6] rounded-lg hover:bg-[#F5EFE6]">🔄 重新整理</button>
+        <button onclick="switchTab('catalog')" class="px-2.5 py-1.5 text-xs bg-white border border-[#EAE2D6] rounded-lg hover:bg-[#F5EFE6]">📋 價目設定</button>
       </div>
     </header>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-      <div class="card-warm rounded-2xl p-4">
-        <p class="text-xs text-[#735D48]">本月現金實收 (含儲值現金)</p>
-        <p class="text-2xl font-bold income-red mt-1" id="statIncome">$0</p>
-      </div>
-      <div class="card-warm rounded-2xl p-4">
-        <p class="text-xs text-[#735D48]">本月營運支出</p>
-        <p class="text-2xl font-bold expense-green mt-1" id="statExpense">$0</p>
-      </div>
-      <div class="card-warm rounded-2xl p-4">
-        <p class="text-xs text-[#735D48]">本月淨現金流</p>
-        <p class="text-2xl font-bold mt-1" id="statNet">$0</p>
-      </div>
-      <div class="card-warm rounded-2xl p-4 bg-[#FDFBF7]">
-        <p class="text-xs text-[#735D48]">全店未消化儲值金 (預收)</p>
-        <p class="text-2xl font-bold text-[#8C735B] mt-1" id="statLiability">$0</p>
-      </div>
+    <!-- 分頁導覽列（首頁預設即為預約月曆） -->
+    <div class="flex flex-wrap gap-1.5 mb-4 bg-[#EFE9DF] p-1 rounded-xl w-full sm:w-fit">
+      <button onclick="switchTab('calendar')" id="tabBtn-calendar" class="tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-white text-[#3D352E] shadow-xs">📅 預約月曆</button>
+      <button onclick="switchTab('customers')" id="tabBtn-customers" class="tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-[#735D48]">👩🏻 客戶儲值</button>
+      <button onclick="switchTab('finance')" id="tabBtn-finance" class="tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-[#735D48]">💰 收支帳本</button>
+      <button onclick="switchTab('catalog')" id="tabBtn-catalog" class="tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-[#735D48]">📋 服務價目</button>
     </div>
 
     <div id="pendingBanner" class="hidden mb-4 bg-amber-50 border border-amber-200 rounded-2xl p-4">
@@ -216,21 +205,23 @@
       <div id="pendingList" class="space-y-2"></div>
     </div>
 
-    <div class="flex flex-wrap gap-1.5 mb-4 bg-[#EFE9DF] p-1 rounded-xl w-full sm:w-fit">
-      <button onclick="switchTab('calendar')" id="tabBtn-calendar" class="tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-white text-[#3D352E] shadow-xs">📅 預約月曆</button>
-      <button onclick="switchTab('customers')" id="tabBtn-customers" class="tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-[#735D48]">👩🏻 客戶儲值</button>
-      <button onclick="switchTab('finance')" id="tabBtn-finance" class="tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-[#735D48]">💰 收支帳本</button>
-      <button onclick="switchTab('catalog')" id="tabBtn-catalog" class="tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-[#735D48]">📋 服務價目</button>
-    </div>
-
-    <!-- 分頁 1：預約月曆（放大時間可讀性、減少擁擠） -->
-    <div id="tab-calendar" class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+    <!-- 分頁 1（預設首頁）：預約月曆（單行不跳行＋大項目符號） -->
+    <div id="tab-calendar" class="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5">
       <div class="xl:col-span-7 card-warm rounded-2xl p-3 sm:p-5">
-        <div class="flex justify-between items-center mb-3">
-          <button onclick="changeMonth(-1)" class="px-3 py-1.5 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">◀</button>
+        <div class="flex justify-between items-center mb-2.5">
+          <button onclick="changeMonth(-1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">◀</button>
           <h2 class="font-bold text-base sm:text-lg" id="calendarMonthLabel">2026年 11月</h2>
-          <button onclick="changeMonth(1)" class="px-3 py-1.5 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">▶</button>
+          <button onclick="changeMonth(1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">▶</button>
         </div>
+
+        <!-- 項目符號說明列 -->
+        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#735D48] bg-[#FAF7F2] border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 mb-2.5">
+          <span class="font-bold text-[#8C735B]">項目符號：</span>
+          <span><strong class="text-amber-800">蠟</strong>＝熱蠟</span>
+          <span><strong class="text-sky-800">冰</strong>＝冰肌/日式</span>
+          <span><strong class="text-rose-700">＋</strong>＝加購/護理/粉嫩</span>
+        </div>
+
         <div class="grid grid-cols-7 text-center text-xs text-[#8C735B] font-bold mb-1.5">
           <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
         </div>
@@ -245,7 +236,7 @@
           </div>
           <button onclick="openBookingModal()" class="btn-primary text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl">+ 新增預約</button>
         </div>
-        <div id="dayBookingsList" class="space-y-3 max-h-[600px] overflow-y-auto pr-1"></div>
+        <div id="dayBookingsList" class="space-y-3 max-h-[620px] overflow-y-auto pr-1"></div>
       </div>
     </div>
 
@@ -258,40 +249,61 @@
       <div id="customersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
 
-    <!-- 分頁 3：收支記帳 -->
-    <div id="tab-finance" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-5">
-      <div class="lg:col-span-4 card-warm rounded-2xl p-5 h-fit">
-        <h3 class="font-bold text-base mb-3 expense-green">+ 登記營運支出</h3>
-        <div class="space-y-3 text-sm">
-          <div>
-            <label class="block text-xs text-[#735D48] mb-1">日期</label>
-            <input type="date" id="expDate" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
-          </div>
-          <div>
-            <label class="block text-xs text-[#735D48] mb-1">支出類別</label>
-            <select id="expCategory" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
-              <option value="RICA蠟豆與耗材">RICA蠟豆與耗材</option>
-              <option value="房租與水電">房租與水電</option>
-              <option value="儀器維護與保養">儀器維護與保養</option>
-              <option value="廣告與社群行銷">廣告與社群行銷</option>
-              <option value="其他雜支">其他雜支</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs text-[#735D48] mb-1">金額 ($)</label>
-            <input type="number" id="expAmount" placeholder="0" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
-          </div>
-          <div>
-            <label class="block text-xs text-[#735D48] mb-1">備註說明</label>
-            <input type="text" id="expNote" placeholder="例如：補貨木棒、除毛蠟" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
-          </div>
-          <button onclick="submitExpense()" class="w-full bg-[#16A34A] hover:bg-[#15803D] text-white font-bold py-2.5 rounded-xl">儲存支出紀錄</button>
+    <!-- 分頁 3：收支帳本（包含本月現金實收／支出／淨現金流／全店未消化儲值金） -->
+    <div id="tab-finance" class="hidden space-y-4">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="card-warm rounded-2xl p-4">
+          <p class="text-xs text-[#735D48]">本月現金實收 (含儲值現金)</p>
+          <p class="text-2xl font-bold income-red mt-1" id="statIncome">$0</p>
+        </div>
+        <div class="card-warm rounded-2xl p-4">
+          <p class="text-xs text-[#735D48]">本月營運支出</p>
+          <p class="text-2xl font-bold expense-green mt-1" id="statExpense">$0</p>
+        </div>
+        <div class="card-warm rounded-2xl p-4">
+          <p class="text-xs text-[#735D48]">本月淨現金流</p>
+          <p class="text-2xl font-bold mt-1" id="statNet">$0</p>
+        </div>
+        <div class="card-warm rounded-2xl p-4 bg-[#FDFBF7]">
+          <p class="text-xs text-[#735D48]">全店未消化儲值金 (預收)</p>
+          <p class="text-2xl font-bold text-[#8C735B] mt-1" id="statLiability">$0</p>
         </div>
       </div>
 
-      <div class="lg:col-span-8 card-warm rounded-2xl p-5">
-        <h3 class="font-bold text-base mb-3">近期資金與儲值異動流水帳</h3>
-        <div id="financeHistoryList" class="space-y-2 text-sm max-h-[520px] overflow-y-auto"></div>
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div class="lg:col-span-4 card-warm rounded-2xl p-5 h-fit">
+          <h3 class="font-bold text-base mb-3 expense-green">+ 登記營運支出</h3>
+          <div class="space-y-3 text-sm">
+            <div>
+              <label class="block text-xs text-[#735D48] mb-1">日期</label>
+              <input type="date" id="expDate" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+            </div>
+            <div>
+              <label class="block text-xs text-[#735D48] mb-1">支出類別</label>
+              <select id="expCategory" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+                <option value="RICA蠟豆與耗材">RICA蠟豆與耗材</option>
+                <option value="房租與水電">房租與水電</option>
+                <option value="儀器維護與保養">儀器維護與保養</option>
+                <option value="廣告與社群行銷">廣告與社群行銷</option>
+                <option value="其他雜支">其他雜支</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs text-[#735D48] mb-1">金額 ($)</label>
+              <input type="number" id="expAmount" placeholder="0" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+            </div>
+            <div>
+              <label class="block text-xs text-[#735D48] mb-1">備註說明</label>
+              <input type="text" id="expNote" placeholder="例如：補貨木棒、除毛蠟" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+            </div>
+            <button onclick="submitExpense()" class="w-full bg-[#16A34A] hover:bg-[#15803D] text-white font-bold py-2.5 rounded-xl">儲存支出紀錄</button>
+          </div>
+        </div>
+
+        <div class="lg:col-span-8 card-warm rounded-2xl p-5">
+          <h3 class="font-bold text-base mb-3">近期資金與儲值異動流水帳</h3>
+          <div id="financeHistoryList" class="space-y-2 text-sm max-h-[520px] overflow-y-auto"></div>
+        </div>
       </div>
     </div>
 
@@ -550,6 +562,22 @@
   };
 
   // =========================================================
+  // 服務大項目符號分析（蠟＝熱蠟、冰＝冰肌/日式、＋＝加購/護理/粉嫩）
+  // =========================================================
+  function getServiceSymbols(booking) {
+    const text = `${booking.category || ""} ${booking.service || ""}`;
+    const hasWax = /熱蠟|RICA/i.test(text);
+    const hasIce = /冰肌|日式|淨毛/i.test(text);
+    const hasAddon = /加購|軟膜|護理|粉嫩|\+/i.test(text);
+
+    const marks = [];
+    if (hasWax) marks.push("蠟");
+    if (hasIce) marks.push("冰");
+    if (hasAddon) marks.push("＋");
+    return marks.length > 0 ? `[${marks.join("")}]` : "";
+  }
+
+  // =========================================================
   // 客人專屬查詢與多項預約邏輯
   // =========================================================
   async function loadCustomerPortal(cid) {
@@ -777,7 +805,7 @@
     `).join("");
   }
 
-  // 預約月曆：加大格子高度與時間字級，優先讓時間清楚可讀
+  // 預約月曆：單行不跳行＋時間＋名字簡稱＋大項目符號
   function renderCalendar() {
     document.getElementById("calendarMonthLabel").textContent = `${currentYear}年 ${currentMonth + 1}月`;
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -794,28 +822,30 @@
         .sort((a, b) => a.startTime.localeCompare(b.startTime));
       const isSelected = dateStr === selectedDateStr;
 
-      const visibleBks = dayBks.slice(0, 2);
+      const visibleBks = dayBks.slice(0, 3);
       const itemsHtml = visibleBks.map(b => {
         const shortName = String(b.customerName || "").slice(0, 2);
+        const sym = getServiceSymbols(b);
         return `
-          <div class="w-full text-left px-1 py-0.5 rounded bg-[#F5EFE6] text-[#3D352E] leading-snug">
-            <div class="text-[11px] sm:text-xs font-bold text-[#634F3C] tracking-tight">${b.startTime}</div>
-            <div class="text-[10px] sm:text-[11px] text-[#735D48] truncate">${shortName}</div>
+          <div class="w-full whitespace-nowrap overflow-hidden text-ellipsis px-1 py-0.5 rounded bg-[#F5EFE6] text-[#3D352E] text-[10px] sm:text-[11px] leading-tight text-left" title="${b.startTime} ${b.customerName} ${sym} - ${b.service}">
+            <span class="font-bold text-[#634F3C]">${b.startTime}</span>
+            <span>${shortName}</span>
+            <span class="font-bold text-[#8C735B]">${sym}</span>
           </div>
         `;
       }).join("");
 
-      const extraHtml = dayBks.length > 2
-        ? `<div class="text-[10px] sm:text-xs font-medium text-[#8C735B] mt-0.5">+${dayBks.length - 2} 筆</div>`
+      const extraHtml = dayBks.length > 3
+        ? `<div class="whitespace-nowrap text-[10px] font-medium text-[#8C735B] mt-0.5">+${dayBks.length - 3}</div>`
         : "";
 
       grid.innerHTML += `
-        <button onclick="selectDate('${dateStr}')" class="min-h-[96px] sm:min-h-[112px] rounded-xl border p-1 sm:p-1.5 flex flex-col justify-start items-center transition ${isSelected ? 'border-[#8C735B] bg-[#FDFBF7] ring-2 ring-[#8C735B]/40' : 'border-[#EAE2D6] bg-white hover:bg-[#FAF7F2]'}">
-          <div class="w-full flex justify-between items-baseline px-0.5 mb-1">
+        <button onclick="selectDate('${dateStr}')" class="min-h-[96px] sm:min-h-[112px] rounded-xl border p-1 sm:p-1.5 flex flex-col justify-start items-center overflow-hidden transition ${isSelected ? 'border-[#8C735B] bg-[#FDFBF7] ring-2 ring-[#8C735B]/40' : 'border-[#EAE2D6] bg-white hover:bg-[#FAF7F2]'}">
+          <div class="w-full flex justify-between items-baseline px-0.5 mb-1 whitespace-nowrap">
             <span class="text-xs sm:text-sm font-bold ${isSelected ? 'text-[#8C735B]' : 'text-[#3D352E]'}">${d}</span>
             ${dayBks.length > 0 ? `<span class="text-[10px] text-[#8C735B]">${dayBks.length}筆</span>` : ''}
           </div>
-          <div class="w-full space-y-1">${itemsHtml}</div>
+          <div class="w-full space-y-1 overflow-hidden">${itemsHtml}</div>
           ${extraHtml}
         </button>
       `;
@@ -852,6 +882,7 @@
       const cust = appData.customers.find(c => c.id === b.customerId);
       const visits = cust ? cust.visitCount : 0;
       const st = b.status;
+      const sym = getServiceSymbols(b);
 
       const btnClass = (target) => st === target
         ? "bg-[#8C735B] text-white font-bold shadow-2xs"
@@ -869,6 +900,7 @@
               <h4 class="font-bold text-base text-[#3D352E] mt-0.5">
                 ${b.customerName}
                 <span class="text-xs font-normal text-[#8C735B] ml-1">${visits}次</span>
+                ${sym ? `<span class="text-xs font-bold text-[#8C735B] ml-1.5">${sym}</span>` : ''}
               </h4>
             </div>
             <span class="text-xs font-bold px-2 py-0.5 rounded bg-white border border-[#EAE2D6]">${st}</span>
@@ -1352,7 +1384,6 @@
     }
   }
 
-  // 價目表彈窗：下拉選單選現有分類，或選「+ 新增自訂分類」輸入新分類
   function populateCatalogCategorySelect(selectedCat = "") {
     const existingCats = [...new Set((appData.catalog || []).map(x => x.category).filter(Boolean))];
     const sel = document.getElementById("catSelect");
