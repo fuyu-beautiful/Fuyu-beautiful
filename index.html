@@ -189,7 +189,7 @@
       </div>
     </header>
 
-    <!-- 分頁導覽列：單行不跳行 -->
+    <!-- 主分頁導覽列：單行不跳行 -->
     <div class="grid grid-cols-4 gap-1 mb-3.5 bg-[#EFE9DF] p-1 rounded-xl">
       <button onclick="switchTab('calendar')" id="tabBtn-calendar" class="tab-btn whitespace-nowrap px-1.5 py-2 rounded-lg text-xs font-bold bg-white text-[#3D352E] shadow-xs text-center">📅 預約月曆</button>
       <button onclick="switchTab('customers')" id="tabBtn-customers" class="tab-btn whitespace-nowrap px-1.5 py-2 rounded-lg text-xs font-medium text-[#735D48] text-center">👩🏻 客戶儲值</button>
@@ -205,7 +205,7 @@
       <div id="pendingList" class="space-y-2"></div>
     </div>
 
-    <!-- 分頁 1（預設首頁）：預約月曆（完整時間＋顏色區分：熱蠟／冰肌／熱蠟+冰肌） -->
+    <!-- 分頁 1（預設首頁）：預約月曆 -->
     <div id="tab-calendar" class="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5">
       <div class="xl:col-span-7 card-warm rounded-2xl p-2 sm:p-5">
         <div class="flex justify-between items-center mb-2">
@@ -214,7 +214,6 @@
           <button onclick="changeMonth(1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">▶</button>
         </div>
 
-        <!-- 色塊圖例（單行不跳行） -->
         <div class="flex items-center justify-around gap-1.5 text-[11px] bg-[#FAF7F2] border border-[#EAE2D6] rounded-lg px-2 py-1 mb-2 whitespace-nowrap">
           <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-medium">熱蠟</span>
           <span class="px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-300 font-medium">冰肌</span>
@@ -231,7 +230,7 @@
         <div class="flex justify-between items-center mb-3.5">
           <div>
             <h3 class="font-bold text-base sm:text-lg" id="selectedDateLabel">今日排程</h3>
-            <p class="text-xs text-[#8C735B]">點「已報到」等同結帳扣點／入帳</p>
+            <p class="text-xs text-[#8C735B]">點「已報到」等同結帳扣點／入帳；改回「尚未到來」自動退回</p>
           </div>
           <button onclick="openBookingModal()" class="btn-primary whitespace-nowrap text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl">+ 新增預約</button>
         </div>
@@ -248,29 +247,44 @@
       <div id="customersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
 
-    <!-- 分頁 3：收支帳本 -->
+    <!-- 分頁 3：收支帳本（拆分為「登記營運支出」與「支出細項」，以月為單位） -->
     <div id="tab-finance" class="hidden space-y-4">
+      <!-- 頂部月份切換與紅收綠支 KPI -->
+      <div class="flex flex-wrap justify-between items-center gap-2 bg-white border border-[#EAE2D6] rounded-2xl px-4 py-2.5">
+        <div class="flex items-center gap-2">
+          <button onclick="changeFinanceMonth(-1)" class="px-2.5 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-xs font-bold">◀</button>
+          <span class="font-bold text-sm text-[#3D352E]" id="financeMonthLabel">2026年 11月</span>
+          <button onclick="changeFinanceMonth(1)" class="px-2.5 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-xs font-bold">▶</button>
+          <button onclick="jumpFinanceToCurrentMonth()" class="text-[11px] px-2 py-0.5 rounded bg-[#F5EFE6] text-[#735D48]">本月</button>
+        </div>
+        <div class="inline-flex bg-[#EFE9DF] p-1 rounded-xl">
+          <button onclick="switchFinanceSubTab('register')" id="finSubBtn-register" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold bg-white text-[#3D352E] shadow-2xs">登記營運支出</button>
+          <button onclick="switchFinanceSubTab('details')" id="finSubBtn-details" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-medium text-[#735D48]">支出細項</button>
+        </div>
+      </div>
+
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div class="card-warm rounded-2xl p-4">
-          <p class="text-xs text-[#735D48]">本月現金實收 (含儲值現金)</p>
+          <p class="text-xs text-[#735D48]" id="statIncomeLabel">本月現金實收</p>
           <p class="text-2xl font-bold income-red mt-1" id="statIncome">$0</p>
         </div>
         <div class="card-warm rounded-2xl p-4">
-          <p class="text-xs text-[#735D48]">本月營運支出</p>
+          <p class="text-xs text-[#735D48]" id="statExpenseLabel">本月營運支出</p>
           <p class="text-2xl font-bold expense-green mt-1" id="statExpense">$0</p>
         </div>
         <div class="card-warm rounded-2xl p-4">
-          <p class="text-xs text-[#735D48]">本月淨現金流</p>
+          <p class="text-xs text-[#735D48]" id="statNetLabel">本月淨現金流</p>
           <p class="text-2xl font-bold mt-1" id="statNet">$0</p>
         </div>
         <div class="card-warm rounded-2xl p-4 bg-[#FDFBF7]">
-          <p class="text-xs text-[#735D48]">全店未消化儲值金 (預收)</p>
+          <p class="text-xs text-[#735D48]">全店未消化儲值金</p>
           <p class="text-2xl font-bold text-[#8C735B] mt-1" id="statLiability">$0</p>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        <div class="lg:col-span-4 card-warm rounded-2xl p-5 h-fit">
+      <!-- 子分頁 A（預設）：登記營運支出 + 月度支出圓餅圖 -->
+      <div id="finSub-register" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div class="lg:col-span-5 card-warm rounded-2xl p-5 h-fit">
           <h3 class="font-bold text-base mb-3 expense-green">+ 登記營運支出</h3>
           <div class="space-y-3 text-sm">
             <div>
@@ -299,9 +313,28 @@
           </div>
         </div>
 
-        <div class="lg:col-span-8 card-warm rounded-2xl p-5">
-          <h3 class="font-bold text-base mb-3">近期資金與儲值異動流水帳</h3>
-          <div id="financeHistoryList" class="space-y-2 text-sm max-h-[520px] overflow-y-auto"></div>
+        <div class="lg:col-span-7 card-warm rounded-2xl p-5">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="font-bold text-base expense-green" id="pieChartTitle">月度支出類別圓餅圖</h3>
+            <span class="text-xs text-[#8C735B]" id="pieChartTotalText">合計 $0</span>
+          </div>
+          <div id="expensePieBox" class="flex flex-col sm:flex-row items-center justify-center gap-6 py-2"></div>
+        </div>
+      </div>
+
+      <!-- 子分頁 B：支出細項 -->
+      <div id="finSub-details" class="hidden space-y-4">
+        <div class="card-warm rounded-2xl p-5">
+          <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+            <h3 class="font-bold text-base expense-green" id="expenseDetailsTitle">本月支出細項</h3>
+            <span class="text-xs text-[#8C735B]" id="expenseDetailsCount">0 筆</span>
+          </div>
+          <div id="expenseDetailsList" class="space-y-2 text-sm max-h-[420px] overflow-y-auto"></div>
+        </div>
+
+        <div class="card-warm rounded-2xl p-5">
+          <h3 class="font-bold text-base mb-3">本月收現與儲值異動流水</h3>
+          <div id="financeHistoryList" class="space-y-2 text-sm max-h-[360px] overflow-y-auto"></div>
         </div>
       </div>
     </div>
@@ -319,25 +352,33 @@
     </div>
   </div>
 
-  <!-- 彈窗 1：新增 / 編輯預約 -->
+  <!-- 彈窗 1：新增 / 編輯預約（簡化點選＋客戶快搜／快建） -->
   <div id="bookingModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[92vh] overflow-y-auto">
-      <h3 class="font-bold text-lg mb-4" id="bkModalTitle">新增除毛預約</h3>
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
+      <h3 class="font-bold text-lg mb-3" id="bkModalTitle">新增預約</h3>
       <input type="hidden" id="bkId">
       <div class="space-y-3 text-sm">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-          <div>
-            <label class="block text-xs text-[#735D48] mb-1">選擇客戶</label>
-            <select id="bkCustomer" onchange="recalculateBookingTotal()" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
+        <!-- 客戶搜尋 + 下拉 + 快速建檔 -->
+        <div class="bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl p-2.5 space-y-2">
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-bold text-[#735D48]">選擇客戶（輸入關鍵字快搜）</label>
+            <button type="button" onclick="toggleQuickAddCustomer()" class="text-xs font-bold text-[#8C735B] hover:underline">+ 快速建檔</button>
           </div>
-          <div>
-            <label class="block text-xs text-[#735D48] mb-1">服務人員</label>
-            <select id="bkStaff" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
-              <option value="Ruby" selected>Ruby</option>
-            </select>
+          <input type="text" id="bkCustomerSearch" oninput="filterBookingCustomerOptions()" placeholder="🔍 輸入姓名或電話快速篩選..." class="w-full border border-[#EAE2D6] rounded-lg px-3 py-1.5 bg-white text-xs">
+          <select id="bkCustomer" onchange="recalculateBookingTotal()" class="w-full border border-[#EAE2D6] rounded-lg px-3 py-2 bg-white text-sm"></select>
+
+          <div id="bkQuickAddCustBox" class="hidden pt-2 border-t border-[#EAE2D6] space-y-2">
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="quickCustName" placeholder="新客人姓名 *" class="border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white text-xs">
+              <input type="text" id="quickCustContact" placeholder="電話或 LINE" class="border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white text-xs">
+            </div>
+            <div class="flex justify-end gap-1.5">
+              <button type="button" onclick="toggleQuickAddCustomer(false)" class="px-2.5 py-1 text-xs rounded border border-[#EAE2D6] bg-white">取消</button>
+              <button type="button" onclick="quickCreateCustomerForBooking()" class="px-3 py-1 text-xs font-bold rounded bg-[#8C735B] text-white">建檔並選取</button>
+            </div>
           </div>
+          <p class="text-xs text-[#8C735B]" id="bkCustomerHint"></p>
         </div>
-        <p class="text-xs text-[#8C735B]" id="bkCustomerHint"></p>
 
         <div class="grid grid-cols-3 gap-2">
           <div>
@@ -354,12 +395,20 @@
           </div>
         </div>
 
+        <!-- 簡化服務點選：常用快選晶片 + 分類下拉 -->
         <div class="bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl p-3 space-y-2.5">
-          <label class="block text-xs font-bold text-[#8C735B]">新增服務項目（可連續加入多個部位或加購）</label>
-          <select id="bkCategory" onchange="updateCatalogDropdown('bkCategory', 'bkService')" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white text-xs"></select>
-          <div class="flex gap-2">
-            <select id="bkService" class="flex-1 border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white text-xs"></select>
-            <button type="button" onclick="addAdminCartItem()" class="px-3 py-1.5 rounded-lg bg-[#8C735B] text-white text-xs font-bold shrink-0">+ 加入</button>
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-bold text-[#8C735B]">點選服務加入（可多選）</label>
+            <span class="text-[11px] text-[#8C735B]">點晶片直接加入</span>
+          </div>
+          <div id="bkQuickChips" class="flex flex-wrap gap-1.5"></div>
+
+          <div class="pt-1 border-t border-[#EAE2D6]/70 space-y-2">
+            <select id="bkCategory" onchange="updateCatalogDropdown('bkCategory', 'bkService')" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white text-xs"></select>
+            <div class="flex gap-2">
+              <select id="bkService" class="flex-1 border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white text-xs"></select>
+              <button type="button" onclick="addAdminCartItem()" class="px-3 py-1.5 rounded-lg bg-[#8C735B] text-white text-xs font-bold shrink-0">+ 加入</button>
+            </div>
           </div>
 
           <div class="pt-1">
@@ -404,9 +453,17 @@
           </div>
         </div>
 
-        <div>
-          <label class="block text-xs text-[#735D48] mb-1">筆記（僅商家可見）</label>
-          <input type="text" id="bkNote" placeholder="選填" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div>
+            <label class="block text-xs text-[#735D48] mb-1">服務人員</label>
+            <select id="bkStaff" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+              <option value="Ruby" selected>Ruby</option>
+            </select>
+          </div>
+          <div class="sm:col-span-2">
+            <label class="block text-xs text-[#735D48] mb-1">筆記（僅商家可見）</label>
+            <input type="text" id="bkNote" placeholder="選填" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+          </div>
         </div>
       </div>
 
@@ -545,7 +602,18 @@
   let portalCart = [];
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth();
+  let financeYear = new Date().getFullYear();
+  let financeMonth = new Date().getMonth();
   let selectedDateStr = formatDateLocal(new Date());
+
+  // 支出類別專屬色碼（每個類別獨立顏色）
+  const EXPENSE_COLOR_MAP = {
+    "RICA蠟豆與耗材": "#D97706",
+    "房租與水電": "#2563EB",
+    "儀器維護與保養": "#7C3AED",
+    "廣告與社群行銷": "#DB2777",
+    "其他雜支": "#0D9488"
+  };
 
   window.onload = function() {
     initTimeSelects();
@@ -560,34 +628,21 @@
     }
   };
 
-  // 依照預約內容判斷類別色系：熱蠟 / 冰肌 / 熱蠟+冰肌
   function getBookingTypeInfo(booking) {
     const text = `${booking.category || ""} ${booking.service || ""}`;
     const hasWax = /熱蠟|RICA/i.test(text);
     const hasIce = /冰肌|日式|淨毛/i.test(text);
 
     if (hasWax && hasIce) {
-      return {
-        label: "熱蠟+冰肌",
-        pillClass: "bg-rose-100 text-rose-900 border-rose-300"
-      };
+      return { label: "熱蠟+冰肌", pillClass: "bg-rose-100 text-rose-900 border-rose-300" };
     }
     if (hasWax) {
-      return {
-        label: "熱蠟",
-        pillClass: "bg-amber-100 text-amber-900 border-amber-300"
-      };
+      return { label: "熱蠟", pillClass: "bg-amber-100 text-amber-900 border-amber-300" };
     }
     if (hasIce) {
-      return {
-        label: "冰肌",
-        pillClass: "bg-sky-100 text-sky-900 border-sky-300"
-      };
+      return { label: "冰肌", pillClass: "bg-sky-100 text-sky-900 border-sky-300" };
     }
-    return {
-      label: "其他",
-      pillClass: "bg-[#F5EFE6] text-[#3D352E] border-[#EAE2D6]"
-    };
+    return { label: "其他", pillClass: "bg-[#F5EFE6] text-[#3D352E] border-[#EAE2D6]" };
   }
 
   // =========================================================
@@ -738,6 +793,7 @@
       hideLoading();
       appData = res;
       initCategorySelectsFromCatalog("bkCategory", "bkService", (appData.catalog || []).filter(c => c.active));
+      renderBookingQuickChips();
       if (isLogin) {
         document.getElementById("adminLoginView").classList.add("hidden");
         document.getElementById("adminDashboardView").classList.remove("hidden");
@@ -751,6 +807,8 @@
 
   function renderAllAdminViews() {
     renderFinanceStats();
+    renderExpenseMonthlyPieChart();
+    renderExpenseMonthlyDetails();
     renderPendingRequests();
     renderCalendar();
     renderDayBookings();
@@ -759,8 +817,54 @@
     renderCatalogManageList();
   }
 
+  // =========================================================
+  // 收支帳本：月份切換、紅收綠支 KPI、以月為單位的支出圓餅圖、支出細項
+  // =========================================================
+  function getFinanceYmPrefix() {
+    return `${financeYear}-${String(financeMonth + 1).padStart(2, '0')}`;
+  }
+
+  function changeFinanceMonth(delta) {
+    financeMonth += delta;
+    if (financeMonth < 0) { financeMonth = 11; financeYear--; }
+    if (financeMonth > 11) { financeMonth = 0; financeYear++; }
+    renderFinanceStats();
+    renderExpenseMonthlyPieChart();
+    renderExpenseMonthlyDetails();
+    renderFinanceHistory();
+  }
+
+  function jumpFinanceToCurrentMonth() {
+    const now = new Date();
+    financeYear = now.getFullYear();
+    financeMonth = now.getMonth();
+    renderFinanceStats();
+    renderExpenseMonthlyPieChart();
+    renderExpenseMonthlyDetails();
+    renderFinanceHistory();
+  }
+
+  function switchFinanceSubTab(subName) {
+    document.getElementById("finSub-register").classList.toggle("hidden", subName !== "register");
+    document.getElementById("finSub-details").classList.toggle("hidden", subName !== "details");
+    const regBtn = document.getElementById("finSubBtn-register");
+    const detBtn = document.getElementById("finSubBtn-details");
+    regBtn.className = (subName === "register")
+      ? "whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold bg-white text-[#3D352E] shadow-2xs"
+      : "whitespace-nowrap px-3 py-1 rounded-lg text-xs font-medium text-[#735D48]";
+    detBtn.className = (subName === "details")
+      ? "whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold bg-white text-[#3D352E] shadow-2xs"
+      : "whitespace-nowrap px-3 py-1 rounded-lg text-xs font-medium text-[#735D48]";
+  }
+
   function renderFinanceStats() {
-    const ymPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+    const ymPrefix = getFinanceYmPrefix();
+    const mLabel = `${financeYear}年 ${financeMonth + 1}月`;
+    document.getElementById("financeMonthLabel").textContent = mLabel;
+    document.getElementById("statIncomeLabel").textContent = `${financeMonth + 1}月現金實收`;
+    document.getElementById("statExpenseLabel").textContent = `${financeMonth + 1}月營運支出`;
+    document.getElementById("statNetLabel").textContent = `${financeMonth + 1}月淨現金流`;
+
     let monthIncome = 0;
     let monthExpense = 0;
 
@@ -794,6 +898,126 @@
     document.getElementById("statLiability").textContent = `$${totalLiability.toLocaleString()}`;
   }
 
+  // SVG 圓餅圖（依選定月份統計各類別支出，每類別獨立色碼）
+  function renderExpenseMonthlyPieChart() {
+    const ymPrefix = getFinanceYmPrefix();
+    const monthExps = (appData.expenses || []).filter(e => e.date.startsWith(ymPrefix));
+    const total = monthExps.reduce((s, e) => s + Number(e.amount || 0), 0);
+
+    document.getElementById("pieChartTitle").textContent = `${financeYear}年 ${financeMonth + 1}月 支出圓餅圖`;
+    document.getElementById("pieChartTotalText").textContent = `合計 $${total.toLocaleString()}`;
+
+    const box = document.getElementById("expensePieBox");
+    if (monthExps.length === 0 || total <= 0) {
+      box.innerHTML = `<div class="text-center py-10 text-xs text-[#8C735B] w-full">本月尚無營運支出紀錄，左側表單新增後即可看到月度圓餅圖</div>`;
+      return;
+    }
+
+    const catTotals = {};
+    monthExps.forEach(e => {
+      const cat = e.category || "其他雜支";
+      catTotals[cat] = (catTotals[cat] || 0) + Number(e.amount || 0);
+    });
+
+    const entries = Object.entries(catTotals).sort((a, b) => b[1] - a[1]);
+    const fallbackColors = ["#D97706", "#2563EB", "#7C3AED", "#DB2777", "#0D9488", "#E11D48"];
+
+    let cumulativeDeg = 0;
+    const slices = entries.map(([cat, amt], idx) => {
+      const deg = (amt / total) * 360;
+      const startDeg = cumulativeDeg;
+      const endDeg = cumulativeDeg + deg;
+      cumulativeDeg = endDeg;
+      const color = EXPENSE_COLOR_MAP[cat] || fallbackColors[idx % fallbackColors.length];
+      return { cat, amt, pct: ((amt / total) * 100).toFixed(1), startDeg, endDeg, color };
+    });
+
+    const polarToCartesian = (cx, cy, r, angleInDegrees) => {
+      const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180.0;
+      return {
+        x: cx + r * Math.cos(angleInRadians),
+        y: cy + r * Math.sin(angleInRadians)
+      };
+    };
+
+    const describeSlice = (cx, cy, r, startAngle, endAngle) => {
+      if (endAngle - startAngle >= 359.99) {
+        return `M ${cx} ${cy - r} A ${r} ${r} 0 1 0 ${cx - 0.01} ${cy - r} Z`;
+      }
+      const start = polarToCartesian(cx, cy, r, endAngle);
+      const end = polarToCartesian(cx, cy, r, startAngle);
+      const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+      return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y} Z`;
+    };
+
+    const svgPaths = slices.map(s =>
+      `<path d="${describeSlice(80, 80, 74, s.startDeg, s.endDeg)}" fill="${s.color}" stroke="#FFFFFF" stroke-width="2"></path>`
+    ).join("");
+
+    const legendHtml = slices.map(s => `
+      <div class="flex items-center justify-between gap-3 text-xs py-1 border-b border-[#F3EFEA] last:border-0">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="w-3 h-3 rounded-xs shrink-0" style="background:${s.color}"></span>
+          <span class="font-medium text-[#3D352E] truncate">${s.cat}</span>
+        </div>
+        <div class="text-right whitespace-nowrap shrink-0">
+          <span class="font-bold expense-green">$${s.amt.toLocaleString()}</span>
+          <span class="text-[#8C735B] ml-1">(${s.pct}%)</span>
+        </div>
+      </div>
+    `).join("");
+
+    box.innerHTML = `
+      <svg width="160" height="160" viewBox="0 0 160 160" class="shrink-0">${svgPaths}</svg>
+      <div class="flex-1 w-full space-y-1">${legendHtml}</div>
+    `;
+  }
+
+  function renderExpenseMonthlyDetails() {
+    const ymPrefix = getFinanceYmPrefix();
+    const monthExps = (appData.expenses || []).filter(e => e.date.startsWith(ymPrefix));
+    document.getElementById("expenseDetailsTitle").textContent = `${financeYear}年 ${financeMonth + 1}月 支出細項`;
+    document.getElementById("expenseDetailsCount").textContent = `${monthExps.length} 筆`;
+
+    const list = document.getElementById("expenseDetailsList");
+    if (monthExps.length === 0) {
+      list.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-6">本月尚無支出細項</p>`;
+      return;
+    }
+
+    list.innerHTML = monthExps.map(e => {
+      const color = EXPENSE_COLOR_MAP[e.category] || "#16A34A";
+      return `
+        <div class="p-3 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] flex justify-between items-center gap-2">
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-xs text-[#8C735B]">${e.date}</span>
+              <span class="text-xs font-bold px-2 py-0.5 rounded bg-white border border-[#EAE2D6]" style="color:${color}">${e.category}</span>
+            </div>
+            <p class="text-sm font-medium text-[#3D352E] mt-1 truncate">${e.note || '無備註'}</p>
+          </div>
+          <div class="flex items-center gap-2.5 shrink-0">
+            <span class="font-bold expense-green">-$${Number(e.amount || 0).toLocaleString()}</span>
+            <button onclick="deleteExpense('${e.id}')" class="text-xs px-2 py-1 rounded bg-white border border-[#EAE2D6] text-red-600 hover:bg-red-50">刪除</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  async function deleteExpense(expenseId) {
+    showLoading("刪除支出紀錄中...");
+    try {
+      appData = await callGasApi({ action: "deleteExpenseAdmin", password: adminPassword, expenseId });
+      hideLoading();
+      renderAllAdminViews();
+      showToast("已刪除支出紀錄");
+    } catch (err) {
+      hideLoading();
+      showToast(err.message);
+    }
+  }
+
   function renderPendingRequests() {
     const pendings = appData.bookings.filter(b => b.status === "待審核");
     const banner = document.getElementById("pendingBanner");
@@ -818,7 +1042,6 @@
     `).join("");
   }
 
-  // 預約月曆：只顯示完整時間＋類別色系（熱蠟／冰肌／熱蠟+冰肌），單行不跳行
   function renderCalendar() {
     document.getElementById("calendarMonthLabel").textContent = `${currentYear}年 ${currentMonth + 1}月`;
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -867,7 +1090,6 @@
     if (currentMonth < 0) { currentMonth = 11; currentYear--; }
     if (currentMonth > 11) { currentMonth = 0; currentYear++; }
     renderCalendar();
-    renderFinanceStats();
   }
 
   function selectDate(dateStr) {
@@ -943,7 +1165,7 @@
       appData = await callGasApi({ action: "quickUpdateBookingStatus", password: adminPassword, bookingId, newStatus });
       hideLoading();
       renderAllAdminViews();
-      showToast(newStatus === "已報到" ? "已報到並完成結帳！" : `狀態已更新為「${newStatus}」`);
+      showToast(newStatus === "已報到" ? "已報到並完成結帳！" : `狀態已更新為「${newStatus}」（若已結帳已自動退回）`);
     } catch (err) {
       hideLoading();
       showToast(err.message);
@@ -1005,10 +1227,12 @@
   }
 
   function renderFinanceHistory() {
+    const ymPrefix = getFinanceYmPrefix();
     const list = document.getElementById("financeHistoryList");
     const items = [];
 
     appData.transactions.forEach(t => {
+      if (!t.time.startsWith(ymPrefix)) return;
       items.push({
         time: t.time,
         title: `${t.type} - ${t.customerName}`,
@@ -1020,7 +1244,7 @@
 
     appData.bookings.forEach(b => {
       const isSettledVisit = (b.status === "已報到" || b.status === "已完成");
-      if (isSettledVisit && (b.payMethod === "現金" || b.payMethod === "轉帳")) {
+      if (b.date.startsWith(ymPrefix) && isSettledVisit && (b.payMethod === "現金" || b.payMethod === "轉帳")) {
         items.push({
           time: `${b.date} ${b.startTime}`,
           title: `現場結帳 - ${b.customerName} (${b.service})`,
@@ -1031,20 +1255,10 @@
       }
     });
 
-    appData.expenses.forEach(e => {
-      items.push({
-        time: e.date,
-        title: `支出：${e.category}`,
-        note: e.note,
-        isExpense: true,
-        tag: `- $${e.amount.toLocaleString()}`
-      });
-    });
-
     items.sort((a, b) => b.time.localeCompare(a.time));
 
     if (items.length === 0) {
-      list.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-8">尚無收支紀錄</p>`;
+      list.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-6">本月尚無收現或儲值異動</p>`;
       return;
     }
 
@@ -1054,7 +1268,7 @@
           <p class="font-bold text-[#3D352E]">${item.title}</p>
           <p class="text-xs text-[#8C735B]">${item.time} ${item.note ? '｜' + item.note : ''}</p>
         </div>
-        <span class="font-bold ${item.isExpense ? 'expense-green' : 'income-red'}">${item.tag}</span>
+        <span class="font-bold income-red">${item.tag}</span>
       </div>
     `).join("");
   }
@@ -1093,22 +1307,111 @@
     `).join("");
   }
 
+  // =========================================================
+  // 預約彈窗：客戶快搜、快速建檔、常用服務晶片快選
+  // =========================================================
+  function filterBookingCustomerOptions(preferredId = null) {
+    const kw = (document.getElementById("bkCustomerSearch").value || "").trim().toLowerCase();
+    const sel = document.getElementById("bkCustomer");
+    const prevVal = preferredId || sel.value;
+
+    const matches = (appData.customers || []).filter(c =>
+      !kw || c.name.toLowerCase().includes(kw) || String(c.contact || "").toLowerCase().includes(kw)
+    );
+
+    if (matches.length === 0) {
+      sel.innerHTML = `<option value="">查無符合客戶（可點右上角 + 快速建檔）</option>`;
+      document.getElementById("bkCustomerHint").textContent = "";
+      return;
+    }
+
+    sel.innerHTML = matches.map(c =>
+      `<option value="${c.id}">${c.name} (${c.contact || '無電話'}・餘額 $${c.balance.toLocaleString()})</option>`
+    ).join("");
+
+    if (prevVal && matches.some(c => c.id === prevVal)) {
+      sel.value = prevVal;
+    } else {
+      sel.selectedIndex = 0;
+    }
+    recalculateBookingTotal();
+  }
+
+  function toggleQuickAddCustomer(show = null) {
+    const box = document.getElementById("bkQuickAddCustBox");
+    const shouldShow = show !== null ? show : box.classList.contains("hidden");
+    box.classList.toggle("hidden", !shouldShow);
+    if (shouldShow) {
+      document.getElementById("quickCustName").value = "";
+      document.getElementById("quickCustContact").value = "";
+      document.getElementById("quickCustName").focus();
+    }
+  }
+
+  async function quickCreateCustomerForBooking() {
+    const name = document.getElementById("quickCustName").value.trim();
+    const contact = document.getElementById("quickCustContact").value.trim();
+    if (!name) return showToast("請輸入新客人姓名");
+
+    showLoading("快速建檔中...");
+    try {
+      const updated = await callGasApi({
+        action: "saveCustomerAdmin",
+        password: adminPassword,
+        data: { name, contact, promoTitle: "", discountType: "none", discountValue: 0, privateNote: "" }
+      });
+      hideLoading();
+      appData = updated;
+      const created = appData.customers.find(c => c.name === name && (c.contact || "") === contact) || appData.customers[appData.customers.length - 1];
+      toggleQuickAddCustomer(false);
+      document.getElementById("bkCustomerSearch").value = "";
+      filterBookingCustomerOptions(created ? created.id : null);
+      renderCustomersList();
+      showToast(`已建檔並選取「${name}」！`);
+    } catch (err) {
+      hideLoading();
+      showToast("建檔失敗：" + err.message);
+    }
+  }
+
+  function renderBookingQuickChips() {
+    const box = document.getElementById("bkQuickChips");
+    if (!box) return;
+    const activeItems = (appData.catalog || []).filter(c => c.active);
+    const popular = activeItems.slice(0, 6);
+    if (popular.length === 0) {
+      box.innerHTML = "";
+      return;
+    }
+    box.innerHTML = popular.map(item => `
+      <button type="button" onclick="quickAddServiceItem('${item.name.replace(/'/g, "\\'")}', ${item.price}, ${item.duration})" class="px-2.5 py-1 rounded-full bg-white hover:bg-[#EFE9DF] border border-[#EAE2D6] text-xs text-[#3D352E] font-medium">
+        + ${item.name}
+      </button>
+    `).join("");
+  }
+
+  function quickAddServiceItem(name, price, duration) {
+    adminCart.push({ name, price: Number(price || 0), duration: Number(duration || 30) });
+    renderAdminCart();
+    recalculateBookingTotal();
+    syncEndTimeByDuration();
+  }
+
   function openBookingModal(existingBk = null) {
     if (appData.customers.length === 0) {
       showToast("請先到「客戶儲值」新增第一位客人資料");
       switchTab('customers');
       return;
     }
-    const custSel = document.getElementById("bkCustomer");
-    custSel.innerHTML = appData.customers.map(c =>
-      `<option value="${c.id}">${c.name} (餘額 $${c.balance})</option>`
-    ).join("");
+    document.getElementById("bkCustomerSearch").value = "";
+    toggleQuickAddCustomer(false);
+    renderBookingQuickChips();
 
     if (existingBk) {
       document.getElementById("bkModalTitle").textContent = "編輯預約 / 改期 / 結帳";
       document.getElementById("bkId").value = existingBk.id;
       document.getElementById("bkDeleteBtn").classList.remove("hidden");
-      custSel.value = existingBk.customerId;
+      filterBookingCustomerOptions(existingBk.customerId);
       document.getElementById("bkStaff").value = existingBk.staff || "Ruby";
       document.getElementById("bkDate").value = existingBk.date;
       document.getElementById("bkStartTime").value = existingBk.startTime;
@@ -1136,9 +1439,10 @@
           `累計 ${cust.visitCount || 0} 次｜餘額：$${cust.balance.toLocaleString()}｜優惠：${cust.promoTitle || '無特定優惠'}`;
       }
     } else {
-      document.getElementById("bkModalTitle").textContent = "新增除毛預約";
+      document.getElementById("bkModalTitle").textContent = "新增預約";
       document.getElementById("bkId").value = "";
       document.getElementById("bkDeleteBtn").classList.add("hidden");
+      filterBookingCustomerOptions(null);
       document.getElementById("bkStaff").value = "Ruby";
       document.getElementById("bkDate").value = selectedDateStr;
       document.getElementById("bkStartTime").value = "10:00";
@@ -1162,14 +1466,7 @@
     const srvSel = document.getElementById("bkService");
     if (!srvSel.value) return;
     const opt = srvSel.options[srvSel.selectedIndex];
-    adminCart.push({
-      name: srvSel.value,
-      price: Number(opt.dataset.price || 0),
-      duration: Number(opt.dataset.duration || 30)
-    });
-    renderAdminCart();
-    recalculateBookingTotal();
-    syncEndTimeByDuration();
+    quickAddServiceItem(srvSel.value, Number(opt.dataset.price || 0), Number(opt.dataset.duration || 30));
   }
 
   function removeAdminCartItem(idx) {
@@ -1185,7 +1482,7 @@
     document.getElementById("bkTotalDuration").textContent = totalDur;
 
     if (adminCart.length === 0) {
-      list.innerHTML = `<p class="text-[#8C735B]">尚未加入項目（也可直接手動填寫下方金額與時間）</p>`;
+      list.innerHTML = `<p class="text-[#8C735B]">點上方服務晶片或下拉選單加入（也可直接改下方金額）</p>`;
       return;
     }
     list.innerHTML = adminCart.map((item, i) => `
@@ -1234,6 +1531,7 @@
 
   async function saveBooking() {
     const custId = document.getElementById("bkCustomer").value;
+    if (!custId) return showToast("請先選擇或建檔客戶");
     const cust = appData.customers.find(c => c.id === custId);
     const servicesText = adminCart.length > 0 ? adminCart.map(x => x.name).join(" + ") : "自訂服務";
     const totalDuration = adminCart.reduce((s, x) => s + x.duration, 0) || 60;
@@ -1375,6 +1673,13 @@
     const note = document.getElementById("expNote").value;
     if (!date || amount <= 0) return showToast("請填寫日期與正確支出金額");
 
+    // 同步帳本月份到該支出日期的月份，讓圓餅圖與明細立刻反映
+    const [yStr, mStr] = date.split("-");
+    if (yStr && mStr) {
+      financeYear = Number(yStr);
+      financeMonth = Number(mStr) - 1;
+    }
+
     showLoading("記錄支出中...");
     try {
       appData = await callGasApi({
@@ -1470,6 +1775,7 @@
       appData = await callGasApi({ action: "saveCatalogItemAdmin", password: adminPassword, item });
       hideLoading();
       initCategorySelectsFromCatalog("bkCategory", "bkService", (appData.catalog || []).filter(c => c.active));
+      renderBookingQuickChips();
       renderAllAdminViews();
       showToast("價目表已更新！");
     } catch (err) {
