@@ -399,12 +399,12 @@
         <div id="catalogManageList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
 
-      <!-- 客人不可預約日期／時段設定區（放於價目分頁，不佔首頁月曆空間） -->
+      <!-- 客人不可預約日期／時段設定區 -->
       <div class="card-warm rounded-2xl p-4 sm:p-5 space-y-3">
         <div class="flex flex-wrap justify-between items-center gap-2 border-b border-[#F3EFEA] pb-2.5">
           <div>
             <h3 class="font-bold text-sm sm:text-base text-[#3D352E]">🚫 客人不可預約日期／時段設定</h3>
-            <p class="text-xs text-[#8C735B]">設定某天整天或特定時段不可預約，客人線上預約頁會直接阻擋；整天不可預約會在月曆做明顯拒絕標示</p>
+            <p class="text-xs text-[#8C735B]">設定某天整天或特定時段不可預約，客人與後台新增預約都會直接阻擋；整天不可預約會在月曆做明顯拒絕標示</p>
           </div>
           <button type="button" onclick="useSelectedDateForBlocked()" class="text-xs px-3 py-1.5 rounded-lg bg-[#FAF7F2] border border-[#EAE2D6] text-[#735D48] font-medium hover:bg-[#EFE9DF]">帶入月曆選取日期</button>
         </div>
@@ -443,7 +443,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 1：新增 / 編輯預約（移除結束時間主欄位，改由項目加總 + 10 分鐘緩衝自動推算，負責人可手動微調） -->
+  <!-- 彈窗 1：新增 / 編輯預約 -->
   <div id="bookingModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
       <h3 class="font-bold text-lg mb-3" id="bkModalTitle">新增預約</h3>
@@ -494,6 +494,9 @@
           <span class="text-[#735D48] font-medium">負責人手動指定結束時間：</span>
           <select id="bkEndTime" onchange="onManualEndTimeChange()" class="border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white font-bold"></select>
         </div>
+
+        <!-- 彈窗內不可預約阻擋提示 -->
+        <div id="bkBlockedAlert" class="hidden px-3.5 py-2.5 rounded-xl bg-red-100 border-2 border-red-400 text-xs text-red-900 font-bold"></div>
 
         <!-- 彈窗內時段重疊醒目警示 -->
         <div id="bkOverlapAlert" class="hidden px-3.5 py-2.5 rounded-xl bg-red-50 border-2 border-red-300 text-xs text-red-800 font-bold"></div>
@@ -569,7 +572,7 @@
         <button id="bkDeleteBtn" onclick="deleteCurrentBooking()" class="hidden px-3 py-2 text-xs text-red-600 bg-red-50 rounded-xl">刪除預約</button>
         <div class="flex gap-2 ml-auto">
           <button onclick="closeModal('bookingModal')" class="px-4 py-2 text-sm rounded-xl border border-[#EAE2D6]">取消</button>
-          <button onclick="saveBooking()" class="btn-primary px-5 py-2 text-sm font-bold rounded-xl">儲存預約</button>
+          <button id="bkSaveBtn" onclick="saveBooking()" class="btn-primary px-5 py-2 text-sm font-bold rounded-xl">儲存預約</button>
         </div>
       </div>
     </div>
@@ -2501,7 +2504,7 @@
     document.getElementById("bkSubtotalText").textContent = `小計 $${totalOrig.toLocaleString()}`;
 
     if (adminCart.length === 0) {
-      list.innerHTML = `<p class="text-[#8C735B]">尚未加入項目（選擇上方分類與項目後按「+ 加入」）</p>`;
+      list.innerHTML = `<p class="text-[#8C735B]">尚未加入項目（選擇上方分類與項目後按「+ 加入」，或點選下方套票「套用扣 1 堂」）</p>`;
       return;
     }
     list.innerHTML = adminCart.map((item, i) => `
@@ -2580,6 +2583,56 @@
     }
   }
 
+  function extractServiceItemsFromPackageTitle(pkgTitle) {
+    const cleaned = String(pkgTitle || "")
+      .replace(/[（(][^）)]*(?:三堂|三回|套票|優惠)[^）)]*[）)]/g, "")
+      .replace(/(?:三堂|三回|優惠套票|三堂套票)/g, "")
+      .trim();
+
+    const rawParts = cleaned
+      .split(/\s*(?:\+|＋|、|\/)\s*/)
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    const catalog = appData.catalog || [];
+    const matchedItems = [];
+
+    if (rawParts.length > 0) {
+      rawParts.forEach(part => {
+        const exact = catalog.find(c => c.name === part);
+        const partial = !exact ? catalog.find(c => c.name.includes(part) || part.includes(c.name)) : null;
+        const found = exact || partial;
+        if (found) {
+          matchedItems.push({
+            name: found.name,
+            price: Number(found.price || 0),
+            isGift: false,
+            duration: Number(found.duration || 30)
+          });
+        } else {
+          matchedItems.push({
+            name: part,
+            price: 0,
+            isGift: false,
+            duration: 30
+          });
+        }
+      });
+    }
+
+    if (matchedItems.length === 0) {
+      const fallbackName = String(pkgTitle || "三堂套票").trim() || "三堂套票";
+      matchedItems.push({
+        name: fallbackName,
+        price: 0,
+        isGift: false,
+        duration: 60
+      });
+    }
+
+    return matchedItems;
+  }
+
   function applyAvailableThreeSessionPackage() {
     const custId = document.getElementById("bkCustomer").value;
     const activePkgs = getCustomerPackages(custId).filter(p => p.remainingSessions > 0);
@@ -2588,12 +2641,21 @@
     const selectedPkgId = document.getElementById("bkPackageSelect").value;
     const pkg = activePkgs.find(p => String(p.id) === String(selectedPkgId)) || activePkgs[0];
 
+    const pkgItems = extractServiceItemsFromPackageTitle(pkg.title);
+    adminCart = [...pkgItems];
+    renderAdminCart();
+
     document.getElementById("bkUsedPackageId").value = pkg.id;
     document.getElementById("bkPayMethod").value = "三堂套票";
     document.getElementById("bkFinalPrice").value = 0;
     manualPriceOverride = true;
+
+    syncEndTimeByDuration(true);
     checkBookingBalanceWarning();
-    showToast(`已套用「${pkg.title}」（本次扣 1 堂，扣完剩 ${pkg.remainingSessions - 1} 堂）`);
+    checkBookingOverlapPreview();
+
+    const totalMins = adminCart.reduce((s, x) => s + x.duration, 0);
+    showToast(`已帶入「${adminCart.map(x => x.name).join(" + ")}」（共 ${totalMins} 分鐘，扣 1 堂）`);
   }
 
   function recalculateBookingTotal(forceRecalc = false) {
@@ -2685,9 +2747,13 @@
   function checkBookingOverlapPreview() {
     const dateStr = document.getElementById("bkDate").value;
     const startStr = document.getElementById("bkStartTime").value;
+    const svcDur = Number(document.getElementById("bkTotalDuration").textContent || 0) || 60;
     const endStr = getActiveBookingEndTime();
     const bkId = document.getElementById("bkId").value;
+
     const alertEl = document.getElementById("bkOverlapAlert");
+    const blkAlertEl = document.getElementById("bkBlockedAlert");
+    const saveBtn = document.getElementById("bkSaveBtn");
 
     const conflicts = findOverlappingBookings(dateStr, startStr, endStr, bkId);
     if (conflicts.length > 0) {
@@ -2696,6 +2762,23 @@
       alertEl.classList.remove("hidden");
     } else {
       alertEl.classList.add("hidden");
+    }
+
+    const blockedMatch = !bkId ? findBlockedSlotForWindow(dateStr, startStr, svcDur) : null;
+    if (blockedMatch) {
+      const rangeText = blockedMatch.fullDay ? "整天禁止預約" : `${blockedMatch.startTime}-${blockedMatch.endTime} 不可預約`;
+      blkAlertEl.textContent = `✕ ${dateStr} 已設定「${rangeText}」(${blockedMatch.reason})，無法新增預約，請改選其他日期或到「價目與禁約」解除限制`;
+      blkAlertEl.classList.remove("hidden");
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.classList.add("opacity-50", "cursor-not-allowed");
+      }
+    } else {
+      blkAlertEl.classList.add("hidden");
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      }
     }
   }
 
@@ -2712,6 +2795,16 @@
     const endVal = getActiveBookingEndTime();
     const bkId = document.getElementById("bkId").value;
     const payMethodVal = document.getElementById("bkPayMethod").value;
+    const statusVal = document.getElementById("bkStatus").value;
+
+    if (!bkId && statusVal !== "取消") {
+      const blockedMatch = findBlockedSlotForWindow(dateVal, startVal, totalDuration);
+      if (blockedMatch) {
+        const rangeText = blockedMatch.fullDay ? "整天禁止預約" : `${blockedMatch.startTime}-${blockedMatch.endTime} 不可預約`;
+        checkBookingOverlapPreview();
+        return showToast(`${dateVal} 已設定「${rangeText}」(${blockedMatch.reason})，無法新增預約`);
+      }
+    }
 
     const conflicts = findOverlappingBookings(dateVal, startVal, endVal, bkId);
     if (conflicts.length > 0) {
@@ -2750,7 +2843,7 @@
       finalPrice: finalPrice,
       payMethod: payMethodVal,
       usedPackageId,
-      status: document.getElementById("bkStatus").value,
+      status: statusVal,
       note: document.getElementById("bkNote").value
     };
 
