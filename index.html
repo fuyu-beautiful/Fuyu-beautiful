@@ -189,7 +189,7 @@
       </div>
     </header>
 
-    <!-- 主分頁導覽列：單行不跳行，改為「客戶資料」 -->
+    <!-- 主分頁導覽列：單行不跳行 -->
     <div class="grid grid-cols-4 gap-1 mb-3.5 bg-[#EFE9DF] p-1 rounded-xl">
       <button onclick="switchTab('calendar')" id="tabBtn-calendar" class="tab-btn whitespace-nowrap px-1.5 py-2 rounded-lg text-xs font-bold bg-white text-[#3D352E] shadow-xs text-center">📅 預約月曆</button>
       <button onclick="switchTab('customers')" id="tabBtn-customers" class="tab-btn whitespace-nowrap px-1.5 py-2 rounded-lg text-xs font-medium text-[#735D48] text-center">👩🏻 客戶資料</button>
@@ -238,7 +238,7 @@
       </div>
     </div>
 
-    <!-- 分頁 2：客戶資料（可觀看客戶基本資料、儲值餘額、消費歷史與項目） -->
+    <!-- 分頁 2：客戶資料 -->
     <div id="tab-customers" class="hidden space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
         <input type="text" id="custSearchInput" oninput="renderCustomersList()" placeholder="🔍 搜尋客人姓名或電話..." class="border border-[#EAE2D6] rounded-xl px-4 py-2 text-sm bg-white w-full sm:w-72">
@@ -349,14 +349,13 @@
     </div>
   </div>
 
-  <!-- 彈窗 1：新增 / 編輯預約（直覺極簡版：無快速建檔、無晶片、單一實收金額框） -->
+  <!-- 彈窗 1：新增 / 編輯預約 -->
   <div id="bookingModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
       <h3 class="font-bold text-lg mb-3" id="bkModalTitle">新增預約</h3>
       <input type="hidden" id="bkId">
       <div class="space-y-3 text-sm">
 
-        <!-- 步驟 1：選擇客戶（快搜 + 清楚顯示餘額與折扣） -->
         <div class="bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl p-3 space-y-2">
           <label class="block text-xs font-bold text-[#735D48]">1. 選擇客戶</label>
           <input type="text" id="bkCustomerSearch" oninput="filterBookingCustomerOptions()" placeholder="🔍 輸入姓名或電話篩選客戶..." class="w-full border border-[#EAE2D6] rounded-lg px-3 py-2 bg-white text-sm">
@@ -364,7 +363,6 @@
           <div id="bkCustomerCard" class="bg-white border border-[#EAE2D6] rounded-lg px-3 py-2 text-xs text-[#735D48]"></div>
         </div>
 
-        <!-- 步驟 2：日期與時間 -->
         <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="block text-xs text-[#735D48] mb-1">預約日期</label>
@@ -380,7 +378,6 @@
           </div>
         </div>
 
-        <!-- 步驟 3：選擇服務項目 -->
         <div class="bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl p-3 space-y-2.5">
           <label class="block text-xs font-bold text-[#735D48]">2. 加入服務項目</label>
           <select id="bkCategory" onchange="updateCatalogDropdown('bkCategory', 'bkService')" class="w-full border border-[#EAE2D6] rounded-lg px-3 py-2 bg-white text-xs"></select>
@@ -398,7 +395,6 @@
           </div>
         </div>
 
-        <!-- 步驟 4：簡化金額與付款方式（單一實收框，自動套用客戶折扣） -->
         <div class="bg-[#FAF7F2] p-3 rounded-xl border border-[#EAE2D6] space-y-2">
           <div class="flex justify-between items-center">
             <label class="text-xs font-bold text-[#735D48]">3. 本次實收 / 扣點金額 ($)</label>
@@ -475,7 +471,7 @@
             <div>
               <label class="block text-xs text-[#735D48] mb-1">自動計價方式</label>
               <select id="custDiscountType" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white">
-                <option value="none">無自動折扣 (原價)</option>
+                <option value="none">無自動折扣 (一般原價)</option>
                 <option value="percent">打折 (填 0.9 = 9折)</option>
                 <option value="fixed">單次折抵固定金額 ($)</option>
               </select>
@@ -582,10 +578,9 @@
         <button onclick="closeModal('customerDetailModal')" class="px-2.5 py-1 rounded-lg bg-[#FAF7F2] text-sm font-bold text-[#735D48]">✕</button>
       </div>
 
-      <!-- 儲值餘額 & 統計摘要 -->
       <div class="grid grid-cols-3 gap-2.5 text-center">
         <div class="p-3 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6]">
-          <p class="text-[11px] text-[#735D48]">儲值金餘額</p>
+          <p class="text-[11px] text-[#735D48]">儲值金</p>
           <p class="text-lg font-bold text-[#8C735B] mt-0.5" id="cdBalance">$0</p>
         </div>
         <div class="p-3 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6]">
@@ -600,20 +595,17 @@
 
       <div id="cdPrivateNoteBox" class="hidden p-3 rounded-xl bg-stone-50 border border-[#EAE2D6] text-xs text-[#735D48]"></div>
 
-      <!-- 快捷操作鈕 -->
       <div class="flex gap-2">
         <button id="cdTopUpBtn" class="flex-1 btn-primary text-xs font-bold py-2 rounded-xl">+ 儲值入帳</button>
         <button id="cdEditBtn" class="flex-1 bg-[#FAF7F2] border border-[#EAE2D6] text-xs font-bold py-2 rounded-xl">✏️ 編輯資料</button>
         <button id="cdCopyLinkBtn" class="flex-1 bg-[#06C755]/15 text-[#06C755] text-xs font-bold py-2 rounded-xl">🔗 會員連結</button>
       </div>
 
-      <!-- 消費與預約歷史項目 -->
       <div>
         <h4 class="font-bold text-sm text-[#3D352E] mb-2">📅 消費與預約項目歷史</h4>
         <div id="cdBookingsList" class="space-y-2 max-h-52 overflow-y-auto pr-1 text-xs"></div>
       </div>
 
-      <!-- 儲值與扣點流水 -->
       <div>
         <h4 class="font-bold text-sm text-[#3D352E] mb-2">💳 儲值與扣點異動紀錄</h4>
         <div id="cdTxList" class="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-xs"></div>
@@ -681,7 +673,7 @@
       hideLoading();
       document.getElementById("portalContent").classList.remove("hidden");
       document.getElementById("pCustName").textContent = res.customer.name;
-      document.getElementById("pCustPromo").textContent = res.customer.promoTitle || "馥語專屬會員";
+      document.getElementById("pCustPromo").textContent = res.customer.promoTitle || "一般會員";
       document.getElementById("pCustVisits").textContent = res.customer.visitCount || 0;
       document.getElementById("pCustBalance").textContent = res.customer.balance.toLocaleString();
 
@@ -1206,7 +1198,7 @@
   }
 
   // =========================================================
-  // 客戶資料分頁 & 客戶詳情／消費歷史彈窗
+  // 客戶資料分頁：儲值金上移＋新增預約按鈕在編輯位置
   // =========================================================
   function renderCustomersList() {
     const kw = (document.getElementById("custSearchInput").value || "").trim().toLowerCase();
@@ -1224,28 +1216,37 @@
       <div class="card-warm rounded-2xl p-5 flex flex-col justify-between space-y-3">
         <div>
           <div class="flex justify-between items-start gap-2">
-            <div onclick="openCustomerDetailModal('${c.id}')" class="cursor-pointer group">
-              <h4 class="font-bold text-base text-[#3D352E] group-hover:text-[#8C735B] transition">
+            <div onclick="openCustomerDetailModal('${c.id}')" class="cursor-pointer group min-w-0">
+              <h4 class="font-bold text-base text-[#3D352E] group-hover:text-[#8C735B] transition truncate">
                 ${c.name}
                 <span class="text-xs font-normal text-[#8C735B] ml-1">${c.visitCount || 0}次</span>
               </h4>
-              <p class="text-xs text-[#8C735B]">${c.contact || '未填聯絡方式'}</p>
+              <p class="text-xs text-[#8C735B] truncate">${c.contact || '未填聯絡方式'}</p>
             </div>
-            <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-[#F5EFE6] text-[#8C735B] shrink-0">${c.promoTitle || '一般原價'}</span>
+            <div class="text-right shrink-0 space-y-1">
+              <div class="text-xs font-bold text-[#8C735B]">儲值金 $${c.balance.toLocaleString()}</div>
+              <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[#F5EFE6] text-[#735D48]">${c.promoTitle || '一般原價'}</span>
+            </div>
           </div>
-          <div class="mt-3 p-3 rounded-xl bg-[#FAF7F2] flex justify-between items-center">
-            <span class="text-xs text-[#735D48]">儲值金餘額</span>
-            <span class="text-lg font-bold text-[#8C735B]">$${c.balance.toLocaleString()}</span>
-          </div>
-          ${c.privateNote ? `<p class="text-xs text-[#735D48] mt-2 bg-stone-50 p-2 rounded-lg">🔒 ${c.privateNote}</p>` : ''}
+          ${c.privateNote ? `<p class="text-xs text-[#735D48] mt-2.5 bg-stone-50 p-2 rounded-lg">🔒 ${c.privateNote}</p>` : ''}
         </div>
-        <div class="pt-2 border-t border-[#F3EFEA] grid grid-cols-2 gap-1.5">
-          <button onclick="openCustomerDetailModal('${c.id}')" class="col-span-2 bg-[#F5EFE6] hover:bg-[#EAE2D6] text-[#3D352E] text-xs font-bold py-2 rounded-lg">📂 查看客戶資料與消費歷史</button>
-          <button onclick="openTopUpModal('${c.id}')" class="btn-primary text-xs font-bold py-1.5 rounded-lg">+ 儲值</button>
-          <button onclick="openCustomerModal('${c.id}')" class="border border-[#EAE2D6] text-xs font-medium py-1.5 rounded-lg hover:bg-[#FAF7F2]">✏️ 編輯資料</button>
+        <div class="pt-2 border-t border-[#F3EFEA] flex flex-col gap-1.5">
+          <button onclick="openCustomerDetailModal('${c.id}')" class="w-full bg-[#F5EFE6] hover:bg-[#EAE2D6] text-[#3D352E] text-xs font-bold py-2 rounded-lg">📂 查看客戶資料與消費歷史</button>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="openTopUpModal('${c.id}')" class="btn-primary text-xs font-bold py-1.5 rounded-lg">+ 儲值</button>
+            <button onclick="openBookingForCustomer('${c.id}')" class="bg-white hover:bg-[#FAF7F2] border border-[#8C735B] text-[#8C735B] text-xs font-bold py-1.5 rounded-lg">+ 新增預約</button>
+          </div>
         </div>
       </div>
     `).join("");
+  }
+
+  function openBookingForCustomer(custId) {
+    switchTab('calendar');
+    openBookingModal(null);
+    const searchInput = document.getElementById("bkCustomerSearch");
+    if (searchInput) searchInput.value = "";
+    filterBookingCustomerOptions(custId);
   }
 
   function openCustomerDetailModal(custId) {
@@ -1419,9 +1420,6 @@
     `).join("");
   }
 
-  // =========================================================
-  // 預約彈窗：優化選擇客戶、簡化加入服務與實收金額計算
-  // =========================================================
   function filterBookingCustomerOptions(preferredId = null) {
     const kw = (document.getElementById("bkCustomerSearch").value || "").trim().toLowerCase();
     const sel = document.getElementById("bkCustomer");
@@ -1440,7 +1438,7 @@
     sel.innerHTML = matches.map(c => {
       const contactPart = c.contact ? `｜${c.contact}` : "";
       const promoPart = c.promoTitle ? `｜${c.promoTitle}` : "";
-      return `<option value="${c.id}">${c.name}${contactPart}（餘額 $${c.balance.toLocaleString()}${promoPart}）</option>`;
+      return `<option value="${c.id}">${c.name}${contactPart}（儲值金 $${c.balance.toLocaleString()}${promoPart}）</option>`;
     }).join("");
 
     if (prevVal && matches.some(c => c.id === prevVal)) {
@@ -1572,7 +1570,7 @@
       return;
     }
     const promo = cust.promoTitle ? `｜優惠：${cust.promoTitle}` : "";
-    card.innerHTML = `儲值餘額：<strong class="text-[#8C735B]">$${cust.balance.toLocaleString()}</strong>｜來店 ${cust.visitCount || 0} 次${promo}`;
+    card.innerHTML = `儲值金：<strong class="text-[#8C735B]">$${cust.balance.toLocaleString()}</strong>｜來店 ${cust.visitCount || 0} 次${promo}`;
   }
 
   function recalculateBookingTotal() {
@@ -1716,7 +1714,7 @@
   function openTopUpModal(custId) {
     const c = appData.customers.find(x => x.id === custId);
     document.getElementById("topUpCustId").value = c.id;
-    document.getElementById("topUpCustLabel").textContent = `客戶：${c.name}（目前餘額 $${c.balance.toLocaleString()}）`;
+    document.getElementById("topUpCustLabel").textContent = `客戶：${c.name}（目前儲值金 $${c.balance.toLocaleString()}）`;
     document.getElementById("topUpCash").value = "";
     document.getElementById("topUpBonus").value = "0";
     document.getElementById("topUpNote").value = "";
