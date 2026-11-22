@@ -40,15 +40,12 @@
 <body class="min-h-screen pb-16">
 
   <script>
-    // 綁定你的 Google Apps Script API 網址與 GitHub Pages 網址
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzvobWMdW_reX803Sn0lldJZF0VfSVkr0tWI1oDAr8urJK3hZ0964mAcxqaq1W27VA-Jg/exec";
     const GITHUB_PAGES_URL = "https://fuyu-beautiful.github.io/Fuyu-beautiful/";
 
-    // 從網址參數讀取 ?cid=xxx
     const urlParams = new URLSearchParams(window.location.search);
     const PORTAL_CID = urlParams.get("cid") || "";
 
-    // 通用 API 呼叫函式 (使用 text/plain 避開 CORS 預檢請求)
     async function callGasApi(bodyData) {
       const response = await fetch(GAS_API_URL, {
         method: "POST",
@@ -72,7 +69,7 @@
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#3D352E] text-white px-5 py-2.5 rounded-full text-sm shadow-lg z-50 hidden transition-opacity"></div>
 
   <!-- ========================================================= -->
-  <!-- 視角 A：客人專屬查詢與預約申請頁 (?cid=xxx)                -->
+  <!-- 視角 A：客人專屬查詢與多項服務預約申請頁 (?cid=xxx)         -->
   <!-- ========================================================= -->
   <div id="customerPortalView" class="hidden max-w-md mx-auto px-4 pt-6">
     <div class="text-center mb-6">
@@ -98,7 +95,10 @@
             <p class="text-xs text-[#EAE2D6] tracking-wider">專屬會員卡</p>
             <h2 class="text-xl font-bold mt-0.5" id="pCustName">--</h2>
           </div>
-          <span class="px-3 py-1 rounded-full text-xs font-medium bg-white/20 backdrop-blur-xs" id="pCustPromo">一般會員</span>
+          <div class="text-right space-y-1">
+            <span class="inline-block px-3 py-1 rounded-full text-xs font-medium bg-white/20 backdrop-blur-xs" id="pCustPromo">一般會員</span>
+            <div class="text-[11px] text-[#EAE2D6]">累計來店 <strong id="pCustVisits">0</strong> 次</div>
+          </div>
         </div>
         <div class="mt-4 pt-4 border-t border-white/15 flex justify-between items-end">
           <div>
@@ -110,7 +110,7 @@
       </div>
 
       <div class="card-warm rounded-2xl p-5">
-        <h3 class="font-bold text-[#3D352E] mb-3 flex items-center gap-1.5">✨ 線上預約申請</h3>
+        <h3 class="font-bold text-[#3D352E] mb-3 flex items-center gap-1.5">✨ 線上預約申請（可選多項服務）</h3>
         <div class="space-y-3 text-sm">
           <div class="grid grid-cols-2 gap-2.5">
             <div>
@@ -124,15 +124,26 @@
           </div>
           <div>
             <label class="block text-xs text-[#735D48] mb-1">服務分類</label>
-            <select id="reqCategory" onchange="updateServiceDropdown('reqCategory', 'reqService')" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
+            <select id="reqCategory" onchange="updateCatalogDropdown('reqCategory', 'reqService')" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
           </div>
-          <div>
-            <label class="block text-xs text-[#735D48] mb-1">除毛項目與價格</label>
-            <select id="reqService" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
+          <div class="flex gap-2">
+            <select id="reqService" class="flex-1 border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
+            <button type="button" onclick="addPortalCartItem()" class="px-3.5 py-2 rounded-xl bg-[#8C735B] text-white text-xs font-bold shrink-0">+ 加入</button>
           </div>
+
+          <div class="bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl p-3 space-y-2">
+            <div class="flex justify-between items-center text-xs text-[#735D48]">
+              <span>已選項目清單</span>
+              <span id="reqSummaryMeta">預估 0 分鐘｜合計 $0</span>
+            </div>
+            <div id="reqCartList" class="space-y-1.5 text-xs">
+              <p class="text-[#8C735B]">尚未加入服務項目</p>
+            </div>
+          </div>
+
           <div>
             <label class="block text-xs text-[#735D48] mb-1">備註需求（選填）</label>
-            <input type="text" id="reqNote" placeholder="例如：想同時加做腋下、或特殊時間需求" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+            <input type="text" id="reqNote" placeholder="例如：想加做軟膜、或特殊時間需求" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
           </div>
           <button onclick="submitPortalBooking()" class="w-full btn-primary font-bold py-2.5 rounded-xl mt-1">送出預約申請（由闆娘確認）</button>
         </div>
@@ -163,18 +174,18 @@
     </div>
   </div>
 
-  <div id="adminDashboardView" class="hidden max-w-5xl mx-auto px-4 pt-5">
+  <div id="adminDashboardView" class="hidden max-w-6xl mx-auto px-4 pt-5">
     <header class="flex flex-wrap justify-between items-center gap-3 mb-5 pb-4 border-b border-[#EAE2D6]">
       <div class="flex items-center gap-2.5">
         <span class="brand-serif text-3xl font-bold text-[#8C735B]">Fy</span>
         <div>
           <h1 class="font-bold text-lg leading-tight">馥語美學・營運與預約管家</h1>
-          <p class="text-xs text-[#8C735B]">營業時間 09:00 - 21:00｜LINE: @933wsvkf</p>
+          <p class="text-xs text-[#8C735B]">南投草屯店｜營業時間 09:00 - 21:00｜服務人員：Ruby</p>
         </div>
       </div>
       <div class="flex gap-2">
         <button onclick="refreshAdminData()" class="px-3 py-1.5 text-xs bg-white border border-[#EAE2D6] rounded-lg hover:bg-[#F5EFE6]">🔄 重新整理</button>
-        <button onclick="openPriceModal()" class="px-3 py-1.5 text-xs bg-white border border-[#EAE2D6] rounded-lg hover:bg-[#F5EFE6]">📋 價目表總覽</button>
+        <button onclick="switchTab('catalog')" class="px-3 py-1.5 text-xs bg-white border border-[#EAE2D6] rounded-lg hover:bg-[#F5EFE6]">📋 價目與時長設定</button>
       </div>
     </header>
 
@@ -205,15 +216,16 @@
       <div id="pendingList" class="space-y-2"></div>
     </div>
 
-    <div class="flex gap-2 mb-5 bg-[#EFE9DF] p-1 rounded-xl w-fit">
+    <div class="flex flex-wrap gap-2 mb-5 bg-[#EFE9DF] p-1 rounded-xl w-fit">
       <button onclick="switchTab('calendar')" id="tabBtn-calendar" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold bg-white text-[#3D352E] shadow-xs">📅 預約月曆</button>
       <button onclick="switchTab('customers')" id="tabBtn-customers" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-[#735D48]">👩🏻 客戶與儲值金</button>
       <button onclick="switchTab('finance')" id="tabBtn-finance" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-[#735D48]">💰 收支記帳明細</button>
+      <button onclick="switchTab('catalog')" id="tabBtn-catalog" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-[#735D48]">📋 服務價目表</button>
     </div>
 
-    <!-- 分頁 1：預約月曆 -->
+    <!-- 分頁 1：預約月曆（顯示每日合計＋時間與客人標籤） -->
     <div id="tab-calendar" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      <div class="lg:col-span-7 card-warm rounded-2xl p-5">
+      <div class="lg:col-span-7 card-warm rounded-2xl p-4 sm:p-5">
         <div class="flex justify-between items-center mb-4">
           <button onclick="changeMonth(-1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF]">◀</button>
           <h2 class="font-bold text-base" id="calendarMonthLabel">2026年 11月</h2>
@@ -222,22 +234,22 @@
         <div class="grid grid-cols-7 text-center text-xs text-[#8C735B] font-medium mb-2">
           <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
         </div>
-        <div id="calendarGrid" class="grid grid-cols-7 gap-1.5"></div>
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
       </div>
 
-      <div class="lg:col-span-5 card-warm rounded-2xl p-5">
+      <div class="lg:col-span-5 card-warm rounded-2xl p-4 sm:p-5">
         <div class="flex justify-between items-center mb-4">
           <div>
             <h3 class="font-bold text-base" id="selectedDateLabel">今日排程</h3>
-            <p class="text-xs text-[#8C735B]">點選預約可結帳扣點或複製 LINE 通知</p>
+            <p class="text-xs text-[#8C735B]">點「已報到」等同結帳扣點／入帳</p>
           </div>
           <button onclick="openBookingModal()" class="btn-primary text-xs font-bold px-3.5 py-2 rounded-xl">+ 新增預約</button>
         </div>
-        <div id="dayBookingsList" class="space-y-3 max-h-[500px] overflow-y-auto pr-1"></div>
+        <div id="dayBookingsList" class="space-y-3 max-h-[560px] overflow-y-auto pr-1"></div>
       </div>
     </div>
 
-    <!-- 分頁 2：客戶管理 -->
+    <!-- 分頁 2：客戶管理（含累積來店次數與私密備註） -->
     <div id="tab-customers" class="hidden space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
         <input type="text" id="custSearchInput" oninput="renderCustomersList()" placeholder="🔍 搜尋客人姓名或電話..." class="border border-[#EAE2D6] rounded-xl px-4 py-2 text-sm bg-white w-full sm:w-72">
@@ -282,19 +294,40 @@
         <div id="financeHistoryList" class="space-y-2 text-sm max-h-[520px] overflow-y-auto"></div>
       </div>
     </div>
+
+    <!-- 分頁 4：動態價目表與預估時間管理 -->
+    <div id="tab-catalog" class="hidden space-y-4">
+      <div class="flex flex-wrap justify-between items-center gap-3">
+        <div>
+          <h3 class="font-bold text-base">服務價目與預估分鐘數設定</h3>
+          <p class="text-xs text-[#8C735B]">新增項目或修改價格/分鐘數後即時生效，也可直接在 Google 試算表「服務價目表」分頁調整</p>
+        </div>
+        <button onclick="openCatalogModal()" class="btn-primary text-sm font-bold px-4 py-2 rounded-xl">+ 新增服務項目</button>
+      </div>
+      <div id="catalogManageList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
   </div>
 
-  <!-- 彈窗 1：新增 / 編輯預約 -->
+  <!-- 彈窗 1：新增 / 編輯預約（支援多項服務購物車與三段狀態） -->
   <div id="bookingModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[92vh] overflow-y-auto">
       <h3 class="font-bold text-lg mb-4" id="bkModalTitle">新增除毛預約</h3>
       <input type="hidden" id="bkId">
       <div class="space-y-3 text-sm">
-        <div>
-          <label class="block text-xs text-[#735D48] mb-1">選擇客戶</label>
-          <select id="bkCustomer" onchange="recalculateBookingPrice()" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
-          <p class="text-xs text-[#8C735B] mt-1" id="bkCustomerHint"></p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs text-[#735D48] mb-1">選擇客戶</label>
+            <select id="bkCustomer" onchange="recalculateBookingTotal()" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
+          </div>
+          <div>
+            <label class="block text-xs text-[#735D48] mb-1">服務人員</label>
+            <select id="bkStaff" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+              <option value="Ruby" selected>Ruby</option>
+            </select>
+          </div>
         </div>
+        <p class="text-xs text-[#8C735B]" id="bkCustomerHint"></p>
+
         <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="block text-xs text-[#735D48] mb-1">預約日期</label>
@@ -302,31 +335,43 @@
           </div>
           <div>
             <label class="block text-xs text-[#735D48] mb-1">開始時間</label>
-            <select id="bkStartTime" class="w-full border border-[#EAE2D6] rounded-xl px-2.5 py-2 bg-[#FAF7F2]"></select>
+            <select id="bkStartTime" onchange="syncEndTimeByDuration()" class="w-full border border-[#EAE2D6] rounded-xl px-2.5 py-2 bg-[#FAF7F2]"></select>
           </div>
           <div>
             <label class="block text-xs text-[#735D48] mb-1">結束時間</label>
             <select id="bkEndTime" class="w-full border border-[#EAE2D6] rounded-xl px-2.5 py-2 bg-[#FAF7F2]"></select>
           </div>
         </div>
-        <div>
-          <label class="block text-xs text-[#735D48] mb-1">服務分類</label>
-          <select id="bkCategory" onchange="updateServiceDropdown('bkCategory', 'bkService'); recalculateBookingPrice();" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
+
+        <!-- 多項服務加入區 -->
+        <div class="bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl p-3 space-y-2.5">
+          <label class="block text-xs font-bold text-[#8C735B]">新增服務項目（可連續加入多個部位或加購）</label>
+          <select id="bkCategory" onchange="updateCatalogDropdown('bkCategory', 'bkService')" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white text-xs"></select>
+          <div class="flex gap-2">
+            <select id="bkService" class="flex-1 border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white text-xs"></select>
+            <button type="button" onclick="addAdminCartItem()" class="px-3 py-1.5 rounded-lg bg-[#8C735B] text-white text-xs font-bold shrink-0">+ 加入</button>
+          </div>
+
+          <div class="pt-1">
+            <div class="flex justify-between items-center text-xs text-[#735D48] mb-1">
+              <span>已選服務清單</span>
+              <span>總計 <strong id="bkTotalDuration">0</strong> 分鐘</span>
+            </div>
+            <div id="bkCartList" class="space-y-1.5 text-xs"></div>
+          </div>
         </div>
-        <div>
-          <label class="block text-xs text-[#735D48] mb-1">服務項目</label>
-          <select id="bkService" onchange="recalculateBookingPrice()" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
-        </div>
+
         <div class="grid grid-cols-2 gap-2.5 bg-[#FAF7F2] p-3 rounded-xl border border-[#EAE2D6]">
           <div>
-            <label class="block text-xs text-[#735D48] mb-1">價目表原價 ($)</label>
-            <input type="number" id="bkOriginalPrice" oninput="recalculateBookingPrice(true)" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white">
+            <label class="block text-xs text-[#735D48] mb-1">項目加總原價 ($)</label>
+            <input type="number" id="bkOriginalPrice" oninput="recalculateBookingTotal(true)" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white">
           </div>
           <div>
-            <label class="block text-xs text-[#735D48] mb-1">折後實收/扣點 ($)</label>
+            <label class="block text-xs text-[#735D48] mb-1">折後實收 / 扣點 ($)</label>
             <input type="number" id="bkFinalPrice" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white font-bold income-red">
           </div>
         </div>
+
         <div class="grid grid-cols-2 gap-2.5">
           <div>
             <label class="block text-xs text-[#735D48] mb-1">付款方式</label>
@@ -340,21 +385,27 @@
           <div>
             <label class="block text-xs text-[#735D48] mb-1">預約狀態</label>
             <select id="bkStatus" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
-              <option value="已確認">已確認</option>
-              <option value="已完成">已完成 (選扣儲值金將自動扣點)</option>
+              <option value="尚未到來">尚未到來</option>
+              <option value="已報到">已報到 (等同結帳)</option>
+              <option value="爽約">爽約</option>
               <option value="待審核">待審核</option>
               <option value="取消">取消</option>
             </select>
           </div>
         </div>
+
         <div>
-          <label class="block text-xs text-[#735D48] mb-1">備註</label>
+          <label class="block text-xs text-[#735D48] mb-1">筆記（僅商家可見）</label>
           <input type="text" id="bkNote" placeholder="選填" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
         </div>
       </div>
-      <div class="flex justify-end gap-2 mt-5">
-        <button onclick="closeModal('bookingModal')" class="px-4 py-2 text-sm rounded-xl border border-[#EAE2D6]">取消</button>
-        <button onclick="saveBooking()" class="btn-primary px-5 py-2 text-sm font-bold rounded-xl">儲存預約</button>
+
+      <div class="flex justify-between items-center mt-5 pt-3 border-t border-[#F3EFEA]">
+        <button id="bkDeleteBtn" onclick="deleteCurrentBooking()" class="hidden px-3 py-2 text-xs text-red-600 bg-red-50 rounded-xl">刪除預約</button>
+        <div class="flex gap-2 ml-auto">
+          <button onclick="closeModal('bookingModal')" class="px-4 py-2 text-sm rounded-xl border border-[#EAE2D6]">取消</button>
+          <button onclick="saveBooking()" class="btn-primary px-5 py-2 text-sm font-bold rounded-xl">儲存預約</button>
+        </div>
       </div>
     </div>
   </div>
@@ -367,17 +418,17 @@
       <div class="space-y-3 text-sm">
         <div>
           <label class="block text-xs text-[#735D48] mb-1">客人姓名 / 暱稱 *</label>
-          <input type="text" id="custName" placeholder="例如：陳小姐 / 小美" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+          <input type="text" id="custName" placeholder="例如：李小姐 / 小美" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
         </div>
         <div>
           <label class="block text-xs text-[#735D48] mb-1">電話或 LINE 顯示名稱</label>
           <input type="text" id="custContact" placeholder="方便核對官方 LINE 帳號" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
         </div>
         <div class="bg-[#FAF7F2] p-3.5 rounded-xl border border-[#EAE2D6] space-y-2.5">
-          <p class="text-xs font-bold text-[#8C735B]">✨ 個人專屬優惠設定（客人查詢頁會顯示優惠名稱）</p>
+          <p class="text-xs font-bold text-[#8C735B]">✨ 個人專屬優惠設定</p>
           <div>
             <label class="block text-xs text-[#735D48] mb-1">優惠標籤名稱</label>
-            <input type="text" id="custPromoTitle" placeholder="無優惠可留白，或填：VIP 9折 / 舊客折$200" class="w-full border border-[#EAE2D6] rounded-lg px-3 py-1.5 bg-white">
+            <input type="text" id="custPromoTitle" placeholder="無優惠可留白，或填：VIP 9折 / 定金依系統預設" class="w-full border border-[#EAE2D6] rounded-lg px-3 py-1.5 bg-white">
           </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
@@ -395,7 +446,7 @@
           </div>
         </div>
         <div>
-          <label class="block text-xs text-[#735D48] mb-1">🔒 闆娘私密備註（客人看不到）</label>
+          <label class="block text-xs text-[#735D48] mb-1">🔒 筆記（僅商家可見）</label>
           <textarea id="custPrivateNote" rows="2" placeholder="記錄膚況、怕痛程度、慣用冰肌能量等" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></textarea>
         </div>
       </div>
@@ -423,7 +474,7 @@
         </div>
         <div>
           <label class="block text-xs text-[#735D48] mb-1">備註</label>
-          <input type="text" id="topUpNote" placeholder="例如：周年慶儲值方案" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+          <input type="text" id="topUpNote" placeholder="例如：儲值方案" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
         </div>
       </div>
       <div class="flex justify-end gap-2 mt-5">
@@ -433,71 +484,64 @@
     </div>
   </div>
 
-  <!-- 彈窗 4：完整價目表參考 -->
-  <div id="priceModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-bold text-lg">📋 馥語美學・完整價目表</h3>
-        <button onclick="closeModal('priceModal')" class="text-sm text-[#8C735B]">✕ 關閉</button>
+  <!-- 彈窗 4：新增 / 編輯價目表項目 -->
+  <div id="catalogModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6">
+      <h3 class="font-bold text-lg mb-4" id="catModalTitle">新增服務項目</h3>
+      <input type="hidden" id="catItemId">
+      <div class="space-y-3 text-sm">
+        <div>
+          <label class="block text-xs text-[#735D48] mb-1">分類名稱</label>
+          <input type="text" id="catName" list="catSuggestions" placeholder="例如：加購護理與美肌項目" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+          <datalist id="catSuggestions">
+            <option value="日式無痛淨毛（單堂）">
+            <option value="日式無痛淨毛（三堂優惠）">
+            <option value="RICA 熱蠟除毛（單項）">
+            <option value="RICA 熱蠟除毛（超值組合）">
+            <option value="加購護理與美肌項目">
+          </datalist>
+        </div>
+        <div>
+          <label class="block text-xs text-[#735D48] mb-1">服務項目名稱 *</label>
+          <input type="text" id="catServiceName" placeholder="例如：舒緩鎮定軟膜" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs text-[#735D48] mb-1">預設價格 ($)</label>
+            <input type="number" id="catPrice" value="0" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+          </div>
+          <div>
+            <label class="block text-xs text-[#735D48] mb-1">預估分鐘數</label>
+            <input type="number" id="catDuration" value="30" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-[#735D48] mb-1">上架狀態</label>
+          <select id="catActive" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+            <option value="true">上架顯示（預約可選）</option>
+            <option value="false">暫停顯示（隱藏）</option>
+          </select>
+        </div>
       </div>
-      <div id="priceTablePreview" class="space-y-4 text-sm"></div>
+      <div class="flex justify-end gap-2 mt-5">
+        <button onclick="closeModal('catalogModal')" class="px-4 py-2 text-sm rounded-xl border border-[#EAE2D6]">取消</button>
+        <button onclick="saveCatalogItem()" class="btn-primary px-5 py-2 text-sm font-bold rounded-xl">儲存項目</button>
+      </div>
     </div>
   </div>
 
 <script>
-  const SERVICE_CATALOG = {
-    "日式無痛淨毛（單堂）": [
-      { name: "鬍子 (單堂)", price: 850 },
-      { name: "腋下 (單堂)", price: 550 },
-      { name: "私密處全除 VIO (單堂)", price: 1800 },
-      { name: "VIO + 腋下 (單堂)", price: 2000 },
-      { name: "前手 (單堂)", price: 1000 },
-      { name: "全手 (單堂)", price: 1500 },
-      { name: "腹部 (單堂)", price: 1050 },
-      { name: "小腿 (單堂)", price: 1300 },
-      { name: "全腿 (單堂)", price: 2000 }
-    ],
-    "日式無痛淨毛（三堂優惠）": [
-      { name: "鬍子 (三堂)", price: 1200 },
-      { name: "腋下 (三堂)", price: 1200 },
-      { name: "私密處全除 VIO (三堂)", price: 4800 },
-      { name: "VIO + 腋下 (三堂)", price: 5700 },
-      { name: "前手 (三堂)", price: 2500 },
-      { name: "全手 (三堂)", price: 4050 },
-      { name: "腹部 (三堂)", price: 2800 },
-      { name: "小腿 (三堂)", price: 3500 },
-      { name: "全腿 (三堂)", price: 5700 }
-    ],
-    "RICA 熱蠟除毛（單項）": [
-      { name: "腋下 (熱蠟)", price: 480 },
-      { name: "全手 (熱蠟)", price: 1350 },
-      { name: "前手 (熱蠟)", price: 900 },
-      { name: "全腿 (熱蠟)", price: 1650 },
-      { name: "小腿 (熱蠟)", price: 1200 },
-      { name: "腹部 (熱蠟)", price: 800 },
-      { name: "背部 (熱蠟)", price: 1350 },
-      { name: "私密處 VIO (熱蠟)", price: 1650 }
-    ],
-    "RICA 熱蠟除毛（超值組合）": [
-      { name: "前手 + 腋下 (熱蠟組合)", price: 1200 },
-      { name: "小腿 + 腋下 (熱蠟組合)", price: 1350 },
-      { name: "VIO + 腋下 (熱蠟組合)", price: 1700 }
-    ],
-    "其他美肌與客製項目": [
-      { name: "無創少女粉嫩／乳暈私密粉嫩", price: 0 },
-      { name: "自訂加購項目", price: 0 }
-    ]
-  };
-
   let adminPassword = "";
-  let appData = { webAppUrl: GITHUB_PAGES_URL, customers: [], bookings: [], transactions: [], expenses: [] };
+  let appData = { webAppUrl: GITHUB_PAGES_URL, catalog: [], customers: [], bookings: [], transactions: [], expenses: [] };
+  let portalCatalog = [];
+  let adminCart = [];
+  let portalCart = [];
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth();
   let selectedDateStr = formatDateLocal(new Date());
 
   window.onload = function() {
     initTimeSelects();
-    initCategorySelects();
 
     if (PORTAL_CID && PORTAL_CID.trim() !== "") {
       document.getElementById("customerPortalView").classList.remove("hidden");
@@ -509,6 +553,9 @@
     }
   };
 
+  // =========================================================
+  // 客人專屬查詢與多項預約邏輯
+  // =========================================================
   async function loadCustomerPortal(cid) {
     showLoading("正在讀取您的專屬會員資料...");
     try {
@@ -517,20 +564,25 @@
       document.getElementById("portalContent").classList.remove("hidden");
       document.getElementById("pCustName").textContent = res.customer.name;
       document.getElementById("pCustPromo").textContent = res.customer.promoTitle || "馥語專屬會員";
+      document.getElementById("pCustVisits").textContent = res.customer.visitCount || 0;
       document.getElementById("pCustBalance").textContent = res.customer.balance.toLocaleString();
+
+      portalCatalog = res.catalog || [];
+      initCategorySelectsFromCatalog("reqCategory", "reqService", portalCatalog);
+      renderPortalCart();
 
       const bList = document.getElementById("pBookingsList");
       if (res.bookings.length === 0) {
         bList.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-3">尚無預約紀錄，可直接使用上方表單預約 ✨</p>`;
       } else {
         bList.innerHTML = res.bookings.map(b => {
-          const badgeColor = b.status === "已確認" ? "bg-emerald-50 text-emerald-700" :
+          const badgeColor = (b.status === "已報到" || b.status === "已完成") ? "bg-emerald-50 text-emerald-700" :
                              b.status === "待審核" ? "bg-amber-50 text-amber-700" :
-                             b.status === "已完成" ? "bg-stone-100 text-stone-600" : "bg-red-50 text-red-600";
+                             b.status === "爽約" ? "bg-red-50 text-red-600" : "bg-[#F5EFE6] text-[#735D48]";
           return `
             <div class="p-3 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] flex justify-between items-center">
               <div>
-                <p class="font-bold text-[#3D352E]">${b.date} ${b.startTime}</p>
+                <p class="font-bold text-[#3D352E]">${b.date} ${b.startTime}-${b.endTime}</p>
                 <p class="text-xs text-[#735D48] mt-0.5">${b.service} ($${b.finalPrice.toLocaleString()})</p>
               </div>
               <span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeColor}">${b.status}</span>
@@ -567,25 +619,64 @@
     }
   }
 
+  function addPortalCartItem() {
+    const srvSel = document.getElementById("reqService");
+    if (!srvSel.value) return;
+    const opt = srvSel.options[srvSel.selectedIndex];
+    portalCart.push({
+      name: srvSel.value,
+      price: Number(opt.dataset.price || 0),
+      duration: Number(opt.dataset.duration || 30)
+    });
+    renderPortalCart();
+  }
+
+  function removePortalCartItem(idx) {
+    portalCart.splice(idx, 1);
+    renderPortalCart();
+  }
+
+  function renderPortalCart() {
+    const list = document.getElementById("reqCartList");
+    const totalPrice = portalCart.reduce((s, x) => s + x.price, 0);
+    const totalDur = portalCart.reduce((s, x) => s + x.duration, 0);
+    document.getElementById("reqSummaryMeta").textContent = `預估 ${totalDur} 分鐘｜合計 $${totalPrice.toLocaleString()}`;
+
+    if (portalCart.length === 0) {
+      list.innerHTML = `<p class="text-[#8C735B]">尚未加入服務項目</p>`;
+      return;
+    }
+    list.innerHTML = portalCart.map((item, i) => `
+      <div class="flex justify-between items-center bg-white px-2.5 py-1.5 rounded-lg border border-[#EAE2D6]">
+        <span>${item.name} <span class="text-[#8C735B]">(${item.duration}分 / $${item.price})</span></span>
+        <button type="button" onclick="removePortalCartItem(${i})" class="text-red-500 font-bold px-1.5">✕</button>
+      </div>
+    `).join("");
+  }
+
   async function submitPortalBooking() {
     const date = document.getElementById("reqDate").value;
     const startTime = document.getElementById("reqTime").value;
-    const category = document.getElementById("reqCategory").value;
-    const serviceSel = document.getElementById("reqService");
-    const service = serviceSel.value;
-    const price = Number(serviceSel.options[serviceSel.selectedIndex].dataset.price || 0);
     const note = document.getElementById("reqNote").value;
 
     if (!date) return showToast("請選擇希望日期");
+    if (portalCart.length === 0) return showToast("請先加入至少一項服務");
+
+    const servicesText = portalCart.map(x => x.name).join(" + ");
+    const totalPrice = portalCart.reduce((s, x) => s + x.price, 0);
+    const totalDuration = portalCart.reduce((s, x) => s + x.duration, 0);
+
     showLoading("正在送出預約申請...");
     try {
       await callGasApi({
         action: "submitCustomerBookingRequest",
-        payload: { cid: PORTAL_CID, date, startTime, category, service, price, note }
+        payload: { cid: PORTAL_CID, date, startTime, servicesText, totalPrice, totalDuration, note }
       });
       hideLoading();
-      showToast("已送出預約申請！闆娘確認後會通知您");
+      portalCart = [];
+      renderPortalCart();
       document.getElementById("reqNote").value = "";
+      showToast("已送出預約申請！闆娘確認後會通知您");
       loadCustomerPortal(PORTAL_CID);
     } catch (err) {
       hideLoading();
@@ -593,6 +684,9 @@
     }
   }
 
+  // =========================================================
+  // 闆娘管理後台邏輯
+  // =========================================================
   function loginAdmin() {
     const pwd = document.getElementById("adminPwdInput").value;
     if (!pwd) return showToast("請輸入管理密碼");
@@ -606,6 +700,7 @@
       const res = await callGasApi({ action: "verifyAdminAndLoadAll", password: adminPassword });
       hideLoading();
       appData = res;
+      initCategorySelectsFromCatalog("bkCategory", "bkService", (appData.catalog || []).filter(c => c.active));
       if (isLogin) {
         document.getElementById("adminLoginView").classList.add("hidden");
         document.getElementById("adminDashboardView").classList.remove("hidden");
@@ -624,6 +719,7 @@
     renderDayBookings();
     renderCustomersList();
     renderFinanceHistory();
+    renderCatalogManageList();
   }
 
   function renderFinanceStats() {
@@ -632,7 +728,8 @@
     let monthExpense = 0;
 
     appData.bookings.forEach(b => {
-      if (b.date.startsWith(ymPrefix) && b.status === "已完成" && (b.payMethod === "現金" || b.payMethod === "轉帳")) {
+      const isSettledVisit = (b.status === "已報到" || b.status === "已完成");
+      if (b.date.startsWith(ymPrefix) && isSettledVisit && (b.payMethod === "現金" || b.payMethod === "轉帳")) {
         monthIncome += b.finalPrice;
       }
     });
@@ -677,29 +774,14 @@
           ${b.note ? `<p class="text-xs text-amber-800 mt-0.5">備註：${b.note}</p>` : ''}
         </div>
         <div class="flex gap-1.5">
-          <button onclick="approvePendingBooking('${b.id}')" class="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg">✓ 核准排入</button>
-          <button onclick="editBooking('${b.id}')" class="px-3 py-1 bg-stone-100 text-stone-700 text-xs rounded-lg">調整時段/價格</button>
+          <button onclick="quickStatus('${b.id}', '尚未到來')" class="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg">✓ 核准排入</button>
+          <button onclick="editBooking('${b.id}')" class="px-3 py-1 bg-stone-100 text-stone-700 text-xs rounded-lg">調整時段/項目</button>
         </div>
       </div>
     `).join("");
   }
 
-  async function approvePendingBooking(bookingId) {
-    const bk = appData.bookings.find(b => b.id === bookingId);
-    if (!bk) return;
-    bk.status = "已確認";
-    showLoading("核准預約中...");
-    try {
-      appData = await callGasApi({ action: "saveBookingAdmin", password: adminPassword, payload: bk });
-      hideLoading();
-      renderAllAdminViews();
-      showToast("已核准並排入月曆！");
-    } catch (err) {
-      hideLoading();
-      showToast(err.message);
-    }
-  }
-
+  // 月曆格子：顯示「合計 X」與當日「時間＋客人名稱」
   function renderCalendar() {
     document.getElementById("calendarMonthLabel").textContent = `${currentYear}年 ${currentMonth + 1}月`;
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -711,13 +793,22 @@
 
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-      const dayBks = appData.bookings.filter(b => b.date === dateStr && b.status !== "取消");
+      const dayBks = appData.bookings
+        .filter(b => b.date === dateStr && b.status !== "取消")
+        .sort((a, b) => a.startTime.localeCompare(b.startTime));
       const isSelected = dateStr === selectedDateStr;
 
+      const itemsHtml = dayBks.slice(0, 3).map(b => {
+        const shortName = String(b.customerName || "").slice(0, 2);
+        return `<div class="truncate text-[10px] leading-tight px-1 py-0.5 rounded bg-[#F5EFE6] text-[#3D352E] w-full text-left">${b.startTime} ${shortName}</div>`;
+      }).join("");
+      const moreHtml = dayBks.length > 3 ? `<div class="text-[9px] text-[#8C735B]">+${dayBks.length - 3}</div>` : "";
+
       grid.innerHTML += `
-        <button onclick="selectDate('${dateStr}')" class="h-14 rounded-xl border p-1 flex flex-col justify-between items-center transition ${isSelected ? 'border-[#8C735B] bg-[#F5EFE6] font-bold' : 'border-[#F3EFEA] bg-white hover:bg-[#FAF7F2]'}">
-          <span class="text-xs ${isSelected ? 'text-[#8C735B]' : 'text-[#3D352E]'}">${d}</span>
-          ${dayBks.length > 0 ? `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-[#8C735B] text-white">${dayBks.length} 客</span>` : ''}
+        <button onclick="selectDate('${dateStr}')" class="min-h-[76px] rounded-xl border p-1 flex flex-col justify-start items-center transition ${isSelected ? 'border-[#8C735B] bg-[#FDFBF7] ring-1 ring-[#8C735B]' : 'border-[#F3EFEA] bg-white hover:bg-[#FAF7F2]'}">
+          <span class="text-xs font-bold ${isSelected ? 'text-[#8C735B]' : 'text-[#3D352E]'}">${d}</span>
+          <span class="text-[9px] text-[#8C735B] mb-0.5">合計 ${dayBks.length}</span>
+          <div class="w-full space-y-0.5">${itemsHtml}${moreHtml}</div>
         </button>
       `;
     }
@@ -737,6 +828,7 @@
     renderDayBookings();
   }
 
+  // 單筆預約卡片：尚未到來 / 已報到 / 爽約 三段切換
   function renderDayBookings() {
     document.getElementById("selectedDateLabel").textContent = `${selectedDateStr} 預約排程`;
     const list = document.getElementById("dayBookingsList");
@@ -750,24 +842,46 @@
     }
 
     list.innerHTML = dayBks.map(b => {
-      const statusBadge = b.status === "已完成" ? "bg-stone-100 text-stone-600" :
-                          b.status === "已確認" ? "bg-emerald-50 text-emerald-700" :
-                          b.status === "待審核" ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-500";
+      const cust = appData.customers.find(c => c.id === b.customerId);
+      const visits = cust ? cust.visitCount : 0;
+      const st = b.status;
+
+      const btnClass = (target) => st === target
+        ? "bg-[#8C735B] text-white font-bold shadow-2xs"
+        : "bg-white text-[#735D48] border border-[#EAE2D6] hover:bg-[#F5EFE6]";
+
       return `
-        <div class="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] space-y-2">
+        <div class="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] space-y-2.5">
           <div class="flex justify-between items-start">
             <div>
-              <span class="text-xs font-bold text-[#8C735B]">${b.startTime} - ${b.endTime}</span>
-              <h4 class="font-bold text-base text-[#3D352E]">${b.customerName}</h4>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-[#8C735B]">${b.startTime} - ${b.endTime}</span>
+                <span class="text-[11px] text-[#8C735B]">(${b.duration || 60}分)</span>
+                <span class="text-[11px] px-1.5 py-0.5 rounded bg-white border border-[#EAE2D6] text-[#735D48]">${b.staff || 'Ruby'}</span>
+              </div>
+              <h4 class="font-bold text-base text-[#3D352E] mt-0.5">
+                ${b.customerName}
+                <span class="text-xs font-normal text-[#8C735B] ml-1">${visits}次</span>
+              </h4>
             </div>
-            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${statusBadge}">${b.status}</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded bg-white border border-[#EAE2D6]">${st}</span>
           </div>
-          <p class="text-xs text-[#735D48]">項目：${b.service}</p>
-          <div class="flex justify-between items-center text-xs pt-1 border-t border-[#EAE2D6]">
-            <span>實收：<strong class="income-red">$${b.finalPrice.toLocaleString()}</strong> (${b.payMethod})</span>
+
+          <!-- 三段狀態快速切換：尚未到來 / 已報到 / 爽約 -->
+          <div class="grid grid-cols-3 gap-1.5 text-xs">
+            <button onclick="quickStatus('${b.id}', '尚未到來')" class="py-1.5 rounded-lg transition ${btnClass('尚未到來')}">尚未到來</button>
+            <button onclick="quickStatus('${b.id}', '已報到')" class="py-1.5 rounded-lg transition ${btnClass('已報到')}">已報到</button>
+            <button onclick="quickStatus('${b.id}', '爽約')" class="py-1.5 rounded-lg transition ${btnClass('爽約')}">爽約</button>
+          </div>
+
+          <p class="text-xs text-[#3D352E]">服務：${b.service}</p>
+          ${b.note ? `<p class="text-xs text-[#735D48] bg-white/80 px-2.5 py-1.5 rounded-lg border border-[#EAE2D6]/60">📝 筆記：${b.note}</p>` : ''}
+
+          <div class="flex justify-between items-center text-xs pt-2 border-t border-[#EAE2D6]">
+            <span>金額：<strong class="income-red">$${b.finalPrice.toLocaleString()}</strong> (${b.payMethod}) ${b.settled === 'Y' ? '<span class="text-emerald-700 font-bold ml-1">[已結帳]</span>' : ''}</span>
             <div class="flex gap-1.5">
-              <button onclick="copyLineConfirm('${b.id}')" class="px-2.5 py-1 bg-[#06C755]/15 text-[#06C755] font-bold rounded-lg">複製 LINE 通知</button>
-              <button onclick="editBooking('${b.id}')" class="px-2.5 py-1 bg-white border border-[#EAE2D6] rounded-lg">編輯/結帳</button>
+              <button onclick="copyLineConfirm('${b.id}')" class="px-2.5 py-1 bg-[#06C755]/15 text-[#06C755] font-bold rounded-lg">LINE 通知</button>
+              <button onclick="editBooking('${b.id}')" class="px-2.5 py-1 bg-white border border-[#EAE2D6] rounded-lg">編輯/改期</button>
             </div>
           </div>
         </div>
@@ -775,11 +889,24 @@
     }).join("");
   }
 
+  async function quickStatus(bookingId, newStatus) {
+    showLoading(`更新狀態為「${newStatus}」...`);
+    try {
+      appData = await callGasApi({ action: "quickUpdateBookingStatus", password: adminPassword, bookingId, newStatus });
+      hideLoading();
+      renderAllAdminViews();
+      showToast(newStatus === "已報到" ? "已報到並完成結帳！" : `狀態已更新為「${newStatus}」`);
+    } catch (err) {
+      hideLoading();
+      showToast(err.message);
+    }
+  }
+
   function copyLineConfirm(bookingId) {
     const b = appData.bookings.find(x => x.id === bookingId);
     if (!b) return;
     const portalUrl = `${GITHUB_PAGES_URL}?cid=${b.customerId}`;
-    const msg = `✨【馥語美學 預約確認通知】✨\n親愛的 ${b.customerName} 您好，已為您保留以下時段：\n\n📅 日期：${b.date}\n⏰ 時間：${b.startTime}\n💆🏻‍♀️ 項目：${b.service}\n💰 金額：$${b.finalPrice.toLocaleString()} (${b.payMethod})\n\n📍 店面導航：https://maps.app.goo.gl/T5TZ3H2ASTdWra1n6?g_st=ic\n💳 查詢個人儲值金與預約紀錄：\n${portalUrl}\n\n期待為您服務，Beautiful every day 🤍`;
+    const msg = `✨【馥語美學 預約確認通知】✨\n親愛的 ${b.customerName} 您好，已為您保留以下時段：\n\n📅 日期：${b.date}\n⏰ 時間：${b.startTime} - ${b.endTime}\n💆🏻‍♀️ 項目：${b.service}\n💰 金額：$${b.finalPrice.toLocaleString()} (${b.payMethod})\n\n📍 店面導航（南投草屯）：https://maps.app.goo.gl/T5TZ3H2ASTdWra1n6?g_st=ic\n💳 查詢個人儲值金與預約紀錄：\n${portalUrl}\n\n期待為您服務，Beautiful every day 🤍`;
     copyToClipboard(msg, "已複製 LINE 預約確認訊息！");
   }
 
@@ -800,7 +927,10 @@
         <div>
           <div class="flex justify-between items-start">
             <div>
-              <h4 class="font-bold text-base text-[#3D352E]">${c.name}</h4>
+              <h4 class="font-bold text-base text-[#3D352E]">
+                ${c.name}
+                <span class="text-xs font-normal text-[#8C735B] ml-1">${c.visitCount || 0}次</span>
+              </h4>
               <p class="text-xs text-[#8C735B]">${c.contact || '未填聯絡方式'}</p>
             </div>
             <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-[#F5EFE6] text-[#8C735B]">${c.promoTitle || '一般原價'}</span>
@@ -841,7 +971,8 @@
     });
 
     appData.bookings.forEach(b => {
-      if (b.status === "已完成" && (b.payMethod === "現金" || b.payMethod === "轉帳")) {
+      const isSettledVisit = (b.status === "已報到" || b.status === "已完成");
+      if (isSettledVisit && (b.payMethod === "現金" || b.payMethod === "轉帳")) {
         items.push({
           time: `${b.date} ${b.startTime}`,
           title: `現場結帳 - ${b.customerName} (${b.service})`,
@@ -880,6 +1011,42 @@
     `).join("");
   }
 
+  // 價目表管理渲染
+  function renderCatalogManageList() {
+    const box = document.getElementById("catalogManageList");
+    const list = appData.catalog || [];
+    if (list.length === 0) {
+      box.innerHTML = `<p class="text-sm text-[#8C735B]">尚無價目表項目</p>`;
+      return;
+    }
+
+    const grouped = {};
+    list.forEach(item => {
+      if (!grouped[item.category]) grouped[item.category] = [];
+      grouped[item.category].push(item);
+    });
+
+    box.innerHTML = Object.keys(grouped).map(cat => `
+      <div class="card-warm rounded-2xl p-4 space-y-2">
+        <h4 class="font-bold text-sm text-[#8C735B] pb-1 border-b border-[#F3EFEA]">${cat}</h4>
+        ${grouped[cat].map(item => `
+          <div class="flex justify-between items-center text-xs py-1.5 border-b border-[#F3EFEA]/60 last:border-0 gap-2">
+            <div>
+              <span class="font-bold text-[#3D352E] ${item.active ? '' : 'line-through text-stone-400'}">${item.name}</span>
+              <span class="text-[#8C735B] ml-1.5">(${item.duration}分)</span>
+              ${!item.active ? '<span class="ml-1 text-red-500">[已下架]</span>' : ''}
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <span class="font-bold text-[#3D352E]">${item.price > 0 ? '$' + item.price.toLocaleString() : '待定/$0'}</span>
+              <button onclick="openCatalogModal('${item.id}')" class="px-2 py-1 rounded bg-[#FAF7F2] border border-[#EAE2D6]">改價/時長</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    `).join("");
+  }
+
+  // 預約彈窗與多項服務購物車
   function openBookingModal(existingBk = null) {
     if (appData.customers.length === 0) {
       showToast("請先到「客戶與儲值金」新增第一位客人資料");
@@ -892,31 +1059,51 @@
     ).join("");
 
     if (existingBk) {
-      document.getElementById("bkModalTitle").textContent = "編輯預約 / 結帳扣點";
+      document.getElementById("bkModalTitle").textContent = "編輯預約 / 改期 / 結帳";
       document.getElementById("bkId").value = existingBk.id;
+      document.getElementById("bkDeleteBtn").classList.remove("hidden");
       custSel.value = existingBk.customerId;
+      document.getElementById("bkStaff").value = existingBk.staff || "Ruby";
       document.getElementById("bkDate").value = existingBk.date;
       document.getElementById("bkStartTime").value = existingBk.startTime;
       document.getElementById("bkEndTime").value = existingBk.endTime;
-      document.getElementById("bkCategory").value = existingBk.category || Object.keys(SERVICE_CATALOG)[0];
-      updateServiceDropdown('bkCategory', 'bkService');
-      document.getElementById("bkService").value = existingBk.service;
-      document.getElementById("bkOriginalPrice").value = existingBk.originalPrice;
-      document.getElementById("bkFinalPrice").value = existingBk.finalPrice;
       document.getElementById("bkPayMethod").value = existingBk.payMethod;
       document.getElementById("bkStatus").value = existingBk.status;
       document.getElementById("bkNote").value = existingBk.note;
+
+      // 將現有服務字串拆回購物車顯示，並保留原設定價格與分鐘數
+      const parts = String(existingBk.service || "").split(" + ").filter(Boolean);
+      adminCart = parts.map((name, idx) => {
+        const found = (appData.catalog || []).find(c => c.name === name);
+        return {
+          name,
+          price: idx === 0 ? Number(existingBk.originalPrice || (found ? found.price : 0)) : (found ? found.price : 0),
+          duration: found ? found.duration : Math.round((Number(existingBk.duration || 60)) / parts.length)
+        };
+      });
+      renderAdminCart();
+      document.getElementById("bkOriginalPrice").value = existingBk.originalPrice;
+      document.getElementById("bkFinalPrice").value = existingBk.finalPrice;
+      document.getElementById("bkTotalDuration").textContent = existingBk.duration || 60;
+      const cust = appData.customers.find(c => c.id === existingBk.customerId);
+      if (cust) {
+        document.getElementById("bkCustomerHint").textContent =
+          `累計 ${cust.visitCount || 0} 次｜餘額：$${cust.balance.toLocaleString()}｜優惠：${cust.promoTitle || '無特定優惠'}`;
+      }
     } else {
       document.getElementById("bkModalTitle").textContent = "新增除毛預約";
       document.getElementById("bkId").value = "";
+      document.getElementById("bkDeleteBtn").classList.add("hidden");
+      document.getElementById("bkStaff").value = "Ruby";
       document.getElementById("bkDate").value = selectedDateStr;
       document.getElementById("bkStartTime").value = "10:00";
       document.getElementById("bkEndTime").value = "11:00";
       document.getElementById("bkPayMethod").value = "扣儲值金";
-      document.getElementById("bkStatus").value = "已確認";
+      document.getElementById("bkStatus").value = "尚未到來";
       document.getElementById("bkNote").value = "";
-      updateServiceDropdown('bkCategory', 'bkService');
-      recalculateBookingPrice();
+      adminCart = [];
+      renderAdminCart();
+      recalculateBookingTotal();
     }
     openModal('bookingModal');
   }
@@ -926,23 +1113,74 @@
     if (bk) openBookingModal(bk);
   }
 
-  function recalculateBookingPrice(manualOriginal = false) {
+  function addAdminCartItem() {
+    const srvSel = document.getElementById("bkService");
+    if (!srvSel.value) return;
+    const opt = srvSel.options[srvSel.selectedIndex];
+    adminCart.push({
+      name: srvSel.value,
+      price: Number(opt.dataset.price || 0),
+      duration: Number(opt.dataset.duration || 30)
+    });
+    renderAdminCart();
+    recalculateBookingTotal();
+    syncEndTimeByDuration();
+  }
+
+  function removeAdminCartItem(idx) {
+    adminCart.splice(idx, 1);
+    renderAdminCart();
+    recalculateBookingTotal();
+    syncEndTimeByDuration();
+  }
+
+  function renderAdminCart() {
+    const list = document.getElementById("bkCartList");
+    const totalDur = adminCart.reduce((s, x) => s + x.duration, 0);
+    document.getElementById("bkTotalDuration").textContent = totalDur;
+
+    if (adminCart.length === 0) {
+      list.innerHTML = `<p class="text-[#8C735B]">尚未加入項目（也可直接手動填寫下方金額與時間）</p>`;
+      return;
+    }
+    list.innerHTML = adminCart.map((item, i) => `
+      <div class="flex justify-between items-center bg-white px-2.5 py-1.5 rounded-lg border border-[#EAE2D6]">
+        <span>${item.name} <span class="text-[#8C735B]">(${item.duration}分 / $${item.price})</span></span>
+        <button type="button" onclick="removeAdminCartItem(${i})" class="text-red-500 font-bold px-1.5">✕</button>
+      </div>
+    `).join("");
+  }
+
+  function syncEndTimeByDuration() {
+    const startVal = document.getElementById("bkStartTime").value;
+    const dur = Number(document.getElementById("bkTotalDuration").textContent || 0);
+    if (!startVal || dur <= 0) return;
+    const [h, m] = startVal.split(':').map(Number);
+    const endTotal = Math.min(22 * 60, h * 60 + m + dur);
+    const endStr = `${String(Math.floor(endTotal / 60)).padStart(2, '0')}:${String(endTotal % 60).padStart(2, '0')}`;
+    const endSel = document.getElementById("bkEndTime");
+    if ([...endSel.options].some(o => o.value === endStr)) {
+      endSel.value = endStr;
+    }
+  }
+
+  function recalculateBookingTotal(manualOriginal = false) {
     const custId = document.getElementById("bkCustomer").value;
     const cust = appData.customers.find(c => c.id === custId);
-    const serviceSel = document.getElementById("bkService");
+
     let orig = manualOriginal
       ? Number(document.getElementById("bkOriginalPrice").value || 0)
-      : Number(serviceSel.options[serviceSel.selectedIndex]?.dataset.price || 0);
+      : adminCart.reduce((s, x) => s + x.price, 0);
 
     if (!manualOriginal) document.getElementById("bkOriginalPrice").value = orig;
 
     let final = orig;
     if (cust) {
       document.getElementById("bkCustomerHint").textContent =
-        `目前餘額：$${cust.balance.toLocaleString()}｜優惠：${cust.promoTitle || '無特定優惠'}`;
-      if (cust.discountType === "percent" && cust.discountValue > 0) {
+        `累計 ${cust.visitCount || 0} 次｜餘額：$${cust.balance.toLocaleString()}｜優惠：${cust.promoTitle || '無特定優惠'}`;
+      if (cust.discountType === "percent" && cust.discountValue > 0 && orig > 0) {
         final = Math.round(orig * cust.discountValue);
-      } else if (cust.discountType === "fixed" && cust.discountValue > 0) {
+      } else if (cust.discountType === "fixed" && cust.discountValue > 0 && orig > 0) {
         final = Math.max(0, orig - cust.discountValue);
       }
     }
@@ -952,15 +1190,20 @@
   async function saveBooking() {
     const custId = document.getElementById("bkCustomer").value;
     const cust = appData.customers.find(c => c.id === custId);
+    const servicesText = adminCart.length > 0 ? adminCart.map(x => x.name).join(" + ") : "自訂服務";
+    const totalDuration = adminCart.reduce((s, x) => s + x.duration, 0) || 60;
+
     const payload = {
       id: document.getElementById("bkId").value,
       customerId: custId,
       customerName: cust ? cust.name : "",
+      staff: document.getElementById("bkStaff").value || "Ruby",
       date: document.getElementById("bkDate").value,
       startTime: document.getElementById("bkStartTime").value,
       endTime: document.getElementById("bkEndTime").value,
-      category: document.getElementById("bkCategory").value,
-      service: document.getElementById("bkService").value,
+      duration: totalDuration,
+      category: adminCart.length > 1 ? "多項服務" : (document.getElementById("bkCategory").value || "除毛服務"),
+      service: servicesText,
       originalPrice: Number(document.getElementById("bkOriginalPrice").value || 0),
       finalPrice: Number(document.getElementById("bkFinalPrice").value || 0),
       payMethod: document.getElementById("bkPayMethod").value,
@@ -981,6 +1224,23 @@
     }
   }
 
+  async function deleteCurrentBooking() {
+    const id = document.getElementById("bkId").value;
+    if (!id) return;
+    closeModal('bookingModal');
+    showLoading("刪除預約中...");
+    try {
+      appData = await callGasApi({ action: "deleteBookingAdmin", password: adminPassword, bookingId: id });
+      hideLoading();
+      renderAllAdminViews();
+      showToast("預約已刪除");
+    } catch (err) {
+      hideLoading();
+      showToast(err.message);
+    }
+  }
+
+  // 客戶 / 儲值 / 支出 / 價目表彈窗
   function openCustomerModal(custId = null) {
     if (custId) {
       const c = appData.customers.find(x => x.id === custId);
@@ -1089,29 +1349,67 @@
     }
   }
 
-  function openPriceModal() {
-    const box = document.getElementById("priceTablePreview");
-    box.innerHTML = Object.keys(SERVICE_CATALOG).map(cat => `
-      <div class="border border-[#EAE2D6] rounded-xl p-3.5 bg-[#FAF7F2]">
-        <h4 class="font-bold text-[#8C735B] mb-2">${cat}</h4>
-        <div class="space-y-1">
-          ${SERVICE_CATALOG[cat].map(item => `
-            <div class="flex justify-between text-xs py-1 border-b border-[#EAE2D6]/60 last:border-0">
-              <span>${item.name}</span>
-              <span class="font-bold">${item.price > 0 ? '$' + item.price.toLocaleString() : '現場報價'}</span>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-    `).join("");
-    openModal('priceModal');
+  function openCatalogModal(itemId = null) {
+    if (itemId) {
+      const it = (appData.catalog || []).find(x => x.id === itemId);
+      document.getElementById("catModalTitle").textContent = "編輯服務項目價格與時長";
+      document.getElementById("catItemId").value = it.id;
+      document.getElementById("catName").value = it.category;
+      document.getElementById("catServiceName").value = it.name;
+      document.getElementById("catPrice").value = it.price;
+      document.getElementById("catDuration").value = it.duration;
+      document.getElementById("catActive").value = String(it.active);
+    } else {
+      document.getElementById("catModalTitle").textContent = "新增服務項目";
+      document.getElementById("catItemId").value = "";
+      document.getElementById("catName").value = "加購護理與美肌項目";
+      document.getElementById("catServiceName").value = "";
+      document.getElementById("catPrice").value = "0";
+      document.getElementById("catDuration").value = "20";
+      document.getElementById("catActive").value = "true";
+    }
+    openModal('catalogModal');
   }
 
+  async function saveCatalogItem() {
+    const category = document.getElementById("catName").value.trim() || "其他項目";
+    const name = document.getElementById("catServiceName").value.trim();
+    if (!name) return showToast("請輸入服務項目名稱");
+    const item = {
+      id: document.getElementById("catItemId").value,
+      category,
+      name,
+      price: Number(document.getElementById("catPrice").value || 0),
+      duration: Number(document.getElementById("catDuration").value || 30),
+      active: document.getElementById("catActive").value === "true"
+    };
+    closeModal('catalogModal');
+    showLoading("更新價目表中...");
+    try {
+      appData = await callGasApi({ action: "saveCatalogItemAdmin", password: adminPassword, item });
+      hideLoading();
+      initCategorySelectsFromCatalog("bkCategory", "bkService", (appData.catalog || []).filter(c => c.active));
+      renderAllAdminViews();
+      showToast("價目表已更新！");
+    } catch (err) {
+      hideLoading();
+      showToast(err.message);
+    }
+  }
+
+  // 共用輔助函式
   function initTimeSelects() {
     const times = [];
     for (let h = 9; h <= 21; h++) {
       times.push(`${String(h).padStart(2, '0')}:00`);
-      if (h < 21) times.push(`${String(h).padStart(2, '0')}:30`);
+      times.push(`${String(h).padStart(2, '0')}:05`);
+      times.push(`${String(h).padStart(2, '0')}:10`);
+      times.push(`${String(h).padStart(2, '0')}:15`);
+      times.push(`${String(h).padStart(2, '0')}:20`);
+      times.push(`${String(h).padStart(2, '0')}:30`);
+      times.push(`${String(h).padStart(2, '0')}:40`);
+      times.push(`${String(h).padStart(2, '0')}:45`);
+      times.push(`${String(h).padStart(2, '0')}:50`);
     }
     ["reqTime", "bkStartTime", "bkEndTime"].forEach(id => {
       const el = document.getElementById(id);
@@ -1119,33 +1417,32 @@
     });
   }
 
-  function initCategorySelects() {
-    const cats = Object.keys(SERVICE_CATALOG);
-    ["reqCategory", "bkCategory"].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join("");
-    });
-    updateServiceDropdown("reqCategory", "reqService");
-    updateServiceDropdown("bkCategory", "bkService");
+  function initCategorySelectsFromCatalog(catId, srvId, catalogList) {
+    const cats = [...new Set((catalogList || []).map(x => x.category))];
+    const catEl = document.getElementById(catId);
+    if (!catEl) return;
+    catEl.innerHTML = cats.map(c => `<option value="${c}">${c}</option>`).join("");
+    updateCatalogDropdown(catId, srvId, catalogList);
   }
 
-  function updateServiceDropdown(catId, srvId) {
+  function updateCatalogDropdown(catId, srvId, sourceList = null) {
+    const list = sourceList || (appData.catalog || []).filter(c => c.active);
     const cat = document.getElementById(catId).value;
     const srvSel = document.getElementById(srvId);
-    const items = SERVICE_CATALOG[cat] || [];
+    const items = list.filter(x => x.category === cat);
     srvSel.innerHTML = items.map(item =>
-      `<option value="${item.name}" data-price="${item.price}">${item.name} ${item.price > 0 ? '($' + item.price + ')' : ''}</option>`
+      `<option value="${item.name}" data-price="${item.price}" data-duration="${item.duration}">${item.name} (${item.duration}分 / ${item.price > 0 ? '$' + item.price : '待定'})</option>`
     ).join("");
   }
 
   function switchTab(tabName) {
-    ["calendar", "customers", "finance"].forEach(t => {
+    ["calendar", "customers", "finance", "catalog"].forEach(t => {
       document.getElementById(`tab-${t}`).classList.toggle("hidden", t !== tabName);
       const btn = document.getElementById(`tabBtn-${t}`);
-      if (t === tabName) {
-        btn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-bold bg-white text-[#3D352E] shadow-xs";
-      } else {
-        btn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-medium text-[#735D48]";
+      if (btn) {
+        btn.className = (t === tabName)
+          ? "tab-btn px-4 py-2 rounded-lg text-sm font-bold bg-white text-[#3D352E] shadow-xs"
+          : "tab-btn px-4 py-2 rounded-lg text-sm font-medium text-[#735D48]";
       }
     });
   }
