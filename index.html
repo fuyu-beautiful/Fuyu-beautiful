@@ -251,15 +251,16 @@
     <!-- 分頁 3：收支帳本 -->
     <div id="tab-finance" class="hidden space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-2 bg-white border border-[#EAE2D6] rounded-2xl px-4 py-2.5">
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 flex-wrap">
           <button onclick="changeFinanceMonth(-1)" class="px-2.5 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-xs font-bold">◀</button>
-          <span class="font-bold text-sm text-[#3D352E]" id="financeMonthLabel">2026年 11月</span>
+          <select id="financeYearSelect" onchange="onFinanceYearMonthDropdownChange()" class="border border-[#EAE2D6] rounded-lg px-2 py-1 text-xs font-bold bg-[#FAF7F2] text-[#3D352E]"></select>
+          <select id="financeMonthSelect" onchange="onFinanceYearMonthDropdownChange()" class="border border-[#EAE2D6] rounded-lg px-2 py-1 text-xs font-bold bg-[#FAF7F2] text-[#3D352E]"></select>
           <button onclick="changeFinanceMonth(1)" class="px-2.5 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-xs font-bold">▶</button>
-          <button onclick="jumpFinanceToCurrentMonth()" class="text-[11px] px-2 py-0.5 rounded bg-[#F5EFE6] text-[#735D48]">本月</button>
+          <button onclick="jumpFinanceToCurrentMonth()" class="text-[11px] px-2 py-1 rounded-lg bg-[#F5EFE6] text-[#735D48] font-medium">本月</button>
         </div>
         <div class="inline-flex bg-[#EFE9DF] p-1 rounded-xl">
           <button onclick="switchFinanceSubTab('register')" id="finSubBtn-register" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-bold bg-white text-[#3D352E] shadow-2xs">登記營運支出</button>
-          <button onclick="switchFinanceSubTab('details')" id="finSubBtn-details" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-medium text-[#735D48]">支出細項</button>
+          <button onclick="switchFinanceSubTab('details')" id="finSubBtn-details" class="whitespace-nowrap px-3 py-1 rounded-lg text-xs font-medium text-[#735D48]">收支明細</button>
         </div>
       </div>
 
@@ -282,19 +283,19 @@
         </div>
       </div>
 
-      <!-- 近 6 個月現金實收 vs 營運支出對照 -->
+      <!-- 優化版：近 6 個月現金實收 vs 營運支出橫向對照 -->
       <div class="card-warm rounded-2xl p-4 sm:p-5">
         <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
           <div>
             <h3 class="font-bold text-sm sm:text-base text-[#3D352E]">📊 近 6 個月現金實收 vs 營運支出對照</h3>
-            <p class="text-xs text-[#8C735B]">快速比對各月營收與耗材／水電／房租支出高低</p>
+            <p class="text-xs text-[#8C735B]">點選任一月份可直接切換下方收支明細；紅字為實收、綠字為支出</p>
           </div>
           <div class="flex items-center gap-3 text-xs">
             <span class="flex items-center gap-1 font-medium income-red"><span class="w-2.5 h-2.5 rounded-xs bg-[#DC2626] inline-block"></span>現金實收</span>
             <span class="flex items-center gap-1 font-medium expense-green"><span class="w-2.5 h-2.5 rounded-xs bg-[#16A34A] inline-block"></span>營運支出</span>
           </div>
         </div>
-        <div id="financeTrendBox" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5"></div>
+        <div id="financeTrendBox" class="space-y-2.5"></div>
       </div>
 
       <div id="finSub-register" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
@@ -336,18 +337,22 @@
         </div>
       </div>
 
+      <!-- 收支明細子分頁（含收入＋支出＋年/月篩選） -->
       <div id="finSub-details" class="hidden space-y-4">
         <div class="card-warm rounded-2xl p-5">
           <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
-            <h3 class="font-bold text-base expense-green" id="expenseDetailsTitle">本月支出細項</h3>
-            <span class="text-xs text-[#8C735B]" id="expenseDetailsCount">0 筆</span>
+            <h3 class="font-bold text-base income-red" id="incomeDetailsTitle">本月收入明細（現金／轉帳／儲值實收）</h3>
+            <span class="text-xs font-bold income-red" id="incomeDetailsSummary">0 筆｜合計 $0</span>
           </div>
-          <div id="expenseDetailsList" class="space-y-2 text-sm max-h-[420px] overflow-y-auto"></div>
+          <div id="financeHistoryList" class="space-y-2 text-sm max-h-[340px] overflow-y-auto"></div>
         </div>
 
         <div class="card-warm rounded-2xl p-5">
-          <h3 class="font-bold text-base mb-3">本月收現與儲值異動流水</h3>
-          <div id="financeHistoryList" class="space-y-2 text-sm max-h-[360px] overflow-y-auto"></div>
+          <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+            <h3 class="font-bold text-base expense-green" id="expenseDetailsTitle">本月支出明細</h3>
+            <span class="text-xs font-bold expense-green" id="expenseDetailsCount">0 筆｜合計 $0</span>
+          </div>
+          <div id="expenseDetailsList" class="space-y-2 text-sm max-h-[360px] overflow-y-auto"></div>
         </div>
       </div>
     </div>
@@ -377,7 +382,19 @@
           <input type="text" id="bkCustomerSearch" oninput="filterBookingCustomerOptions()" placeholder="🔍 輸入姓名或電話篩選客戶..." class="w-full border border-[#EAE2D6] rounded-lg px-3 py-2 bg-white text-sm">
           <select id="bkCustomer" onchange="recalculateBookingTotal()" class="w-full border border-[#EAE2D6] rounded-lg px-3 py-2 bg-white text-sm font-medium"></select>
           <div id="bkCustomerCard" class="bg-white border border-[#EAE2D6] rounded-lg px-3 py-2 text-xs text-[#735D48] space-y-1"></div>
-          <div id="bkPackageBanner" class="hidden bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-900"></div>
+
+          <!-- 客戶三堂套票剩餘堂數專區 -->
+          <div id="bkPackageBanner" class="hidden bg-amber-50 border border-amber-300 rounded-lg p-2.5 text-xs text-amber-950 space-y-1.5">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-amber-900">🎟️ 此客戶擁有的三堂套票</span>
+              <span class="text-[11px] text-amber-800" id="bkPackageTotalRemTag"></span>
+            </div>
+            <div id="bkPackageItemsList" class="space-y-1"></div>
+            <div class="flex items-center gap-2 pt-1">
+              <select id="bkPackageSelect" class="flex-1 border border-amber-300 rounded-lg px-2 py-1 bg-white text-xs text-[#3D352E]"></select>
+              <button type="button" id="bkUsePackageBtn" onclick="applyAvailableThreeSessionPackage()" class="px-2.5 py-1 rounded-lg bg-[#8C735B] text-white text-xs font-bold shrink-0">套用扣 1 堂</button>
+            </div>
+          </div>
         </div>
 
         <div class="grid grid-cols-3 gap-2">
@@ -397,7 +414,9 @@
         <div id="bkOverlapAlert" class="hidden px-3 py-2 rounded-xl bg-amber-50 border border-amber-300 text-xs text-amber-900 font-medium"></div>
 
         <div class="bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl p-3 space-y-2.5">
-          <label class="block text-xs font-bold text-[#735D48]">2. 加入服務項目</label>
+          <div class="flex justify-between items-center">
+            <label class="text-xs font-bold text-[#735D48]">2. 加入服務項目（可將單項設為贈送 $0）</label>
+          </div>
           <select id="bkCategory" onchange="updateCatalogDropdown('bkCategory', 'bkService')" class="w-full border border-[#EAE2D6] rounded-lg px-3 py-2 bg-white text-xs"></select>
           <div class="flex gap-2">
             <select id="bkService" class="flex-1 border border-[#EAE2D6] rounded-lg px-3 py-2 bg-white text-xs"></select>
@@ -416,10 +435,7 @@
         <div class="bg-[#FAF7F2] p-3 rounded-xl border border-[#EAE2D6] space-y-2">
           <div class="flex justify-between items-center flex-wrap gap-1">
             <label class="text-xs font-bold text-[#735D48]">3. 本次實收 / 扣點金額 ($)</label>
-            <div class="flex items-center gap-1.5">
-              <span id="bkDiscountBadge" class="hidden text-[11px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold"></span>
-              <button type="button" id="bkUsePackageBtn" onclick="applyAvailableThreeSessionPackage()" class="hidden text-[11px] px-2 py-0.5 rounded bg-[#8C735B] text-white font-bold">套用三堂扣 1 堂</button>
-            </div>
+            <span id="bkDiscountBadge" class="hidden text-[11px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold"></span>
           </div>
           <input type="hidden" id="bkOriginalPrice">
           <input type="hidden" id="bkUsedPackageId">
@@ -588,7 +604,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 5：客戶完整資料、消費歷史、三堂套票與儲值明細 -->
+  <!-- 彈窗 5：客戶完整資料、消費歷史、三堂套票（多選／刪除）與儲值明細 -->
   <div id="customerDetailModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 max-h-[92vh] overflow-y-auto space-y-4">
       <div class="flex justify-between items-start gap-2 border-b border-[#F3EFEA] pb-3">
@@ -618,12 +634,32 @@
         </div>
       </div>
 
-      <!-- 三堂套票管理區塊 -->
+      <!-- 三堂套票管理區塊（支援多品項選擇＋刪除＋同步試算表） -->
       <div class="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] space-y-2.5">
         <div class="flex justify-between items-center gap-2">
           <h4 class="font-bold text-xs text-[#3D352E]">🎟️ 三堂優惠套票堂數</h4>
-          <button type="button" id="cdAddPackageBtn" class="text-[11px] px-2.5 py-1 rounded-lg bg-[#8C735B] text-white font-bold">+ 建三堂套票</button>
+          <button type="button" onclick="toggleCustomerPackageBuilder()" id="cdTogglePkgBuilderBtn" class="text-[11px] px-2.5 py-1 rounded-lg bg-[#8C735B] text-white font-bold">+ 新增三堂套票</button>
         </div>
+
+        <div id="cdPkgBuilderBox" class="hidden bg-white border border-[#EAE2D6] rounded-xl p-3 space-y-2.5 text-xs">
+          <div class="flex justify-between items-center gap-2">
+            <span class="font-bold text-[#735D48]">選擇套票包含項目（可複選多項）</span>
+            <label class="flex items-center gap-1 text-[11px] text-[#8C735B] cursor-pointer">
+              <input type="checkbox" id="cdPkgShowAllCatalog" onchange="renderPackageCatalogCheckboxes()"> 顯示全部價目項目
+            </label>
+          </div>
+          <input type="text" id="cdPkgCatalogSearch" oninput="renderPackageCatalogCheckboxes()" placeholder="🔍 搜尋價目項目（如：私密處、腋下、小腿、三堂...）" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-[#FAF7F2]">
+          <div id="cdPkgCatalogChecklist" class="max-h-40 overflow-y-auto space-y-1 border border-[#F3EFEA] rounded-lg p-2 bg-[#FAF7F2]"></div>
+          <div>
+            <label class="block text-[11px] text-[#735D48] mb-1">套票組合名稱（勾選後自動帶入，也可手動微調）</label>
+            <input type="text" id="cdPkgCustomTitle" placeholder="例如：巴西式全除 + 腋下三堂優惠" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white">
+          </div>
+          <div class="flex justify-end gap-2">
+            <button type="button" onclick="toggleCustomerPackageBuilder(false)" class="px-3 py-1.5 rounded-lg border border-[#EAE2D6]">取消</button>
+            <button type="button" id="cdConfirmAddPkgBtn" class="px-3.5 py-1.5 rounded-lg bg-[#8C735B] text-white font-bold">確認建立 (3堂)</button>
+          </div>
+        </div>
+
         <div id="cdPackageList" class="space-y-1.5 text-xs"></div>
       </div>
 
@@ -656,11 +692,14 @@
     bookings: [],
     transactions: [],
     expenses: [],
-    packages: []
+    packages: [],
+    deletedPackageSourceIds: []
   };
   let portalCatalog = [];
   let adminCart = [];
   let portalCart = [];
+  let selectedPkgCatalogIds = new Set();
+  let currentDetailCustomerId = "";
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth();
   let financeYear = new Date().getFullYear();
@@ -677,6 +716,7 @@
 
   window.onload = function() {
     initTimeSelects();
+    initFinanceYearMonthSelects();
 
     if (PORTAL_CID && PORTAL_CID.trim() !== "") {
       document.getElementById("customerPortalView").classList.remove("hidden");
@@ -687,6 +727,40 @@
       document.getElementById("expDate").value = selectedDateStr;
     }
   };
+
+  function initFinanceYearMonthSelects() {
+    const ySel = document.getElementById("financeYearSelect");
+    const mSel = document.getElementById("financeMonthSelect");
+    if (!ySel || !mSel) return;
+
+    const nowY = new Date().getFullYear();
+    const years = [];
+    for (let y = nowY - 3; y <= nowY + 1; y++) years.push(y);
+    ySel.innerHTML = years.map(y => `<option value="${y}">${y}年</option>`).join("");
+
+    const months = [];
+    for (let m = 0; m < 12; m++) months.push(`<option value="${m}">${m + 1}月</option>`);
+    mSel.innerHTML = months.join("");
+    syncFinanceYearMonthSelects();
+  }
+
+  function syncFinanceYearMonthSelects() {
+    const ySel = document.getElementById("financeYearSelect");
+    const mSel = document.getElementById("financeMonthSelect");
+    if (ySel && [...ySel.options].some(o => Number(o.value) === financeYear)) {
+      ySel.value = String(financeYear);
+    }
+    if (mSel) {
+      mSel.value = String(financeMonth);
+    }
+  }
+
+  function onFinanceYearMonthDropdownChange() {
+    const ySel = document.getElementById("financeYearSelect");
+    const mSel = document.getElementById("financeMonthSelect");
+    if (!ySel || !mSel) return;
+    jumpToSpecificFinanceMonth(Number(ySel.value), Number(mSel.value));
+  }
 
   function getBookingTypeInfo(booking) {
     const text = `${booking.category || ""} ${booking.service || ""}`;
@@ -706,14 +780,15 @@
   }
 
   // =========================================================
-  // 三堂套票計算與防重複輔助邏輯
+  // 三堂套票計算、多品項建立、刪除與試算表同步
   // =========================================================
   function isThreeSessionServiceText(text) {
-    return /三堂/.test(String(text || ""));
+    return /三堂|三回|套票/.test(String(text || ""));
   }
 
   function buildDerivedPackagesFromBookings() {
     const existing = Array.isArray(appData.packages) ? [...appData.packages] : [];
+    const deletedSourceIds = new Set(Array.isArray(appData.deletedPackageSourceIds) ? appData.deletedPackageSourceIds.map(String) : []);
     const bySourceBooking = new Map();
     existing.forEach(p => {
       if (p.sourceBookingId) bySourceBooking.set(String(p.sourceBookingId), p);
@@ -723,11 +798,11 @@
       `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`)
     );
 
-    // 1. 針對含「三堂」字樣的預約建立 3 堂套票（同 sourceBookingId 不重複建立）
     sortedBks.forEach(b => {
       if (!b || b.status === "取消") return;
+      if (deletedSourceIds.has(String(b.id))) return;
       if (isThreeSessionServiceText(b.service) && !bySourceBooking.has(String(b.id))) {
-        const cleanTitle = String(b.service).replace(/\s*\+?.*$/, "").trim() || "三堂優惠套票";
+        const cleanTitle = String(b.service).trim() || "三堂優惠套票";
         const pkg = {
           id: `pkg_bk_${b.id}`,
           customerId: b.customerId,
@@ -742,7 +817,6 @@
       }
     });
 
-    // 重置 derived usedSessions 再依已報到預約計算（避免重複扣堂）
     const usedCountByPkg = new Map();
     const countedBookingIds = new Set();
 
@@ -751,7 +825,7 @@
       const isSettled = (b.status === "已報到" || b.status === "已完成");
       if (!isSettled) return;
 
-      const custPkgs = existing.filter(p => p.customerId === b.customerId);
+      const custPkgs = existing.filter(p => String(p.customerId) === String(b.customerId));
       let matchedPkg = null;
 
       if (b.usedPackageId) {
@@ -791,13 +865,87 @@
   function getCustomerRemainingSessionsText(custId) {
     const pkgs = getCustomerPackages(custId).filter(p => p.remainingSessions > 0);
     if (pkgs.length === 0) return "";
-    return pkgs.map(p => `${p.title} 剩 ${p.remainingSessions}/${p.totalSessions} 堂`).join("、");
+    return pkgs.map(p => `${p.title}（剩 ${p.remainingSessions}/${p.totalSessions} 堂）`).join("、");
   }
 
-  async function createManualThreeSessionPackage(custId, customTitle = "") {
+  function toggleCustomerPackageBuilder(forceState = null) {
+    const box = document.getElementById("cdPkgBuilderBox");
+    const shouldShow = forceState !== null ? forceState : box.classList.contains("hidden");
+    box.classList.toggle("hidden", !shouldShow);
+    if (shouldShow) {
+      selectedPkgCatalogIds.clear();
+      document.getElementById("cdPkgCatalogSearch").value = "";
+      document.getElementById("cdPkgCustomTitle").value = "";
+      renderPackageCatalogCheckboxes();
+    }
+  }
+
+  function renderPackageCatalogCheckboxes() {
+    const listEl = document.getElementById("cdPkgCatalogChecklist");
+    const showAll = document.getElementById("cdPkgShowAllCatalog").checked;
+    const kw = (document.getElementById("cdPkgCatalogSearch").value || "").trim().toLowerCase();
+
+    const activeCatalog = (appData.catalog || []).filter(item => item.active !== false);
+    const threeItems = activeCatalog.filter(item =>
+      isThreeSessionServiceText(item.category) || isThreeSessionServiceText(item.name)
+    );
+
+    let baseList = (showAll || threeItems.length === 0) ? activeCatalog : threeItems;
+    if (kw) {
+      baseList = activeCatalog.filter(item =>
+        String(item.name || "").toLowerCase().includes(kw) ||
+        String(item.category || "").toLowerCase().includes(kw)
+      );
+    }
+
+    if (baseList.length === 0) {
+      listEl.innerHTML = `<p class="text-[#8C735B] py-2 text-center">找不到符合的價目項目，可直接在下方輸入套票名稱</p>`;
+      return;
+    }
+
+    listEl.innerHTML = baseList.map(item => {
+      const itemKey = String(item.id || `${item.category}_${item.name}`);
+      const checked = selectedPkgCatalogIds.has(itemKey) ? "checked" : "";
+      return `
+        <label class="flex items-center justify-between gap-2 bg-white px-2.5 py-1.5 rounded-lg border border-[#EAE2D6] cursor-pointer hover:bg-[#FDFBF7]">
+          <div class="flex items-center gap-2 min-w-0">
+            <input type="checkbox" ${checked} onchange="togglePkgCatalogItem('${itemKey.replace(/'/g, "\\'")}')" class="rounded text-[#8C735B]">
+            <span class="truncate font-medium text-[#3D352E]">${item.name}</span>
+          </div>
+          <span class="text-[11px] text-[#8C735B] shrink-0">${item.category}｜$${Number(item.price || 0).toLocaleString()}</span>
+        </label>
+      `;
+    }).join("");
+  }
+
+  function togglePkgCatalogItem(itemKey) {
+    if (selectedPkgCatalogIds.has(itemKey)) {
+      selectedPkgCatalogIds.delete(itemKey);
+    } else {
+      selectedPkgCatalogIds.add(itemKey);
+    }
+    const activeCatalog = (appData.catalog || []).filter(item => item.active !== false);
+    const chosenNames = activeCatalog
+      .filter(item => selectedPkgCatalogIds.has(String(item.id || `${item.category}_${item.name}`)))
+      .map(item => item.name);
+
+    const titleInput = document.getElementById("cdPkgCustomTitle");
+    if (chosenNames.length > 0) {
+      const joined = chosenNames.join(" + ");
+      titleInput.value = isThreeSessionServiceText(joined) ? joined : `${joined}（三堂套票）`;
+    } else {
+      titleInput.value = "";
+    }
+  }
+
+  async function createMultiItemThreeSessionPackage(custId) {
     const cust = (appData.customers || []).find(c => c.id === custId);
     if (!cust) return;
-    const title = (customTitle || "").trim() || `${cust.name} 三堂優惠套票`;
+    const title = (document.getElementById("cdPkgCustomTitle").value || "").trim();
+    if (!title) {
+      return showToast("請至少勾選一項服務，或輸入套票組合名稱");
+    }
+
     const newPkg = {
       id: `pkg_${Date.now()}`,
       customerId: custId,
@@ -808,21 +956,64 @@
       createdAt: formatDateLocal(new Date())
     };
 
-    if (!Array.isArray(appData.packages)) appData.packages = [];
-    appData.packages.push(newPkg);
-
+    toggleCustomerPackageBuilder(false);
+    showLoading("寫入試算表中...");
     try {
-      await callGasApi({
+      const res = await callGasApi({
         action: "savePackageAdmin",
         password: adminPassword,
         payload: newPkg
       });
-    } catch (_) {
-      // 若後端尚未建立 savePackageAdmin，先以本機狀態運作不中斷操作
+      appData = res;
+      hideLoading();
+      renderAllAdminViews();
+      openCustomerDetailModal(custId);
+      showToast(`已建立並存入試算表：「${title}」（共 3 堂）`);
+    } catch (err) {
+      hideLoading();
+      if (!Array.isArray(appData.packages)) appData.packages = [];
+      appData.packages.push(newPkg);
+      renderCustomersList();
+      openCustomerDetailModal(custId);
+      showToast("已暫存本機（請確認 Code.gs 已部署最新版本）：" + err.message);
     }
-    renderCustomersList();
-    openCustomerDetailModal(custId);
-    showToast("已新增 3 堂套票額度（防重複機制已啟用）");
+  }
+
+  async function deleteCustomerPackage(custId, pkgId) {
+    const allPkgs = getCustomerPackages(custId);
+    const target = allPkgs.find(p => String(p.id) === String(pkgId));
+    if (!target) return;
+
+    const ok = window.confirm(`確定要刪除「${target.title}」（剩餘 ${target.remainingSessions}/${target.totalSessions} 堂）嗎？`);
+    if (!ok) return;
+
+    showLoading("從試算表刪除套票中...");
+    try {
+      const res = await callGasApi({
+        action: "deletePackageAdmin",
+        password: adminPassword,
+        packageId: pkgId
+      });
+      appData = res;
+      hideLoading();
+      renderAllAdminViews();
+      openCustomerDetailModal(custId);
+      showToast("已從試算表刪除該筆三堂套票");
+    } catch (err) {
+      hideLoading();
+      if (Array.isArray(appData.packages)) {
+        appData.packages = appData.packages.filter(p => String(p.id) !== String(pkgId));
+      }
+      if (target.sourceBookingId) {
+        if (!Array.isArray(appData.deletedPackageSourceIds)) appData.deletedPackageSourceIds = [];
+        if (!appData.deletedPackageSourceIds.includes(String(target.sourceBookingId))) {
+          appData.deletedPackageSourceIds.push(String(target.sourceBookingId));
+        }
+      }
+      renderCustomersList();
+      openCustomerDetailModal(custId);
+      showToast("已移除（請確認 Code.gs 已部署最新版本）：" + err.message);
+    }
   }
 
   // =========================================================
@@ -971,10 +1162,7 @@
     try {
       const res = await callGasApi({ action: "verifyAdminAndLoadAll", password: adminPassword });
       hideLoading();
-      appData = {
-        ...res,
-        packages: Array.isArray(res.packages) ? res.packages : []
-      };
+      appData = res;
       initCategorySelectsFromCatalog("bkCategory", "bkService", (appData.catalog || []).filter(c => c.active));
       if (isLogin) {
         document.getElementById("adminLoginView").classList.add("hidden");
@@ -988,6 +1176,7 @@
   }
 
   function renderAllAdminViews() {
+    syncFinanceYearMonthSelects();
     renderFinanceStats();
     renderFinanceTrendComparison();
     renderExpenseMonthlyPieChart();
@@ -1001,7 +1190,7 @@
   }
 
   // =========================================================
-  // 收支帳本 + 近 6 個月實收 vs 支出對照
+  // 收支帳本 + 優化版近 6 個月實收 vs 支出橫向對照
   // =========================================================
   function getFinanceYmPrefix() {
     return `${financeYear}-${String(financeMonth + 1).padStart(2, '0')}`;
@@ -1047,10 +1236,11 @@
       months.push({
         y,
         m,
-        label: `${m + 1}月`,
+        ymLabel: `${y}/${String(m + 1).padStart(2, '0')}`,
         isCurrent: (y === financeYear && m === financeMonth),
         income,
-        expense
+        expense,
+        net: income - expense
       });
     }
 
@@ -1062,29 +1252,35 @@
     box.innerHTML = months.map(item => {
       const incPct = Math.round((item.income / maxVal) * 100);
       const expPct = Math.round((item.expense / maxVal) * 100);
+      const netText = `${item.net >= 0 ? '+' : '-'}$${Math.abs(item.net).toLocaleString()}`;
       return `
-        <div onclick="jumpToSpecificFinanceMonth(${item.y}, ${item.m})" class="cursor-pointer p-3 rounded-xl border transition ${item.isCurrent ? 'bg-[#FDFBF7] border-[#8C735B] ring-1 ring-[#8C735B]/40' : 'bg-[#FAF7F2] border-[#EAE2D6] hover:bg-[#F5EFE6]'}">
-          <div class="flex justify-between items-center mb-2">
-            <span class="text-xs font-bold text-[#3D352E]">${item.label}</span>
-            ${item.isCurrent ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-[#8C735B] text-white">檢視中</span>' : ''}
+        <div onclick="jumpToSpecificFinanceMonth(${item.y}, ${item.m})" class="cursor-pointer rounded-xl border p-3 transition ${item.isCurrent ? 'bg-[#FDFBF7] border-[#8C735B] ring-1 ring-[#8C735B]/40' : 'bg-[#FAF7F2] border-[#EAE2D6] hover:bg-[#F5EFE6]'}">
+          <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs sm:text-sm font-bold text-[#3D352E]">${item.ymLabel}</span>
+              ${item.isCurrent ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-[#8C735B] text-white font-medium">目前檢視</span>' : ''}
+            </div>
+            <span class="text-xs font-bold ${item.net >= 0 ? 'income-red' : 'expense-green'}">淨流 ${netText}</span>
           </div>
-          <div class="space-y-1.5 text-[11px]">
-            <div>
-              <div class="flex justify-between income-red font-bold">
-                <span>收</span>
-                <span>$${item.income.toLocaleString()}</span>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+            <div class="bg-white/90 rounded-lg px-2.5 py-1.5 border border-[#EAE2D6]/80">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[#735D48] font-medium">現金實收</span>
+                <span class="font-bold income-red">$${item.income.toLocaleString()}</span>
               </div>
-              <div class="h-1.5 bg-red-100 rounded-full overflow-hidden mt-0.5">
-                <div class="h-full bg-[#DC2626] rounded-full" style="width:${incPct}%"></div>
+              <div class="h-2 bg-red-100 rounded-full overflow-hidden">
+                <div class="h-full bg-[#DC2626] rounded-full transition-all" style="width:${incPct}%"></div>
               </div>
             </div>
-            <div>
-              <div class="flex justify-between expense-green font-bold">
-                <span>支</span>
-                <span>$${item.expense.toLocaleString()}</span>
+
+            <div class="bg-white/90 rounded-lg px-2.5 py-1.5 border border-[#EAE2D6]/80">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-[#735D48] font-medium">營運支出</span>
+                <span class="font-bold expense-green">$${item.expense.toLocaleString()}</span>
               </div>
-              <div class="h-1.5 bg-emerald-100 rounded-full overflow-hidden mt-0.5">
-                <div class="h-full bg-[#16A34A] rounded-full" style="width:${expPct}%"></div>
+              <div class="h-2 bg-emerald-100 rounded-full overflow-hidden">
+                <div class="h-full bg-[#16A34A] rounded-full transition-all" style="width:${expPct}%"></div>
               </div>
             </div>
           </div>
@@ -1096,6 +1292,7 @@
   function jumpToSpecificFinanceMonth(y, m) {
     financeYear = y;
     financeMonth = m;
+    syncFinanceYearMonthSelects();
     renderFinanceStats();
     renderFinanceTrendComparison();
     renderExpenseMonthlyPieChart();
@@ -1107,11 +1304,7 @@
     financeMonth += delta;
     if (financeMonth < 0) { financeMonth = 11; financeYear--; }
     if (financeMonth > 11) { financeMonth = 0; financeYear++; }
-    renderFinanceStats();
-    renderFinanceTrendComparison();
-    renderExpenseMonthlyPieChart();
-    renderExpenseMonthlyDetails();
-    renderFinanceHistory();
+    jumpToSpecificFinanceMonth(financeYear, financeMonth);
   }
 
   function jumpFinanceToCurrentMonth() {
@@ -1133,8 +1326,6 @@
   }
 
   function renderFinanceStats() {
-    const mLabel = `${financeYear}年 ${financeMonth + 1}月`;
-    document.getElementById("financeMonthLabel").textContent = mLabel;
     document.getElementById("statIncomeLabel").textContent = `${financeMonth + 1}月現金實收`;
     document.getElementById("statExpenseLabel").textContent = `${financeMonth + 1}月營運支出`;
     document.getElementById("statNetLabel").textContent = `${financeMonth + 1}月淨現金流`;
@@ -1228,12 +1419,14 @@
   function renderExpenseMonthlyDetails() {
     const ymPrefix = getFinanceYmPrefix();
     const monthExps = (appData.expenses || []).filter(e => e.date.startsWith(ymPrefix));
-    document.getElementById("expenseDetailsTitle").textContent = `${financeYear}年 ${financeMonth + 1}月 支出細項`;
-    document.getElementById("expenseDetailsCount").textContent = `${monthExps.length} 筆`;
+    const totalExp = monthExps.reduce((s, e) => s + Number(e.amount || 0), 0);
+
+    document.getElementById("expenseDetailsTitle").textContent = `${financeYear}年 ${financeMonth + 1}月 支出明細`;
+    document.getElementById("expenseDetailsCount").textContent = `${monthExps.length} 筆｜合計 $${totalExp.toLocaleString()}`;
 
     const list = document.getElementById("expenseDetailsList");
     if (monthExps.length === 0) {
-      list.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-6">本月尚無支出細項</p>`;
+      list.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-6">本月尚無支出明細</p>`;
       return;
     }
 
@@ -1260,7 +1453,8 @@
   async function deleteExpense(expenseId) {
     showLoading("刪除支出紀錄中...");
     try {
-      appData = await callGasApi({ action: "deleteExpenseAdmin", password: adminPassword, expenseId });
+      const res = await callGasApi({ action: "deleteExpenseAdmin", password: adminPassword, expenseId });
+      appData = res;
       hideLoading();
       renderAllAdminViews();
       showToast("已刪除支出紀錄");
@@ -1415,7 +1609,8 @@
   async function quickStatus(bookingId, newStatus) {
     showLoading(`更新狀態為「${newStatus}」...`);
     try {
-      appData = await callGasApi({ action: "quickUpdateBookingStatus", password: adminPassword, bookingId, newStatus });
+      const res = await callGasApi({ action: "quickUpdateBookingStatus", password: adminPassword, bookingId, newStatus });
+      appData = res;
       hideLoading();
       renderAllAdminViews();
       showToast(newStatus === "已報到" ? "已報到並完成結帳！" : `狀態已更新為「${newStatus}」，若已結帳已自動退回`);
@@ -1434,7 +1629,7 @@
   }
 
   // =========================================================
-  // 客戶資料分頁：儲值金上移＋新增預約按鈕＋低餘額與三堂套票顯示
+  // 客戶資料分頁
   // =========================================================
   function renderCustomersList() {
     const kw = (document.getElementById("custSearchInput").value || "").trim().toLowerCase();
@@ -1494,6 +1689,7 @@
   function openCustomerDetailModal(custId) {
     const c = appData.customers.find(x => x.id === custId);
     if (!c) return;
+    currentDetailCustomerId = c.id;
 
     const custBookings = (appData.bookings || [])
       .filter(b => b.customerId === c.id)
@@ -1517,25 +1713,29 @@
     document.getElementById("cdVisits").textContent = `${c.visitCount || 0} 次`;
     document.getElementById("cdTotalSpent").textContent = `$${totalSpent.toLocaleString()}`;
 
-    // 三堂套票清單
+    toggleCustomerPackageBuilder(false);
+    document.getElementById("cdConfirmAddPkgBtn").onclick = () => createMultiItemThreeSessionPackage(c.id);
+
     const pkgs = getCustomerPackages(c.id);
     const pkgListEl = document.getElementById("cdPackageList");
     if (pkgs.length === 0) {
-      pkgListEl.innerHTML = `<p class="text-[#8C735B]">尚無三堂套票紀錄（預約含「三堂」項目或點右上角可建立）</p>`;
+      pkgListEl.innerHTML = `<p class="text-[#8C735B]">尚無三堂套票紀錄（點右上角「+ 新增三堂套票」可多選價目項目建立）</p>`;
     } else {
       pkgListEl.innerHTML = pkgs.map(p => `
-        <div class="flex justify-between items-center bg-white px-2.5 py-1.5 rounded-lg border border-[#EAE2D6]">
-          <div>
-            <span class="font-bold text-[#3D352E]">${p.title}</span>
-            <span class="text-[#8C735B] ml-1.5">(${p.createdAt || ''})</span>
+        <div class="flex justify-between items-center gap-2 bg-white px-2.5 py-2 rounded-lg border border-[#EAE2D6]">
+          <div class="min-w-0">
+            <p class="font-bold text-[#3D352E] truncate">${p.title}</p>
+            <p class="text-[11px] text-[#8C735B]">建立日：${p.createdAt || '紀錄同步'}｜已用 ${p.usedSessions} 堂</p>
           </div>
-          <span class="font-bold ${p.remainingSessions > 0 ? 'text-emerald-700' : 'text-[#8C735B]'}">
-            剩餘 ${p.remainingSessions} / ${p.totalSessions} 堂
-          </span>
+          <div class="flex items-center gap-2 shrink-0">
+            <span class="font-bold ${p.remainingSessions > 0 ? 'text-emerald-700' : 'text-[#8C735B]'}">
+              剩餘 ${p.remainingSessions}/${p.totalSessions} 堂
+            </span>
+            <button type="button" onclick="deleteCustomerPackage('${c.id}', '${String(p.id).replace(/'/g, "\\'")}')" class="px-2 py-1 rounded bg-red-50 text-red-600 border border-red-200 text-[11px] font-bold hover:bg-red-100">刪除</button>
+          </div>
         </div>
       `).join("");
     }
-    document.getElementById("cdAddPackageBtn").onclick = () => createManualThreeSessionPackage(c.id);
 
     const noteBox = document.getElementById("cdPrivateNoteBox");
     if (c.privateNote) {
@@ -1610,34 +1810,50 @@
   function renderFinanceHistory() {
     const ymPrefix = getFinanceYmPrefix();
     const list = document.getElementById("financeHistoryList");
+    const titleEl = document.getElementById("incomeDetailsTitle");
+    const sumEl = document.getElementById("incomeDetailsSummary");
     const items = [];
+    let totalInc = 0;
+
+    if (titleEl) {
+      titleEl.textContent = `${financeYear}年 ${financeMonth + 1}月 收入明細（現金／轉帳／儲值實收）`;
+    }
 
     appData.transactions.forEach(t => {
       if (!t.time.startsWith(ymPrefix)) return;
-      items.push({
-        time: t.time,
-        title: `${t.type} - ${t.customerName}`,
-        note: t.note,
-        tag: t.type === "儲值入帳" ? `實收現金 +$${t.cashReceived}` : `${t.pointsChange >= 0 ? '+' : ''}${t.pointsChange} 點`
-      });
+      if (t.type === "儲值入帳" && Number(t.cashReceived || 0) > 0) {
+        const amt = Number(t.cashReceived || 0);
+        totalInc += amt;
+        items.push({
+          time: t.time,
+          title: `${t.type} - ${t.customerName}`,
+          note: t.note,
+          tag: `+$${amt.toLocaleString()}`
+        });
+      }
     });
 
     appData.bookings.forEach(b => {
       const isSettledVisit = (b.status === "已報到" || b.status === "已完成");
       if (b.date.startsWith(ymPrefix) && isSettledVisit && (b.payMethod === "現金" || b.payMethod === "轉帳")) {
+        const amt = Number(b.finalPrice || 0);
+        totalInc += amt;
         items.push({
           time: `${b.date} ${b.startTime}`,
           title: `現場結帳 - ${b.customerName} (${b.service})`,
           note: b.payMethod,
-          tag: `+ $${b.finalPrice.toLocaleString()}`
+          tag: `+$${amt.toLocaleString()}`
         });
       }
     });
 
     items.sort((a, b) => b.time.localeCompare(a.time));
+    if (sumEl) {
+      sumEl.textContent = `${items.length} 筆｜合計 $${totalInc.toLocaleString()}`;
+    }
 
     if (items.length === 0) {
-      list.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-6">本月尚無收現或儲值異動</p>`;
+      list.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-6">本月尚無現金或轉帳收入紀錄</p>`;
       return;
     }
 
@@ -1741,20 +1957,26 @@
       document.getElementById("bkNote").value = existingBk.note;
       document.getElementById("bkUsedPackageId").value = existingBk.usedPackageId || "";
 
-      const parts = String(existingBk.service || "").split(" + ").filter(Boolean);
-      adminCart = parts.map((name, idx) => {
-        const found = (appData.catalog || []).find(c => c.name === name);
+      const rawService = String(existingBk.service || "");
+      const parts = rawService.split(" + ").filter(Boolean);
+      adminCart = parts.map((rawPart, idx) => {
+        const isGift = /\[\s*贈送(?:\s*\$0)?\s*\]/.test(rawPart);
+        const cleanName = rawPart.replace(/\s*\[\s*贈送(?:\s*\$0)?\s*\]\s*/g, "").trim();
+        const found = (appData.catalog || []).find(c => c.name === cleanName);
+        const basePrice = found ? Number(found.price || 0) : (idx === 0 ? Number(existingBk.originalPrice || 0) : 0);
         return {
-          name,
-          price: idx === 0 ? Number(existingBk.originalPrice || (found ? found.price : 0)) : (found ? found.price : 0),
-          duration: found ? found.duration : Math.round((Number(existingBk.duration || 60)) / parts.length)
+          name: cleanName,
+          price: basePrice,
+          isGift,
+          duration: found ? Number(found.duration || 30) : Math.round((Number(existingBk.duration || 60)) / parts.length)
         };
       });
       renderAdminCart();
       document.getElementById("bkOriginalPrice").value = existingBk.originalPrice;
       document.getElementById("bkFinalPrice").value = existingBk.finalPrice;
       document.getElementById("bkTotalDuration").textContent = existingBk.duration || 60;
-      document.getElementById("bkSubtotalText").textContent = `小計 $${Number(existingBk.originalPrice || 0).toLocaleString()}`;
+      const calcSub = adminCart.reduce((s, x) => s + (x.isGift ? 0 : x.price), 0);
+      document.getElementById("bkSubtotalText").textContent = `小計 $${calcSub.toLocaleString()}`;
       updateCustomerCardPreview(existingBk.customerId);
     } else {
       document.getElementById("bkModalTitle").textContent = "新增預約";
@@ -1789,11 +2011,19 @@
     adminCart.push({
       name: srvSel.value,
       price: Number(opt.dataset.price || 0),
+      isGift: false,
       duration: Number(opt.dataset.duration || 30)
     });
     renderAdminCart();
     recalculateBookingTotal();
     syncEndTimeByDuration();
+  }
+
+  function toggleAdminCartItemGift(idx) {
+    if (!adminCart[idx]) return;
+    adminCart[idx].isGift = !adminCart[idx].isGift;
+    renderAdminCart();
+    recalculateBookingTotal();
   }
 
   function removeAdminCartItem(idx) {
@@ -1803,10 +2033,14 @@
     syncEndTimeByDuration();
   }
 
+  function formatAdminCartItemLabel(item) {
+    return item.isGift ? `${item.name} [贈送 $0]` : item.name;
+  }
+
   function renderAdminCart() {
     const list = document.getElementById("bkCartList");
     const totalDur = adminCart.reduce((s, x) => s + x.duration, 0);
-    const totalOrig = adminCart.reduce((s, x) => s + x.price, 0);
+    const totalOrig = adminCart.reduce((s, x) => s + (x.isGift ? 0 : x.price), 0);
     document.getElementById("bkTotalDuration").textContent = totalDur;
     document.getElementById("bkSubtotalText").textContent = `小計 $${totalOrig.toLocaleString()}`;
 
@@ -1815,9 +2049,20 @@
       return;
     }
     list.innerHTML = adminCart.map((item, i) => `
-      <div class="flex justify-between items-center bg-white px-2.5 py-1.5 rounded-lg border border-[#EAE2D6]">
-        <span>${item.name} <span class="text-[#8C735B]">(${item.duration}分 / $${item.price.toLocaleString()})</span></span>
-        <button type="button" onclick="removeAdminCartItem(${i})" class="text-red-500 font-bold px-1.5">✕</button>
+      <div class="flex justify-between items-center gap-2 bg-white px-2.5 py-1.5 rounded-lg border ${item.isGift ? 'border-amber-300 bg-amber-50/40' : 'border-[#EAE2D6]'}">
+        <div class="min-w-0">
+          <span class="font-medium text-[#3D352E]">${item.name}</span>
+          ${item.isGift
+            ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 font-bold text-[10px]">贈送 $0</span>`
+            : `<span class="text-[#8C735B]">(${item.duration}分 / $${item.price.toLocaleString()})</span>`
+          }
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button type="button" onclick="toggleAdminCartItemGift(${i})" class="px-2 py-0.5 rounded text-[11px] font-bold border ${item.isGift ? 'bg-amber-600 text-white border-amber-600' : 'bg-[#FAF7F2] text-[#735D48] border-[#EAE2D6] hover:bg-[#EFE9DF]'}">
+            ${item.isGift ? '取消贈送' : '贈送($0)'}
+          </button>
+          <button type="button" onclick="removeAdminCartItem(${i})" class="text-red-500 font-bold px-1.5">✕</button>
+        </div>
       </div>
     `).join("");
   }
@@ -1839,12 +2084,13 @@
     const cust = appData.customers.find(c => c.id === custId);
     const card = document.getElementById("bkCustomerCard");
     const pkgBanner = document.getElementById("bkPackageBanner");
-    const usePkgBtn = document.getElementById("bkUsePackageBtn");
+    const pkgItemsList = document.getElementById("bkPackageItemsList");
+    const pkgSelect = document.getElementById("bkPackageSelect");
+    const pkgTotalTag = document.getElementById("bkPackageTotalRemTag");
 
     if (!cust) {
       card.textContent = "";
       pkgBanner.classList.add("hidden");
-      usePkgBtn.classList.add("hidden");
       return;
     }
 
@@ -1858,15 +2104,34 @@
       </div>
     `;
 
-    const activePkgs = getCustomerPackages(cust.id).filter(p => p.remainingSessions > 0);
-    if (activePkgs.length > 0) {
-      const summary = activePkgs.map(p => `${p.title}（剩 ${p.remainingSessions}/${p.totalSessions} 堂）`).join("、");
-      pkgBanner.innerHTML = `🎟️ <strong>可用三堂套票：</strong>${summary}`;
+    const allCustPkgs = getCustomerPackages(cust.id);
+    const activePkgs = allCustPkgs.filter(p => p.remainingSessions > 0);
+    if (allCustPkgs.length > 0) {
+      const totalRem = activePkgs.reduce((sum, p) => sum + p.remainingSessions, 0);
+      pkgTotalTag.textContent = `合計剩餘 ${totalRem} 堂`;
+
+      pkgItemsList.innerHTML = allCustPkgs.map(p => `
+        <div class="flex justify-between items-center bg-white/90 px-2.5 py-1 rounded border border-amber-200">
+          <span class="font-medium text-[#3D352E] truncate">${p.title}</span>
+          <span class="font-bold shrink-0 ml-2 ${p.remainingSessions > 0 ? 'text-emerald-700' : 'text-stone-400'}">
+            剩餘 ${p.remainingSessions} 堂（共 ${p.totalSessions} 堂）
+          </span>
+        </div>
+      `).join("");
+
+      if (activePkgs.length > 0) {
+        pkgSelect.innerHTML = activePkgs.map(p =>
+          `<option value="${p.id}">${p.title}（剩 ${p.remainingSessions}/${p.totalSessions} 堂）</option>`
+        ).join("");
+        pkgSelect.classList.remove("hidden");
+        document.getElementById("bkUsePackageBtn").classList.remove("hidden");
+      } else {
+        pkgSelect.classList.add("hidden");
+        document.getElementById("bkUsePackageBtn").classList.add("hidden");
+      }
       pkgBanner.classList.remove("hidden");
-      usePkgBtn.classList.remove("hidden");
     } else {
       pkgBanner.classList.add("hidden");
-      usePkgBtn.classList.add("hidden");
     }
   }
 
@@ -1875,12 +2140,14 @@
     const activePkgs = getCustomerPackages(custId).filter(p => p.remainingSessions > 0);
     if (activePkgs.length === 0) return showToast("這位客戶目前沒有剩餘的三堂套票堂數");
 
-    const pkg = activePkgs[0];
+    const selectedPkgId = document.getElementById("bkPackageSelect").value;
+    const pkg = activePkgs.find(p => String(p.id) === String(selectedPkgId)) || activePkgs[0];
+
     document.getElementById("bkUsedPackageId").value = pkg.id;
     document.getElementById("bkPayMethod").value = "三堂套票";
     document.getElementById("bkFinalPrice").value = 0;
     checkBookingBalanceWarning();
-    showToast(`已套用「${pkg.title}」（本次扣 1 堂，剩餘 ${pkg.remainingSessions - 1} 堂）`);
+    showToast(`已套用「${pkg.title}」（本次扣 1 堂，扣完剩 ${pkg.remainingSessions - 1} 堂）`);
   }
 
   function recalculateBookingTotal() {
@@ -1888,7 +2155,7 @@
     const cust = appData.customers.find(c => c.id === custId);
     updateCustomerCardPreview(custId);
 
-    const orig = adminCart.reduce((s, x) => s + x.price, 0);
+    const orig = adminCart.reduce((s, x) => s + (x.isGift ? 0 : x.price), 0);
     document.getElementById("bkOriginalPrice").value = orig;
     document.getElementById("bkSubtotalText").textContent = `小計 $${orig.toLocaleString()}`;
 
@@ -1979,7 +2246,7 @@
     const custId = document.getElementById("bkCustomer").value;
     if (!custId) return showToast("請先選擇客戶");
     const cust = appData.customers.find(c => c.id === custId);
-    const servicesText = adminCart.length > 0 ? adminCart.map(x => x.name).join(" + ") : "自訂服務";
+    const servicesText = adminCart.length > 0 ? adminCart.map(formatAdminCartItemLabel).join(" + ") : "自訂服務";
     const totalDuration = adminCart.reduce((s, x) => s + x.duration, 0) || 60;
     const origPrice = Number(document.getElementById("bkOriginalPrice").value || 0);
     const finalPrice = Number(document.getElementById("bkFinalPrice").value || 0);
@@ -1998,8 +2265,10 @@
 
     let usedPackageId = document.getElementById("bkUsedPackageId").value;
     if (payMethodVal === "三堂套票" && !usedPackageId) {
+      const selectedPkgId = document.getElementById("bkPackageSelect").value;
       const activePkgs = getCustomerPackages(custId).filter(p => p.remainingSessions > 0);
-      if (activePkgs.length > 0) usedPackageId = activePkgs[0].id;
+      const chosen = activePkgs.find(p => String(p.id) === String(selectedPkgId)) || activePkgs[0];
+      if (chosen) usedPackageId = chosen.id;
     }
 
     const payload = {
@@ -2013,7 +2282,7 @@
       duration: totalDuration,
       category: adminCart.length > 1 ? "多項服務" : (document.getElementById("bkCategory").value || "除毛服務"),
       service: servicesText,
-      originalPrice: origPrice > 0 ? origPrice : finalPrice,
+      originalPrice: origPrice,
       finalPrice: finalPrice,
       payMethod: payMethodVal,
       usedPackageId,
@@ -2025,10 +2294,7 @@
     showLoading("儲存預約中...");
     try {
       const res = await callGasApi({ action: "saveBookingAdmin", password: adminPassword, payload });
-      appData = {
-        ...res,
-        packages: Array.isArray(res.packages) ? res.packages : (appData.packages || [])
-      };
+      appData = res;
       hideLoading();
       renderAllAdminViews();
       showToast("預約已儲存！");
@@ -2045,10 +2311,7 @@
     showLoading("刪除預約中...");
     try {
       const res = await callGasApi({ action: "deleteBookingAdmin", password: adminPassword, bookingId: id });
-      appData = {
-        ...res,
-        packages: Array.isArray(res.packages) ? res.packages : (appData.packages || [])
-      };
+      appData = res;
       hideLoading();
       renderAllAdminViews();
       showToast("預約已刪除");
@@ -2098,10 +2361,7 @@
     showLoading("儲存客戶資料...");
     try {
       const res = await callGasApi({ action: "saveCustomerAdmin", password: adminPassword, data });
-      appData = {
-        ...res,
-        packages: Array.isArray(res.packages) ? res.packages : (appData.packages || [])
-      };
+      appData = res;
       hideLoading();
       renderAllAdminViews();
       showToast("客戶資料已更新！");
@@ -2136,10 +2396,7 @@
         password: adminPassword,
         payload: { customerId, cashPaid, bonusPoints, note }
       });
-      appData = {
-        ...res,
-        packages: Array.isArray(res.packages) ? res.packages : (appData.packages || [])
-      };
+      appData = res;
       hideLoading();
       renderAllAdminViews();
       showToast("儲值入帳完成！");
@@ -2169,10 +2426,7 @@
         password: adminPassword,
         payload: { date, category, amount, note }
       });
-      appData = {
-        ...res,
-        packages: Array.isArray(res.packages) ? res.packages : (appData.packages || [])
-      };
+      appData = res;
       hideLoading();
       document.getElementById("expAmount").value = "";
       document.getElementById("expNote").value = "";
@@ -2259,10 +2513,7 @@
     showLoading("更新價目表中...");
     try {
       const res = await callGasApi({ action: "saveCatalogItemAdmin", password: adminPassword, item });
-      appData = {
-        ...res,
-        packages: Array.isArray(res.packages) ? res.packages : (appData.packages || [])
-      };
+      appData = res;
       hideLoading();
       initCategorySelectsFromCatalog("bkCategory", "bkService", (appData.catalog || []).filter(c => c.active));
       renderAllAdminViews();
