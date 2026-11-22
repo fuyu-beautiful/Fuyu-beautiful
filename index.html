@@ -174,8 +174,8 @@
     </div>
   </div>
 
-  <div id="adminDashboardView" class="hidden max-w-6xl mx-auto px-4 pt-5">
-    <header class="flex flex-wrap justify-between items-center gap-3 mb-5 pb-4 border-b border-[#EAE2D6]">
+  <div id="adminDashboardView" class="hidden max-w-6xl mx-auto px-3 sm:px-4 pt-4 sm:pt-5">
+    <header class="flex flex-wrap justify-between items-center gap-3 mb-4 pb-3 border-b border-[#EAE2D6]">
       <div class="flex items-center gap-2.5">
         <span class="brand-serif text-3xl font-bold text-[#8C735B]">Fy</span>
         <div>
@@ -189,7 +189,7 @@
       </div>
     </header>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
       <div class="card-warm rounded-2xl p-4">
         <p class="text-xs text-[#735D48]">本月現金實收 (含儲值現金)</p>
         <p class="text-2xl font-bold income-red mt-1" id="statIncome">$0</p>
@@ -208,7 +208,7 @@
       </div>
     </div>
 
-    <div id="pendingBanner" class="hidden mb-5 bg-amber-50 border border-amber-200 rounded-2xl p-4">
+    <div id="pendingBanner" class="hidden mb-4 bg-amber-50 border border-amber-200 rounded-2xl p-4">
       <div class="flex justify-between items-center mb-2">
         <h3 class="font-bold text-amber-900 text-sm">🔔 客人線上預約申請（待審核）</h3>
         <span class="text-xs text-amber-700" id="pendingCountBadge">0 筆</span>
@@ -216,40 +216,40 @@
       <div id="pendingList" class="space-y-2"></div>
     </div>
 
-    <div class="flex flex-wrap gap-2 mb-5 bg-[#EFE9DF] p-1 rounded-xl w-fit">
-      <button onclick="switchTab('calendar')" id="tabBtn-calendar" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold bg-white text-[#3D352E] shadow-xs">📅 預約月曆</button>
-      <button onclick="switchTab('customers')" id="tabBtn-customers" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-[#735D48]">👩🏻 客戶與儲值金</button>
-      <button onclick="switchTab('finance')" id="tabBtn-finance" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-[#735D48]">💰 收支記帳明細</button>
-      <button onclick="switchTab('catalog')" id="tabBtn-catalog" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-[#735D48]">📋 服務價目表</button>
+    <div class="flex flex-wrap gap-1.5 mb-4 bg-[#EFE9DF] p-1 rounded-xl w-full sm:w-fit">
+      <button onclick="switchTab('calendar')" id="tabBtn-calendar" class="tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-white text-[#3D352E] shadow-xs">📅 預約月曆</button>
+      <button onclick="switchTab('customers')" id="tabBtn-customers" class="tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-[#735D48]">👩🏻 客戶儲值</button>
+      <button onclick="switchTab('finance')" id="tabBtn-finance" class="tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-[#735D48]">💰 收支帳本</button>
+      <button onclick="switchTab('catalog')" id="tabBtn-catalog" class="tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-[#735D48]">📋 服務價目</button>
     </div>
 
-    <!-- 分頁 1：預約月曆（顯示每日合計＋時間與客人標籤） -->
-    <div id="tab-calendar" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      <div class="lg:col-span-7 card-warm rounded-2xl p-4 sm:p-5">
-        <div class="flex justify-between items-center mb-4">
-          <button onclick="changeMonth(-1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF]">◀</button>
-          <h2 class="font-bold text-base" id="calendarMonthLabel">2026年 11月</h2>
-          <button onclick="changeMonth(1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF]">▶</button>
+    <!-- 分頁 1：預約月曆（放大時間可讀性、減少擁擠） -->
+    <div id="tab-calendar" class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+      <div class="xl:col-span-7 card-warm rounded-2xl p-3 sm:p-5">
+        <div class="flex justify-between items-center mb-3">
+          <button onclick="changeMonth(-1)" class="px-3 py-1.5 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">◀</button>
+          <h2 class="font-bold text-base sm:text-lg" id="calendarMonthLabel">2026年 11月</h2>
+          <button onclick="changeMonth(1)" class="px-3 py-1.5 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">▶</button>
         </div>
-        <div class="grid grid-cols-7 text-center text-xs text-[#8C735B] font-medium mb-2">
+        <div class="grid grid-cols-7 text-center text-xs text-[#8C735B] font-bold mb-1.5">
           <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
         </div>
-        <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-1.5"></div>
       </div>
 
-      <div class="lg:col-span-5 card-warm rounded-2xl p-4 sm:p-5">
+      <div class="xl:col-span-5 card-warm rounded-2xl p-4 sm:p-5">
         <div class="flex justify-between items-center mb-4">
           <div>
-            <h3 class="font-bold text-base" id="selectedDateLabel">今日排程</h3>
+            <h3 class="font-bold text-base sm:text-lg" id="selectedDateLabel">今日排程</h3>
             <p class="text-xs text-[#8C735B]">點「已報到」等同結帳扣點／入帳</p>
           </div>
-          <button onclick="openBookingModal()" class="btn-primary text-xs font-bold px-3.5 py-2 rounded-xl">+ 新增預約</button>
+          <button onclick="openBookingModal()" class="btn-primary text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl">+ 新增預約</button>
         </div>
-        <div id="dayBookingsList" class="space-y-3 max-h-[560px] overflow-y-auto pr-1"></div>
+        <div id="dayBookingsList" class="space-y-3 max-h-[600px] overflow-y-auto pr-1"></div>
       </div>
     </div>
 
-    <!-- 分頁 2：客戶管理（含累積來店次數與私密備註） -->
+    <!-- 分頁 2：客戶管理 -->
     <div id="tab-customers" class="hidden space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
         <input type="text" id="custSearchInput" oninput="renderCustomersList()" placeholder="🔍 搜尋客人姓名或電話..." class="border border-[#EAE2D6] rounded-xl px-4 py-2 text-sm bg-white w-full sm:w-72">
@@ -308,7 +308,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 1：新增 / 編輯預約（支援多項服務購物車與三段狀態） -->
+  <!-- 彈窗 1：新增 / 編輯預約 -->
   <div id="bookingModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[92vh] overflow-y-auto">
       <h3 class="font-bold text-lg mb-4" id="bkModalTitle">新增除毛預約</h3>
@@ -343,7 +343,6 @@
           </div>
         </div>
 
-        <!-- 多項服務加入區 -->
         <div class="bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl p-3 space-y-2.5">
           <label class="block text-xs font-bold text-[#8C735B]">新增服務項目（可連續加入多個部位或加購）</label>
           <select id="bkCategory" onchange="updateCatalogDropdown('bkCategory', 'bkService')" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white text-xs"></select>
@@ -484,22 +483,19 @@
     </div>
   </div>
 
-  <!-- 彈窗 4：新增 / 編輯價目表項目 -->
+  <!-- 彈窗 4：新增 / 編輯價目表項目（分類下拉選單 + 自訂新分類） -->
   <div id="catalogModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6">
       <h3 class="font-bold text-lg mb-4" id="catModalTitle">新增服務項目</h3>
       <input type="hidden" id="catItemId">
       <div class="space-y-3 text-sm">
         <div>
-          <label class="block text-xs text-[#735D48] mb-1">分類名稱</label>
-          <input type="text" id="catName" list="catSuggestions" placeholder="例如：加購護理與美肌項目" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
-          <datalist id="catSuggestions">
-            <option value="日式無痛淨毛（單堂）">
-            <option value="日式無痛淨毛（三堂優惠）">
-            <option value="RICA 熱蠟除毛（單項）">
-            <option value="RICA 熱蠟除毛（超值組合）">
-            <option value="加購護理與美肌項目">
-          </datalist>
+          <label class="block text-xs text-[#735D48] mb-1">選擇分類</label>
+          <select id="catSelect" onchange="toggleCustomCategoryInput()" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
+        </div>
+        <div id="catCustomBox" class="hidden">
+          <label class="block text-xs text-[#735D48] mb-1">新分類名稱 *</label>
+          <input type="text" id="catCustomInput" placeholder="請輸入新的分類名稱" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-white">
         </div>
         <div>
           <label class="block text-xs text-[#735D48] mb-1">服務項目名稱 *</label>
@@ -781,7 +777,7 @@
     `).join("");
   }
 
-  // 月曆格子：顯示「合計 X」與當日「時間＋客人名稱」
+  // 預約月曆：加大格子高度與時間字級，優先讓時間清楚可讀
   function renderCalendar() {
     document.getElementById("calendarMonthLabel").textContent = `${currentYear}年 ${currentMonth + 1}月`;
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -798,17 +794,29 @@
         .sort((a, b) => a.startTime.localeCompare(b.startTime));
       const isSelected = dateStr === selectedDateStr;
 
-      const itemsHtml = dayBks.slice(0, 3).map(b => {
+      const visibleBks = dayBks.slice(0, 2);
+      const itemsHtml = visibleBks.map(b => {
         const shortName = String(b.customerName || "").slice(0, 2);
-        return `<div class="truncate text-[10px] leading-tight px-1 py-0.5 rounded bg-[#F5EFE6] text-[#3D352E] w-full text-left">${b.startTime} ${shortName}</div>`;
+        return `
+          <div class="w-full text-left px-1 py-0.5 rounded bg-[#F5EFE6] text-[#3D352E] leading-snug">
+            <div class="text-[11px] sm:text-xs font-bold text-[#634F3C] tracking-tight">${b.startTime}</div>
+            <div class="text-[10px] sm:text-[11px] text-[#735D48] truncate">${shortName}</div>
+          </div>
+        `;
       }).join("");
-      const moreHtml = dayBks.length > 3 ? `<div class="text-[9px] text-[#8C735B]">+${dayBks.length - 3}</div>` : "";
+
+      const extraHtml = dayBks.length > 2
+        ? `<div class="text-[10px] sm:text-xs font-medium text-[#8C735B] mt-0.5">+${dayBks.length - 2} 筆</div>`
+        : "";
 
       grid.innerHTML += `
-        <button onclick="selectDate('${dateStr}')" class="min-h-[76px] rounded-xl border p-1 flex flex-col justify-start items-center transition ${isSelected ? 'border-[#8C735B] bg-[#FDFBF7] ring-1 ring-[#8C735B]' : 'border-[#F3EFEA] bg-white hover:bg-[#FAF7F2]'}">
-          <span class="text-xs font-bold ${isSelected ? 'text-[#8C735B]' : 'text-[#3D352E]'}">${d}</span>
-          <span class="text-[9px] text-[#8C735B] mb-0.5">合計 ${dayBks.length}</span>
-          <div class="w-full space-y-0.5">${itemsHtml}${moreHtml}</div>
+        <button onclick="selectDate('${dateStr}')" class="min-h-[96px] sm:min-h-[112px] rounded-xl border p-1 sm:p-1.5 flex flex-col justify-start items-center transition ${isSelected ? 'border-[#8C735B] bg-[#FDFBF7] ring-2 ring-[#8C735B]/40' : 'border-[#EAE2D6] bg-white hover:bg-[#FAF7F2]'}">
+          <div class="w-full flex justify-between items-baseline px-0.5 mb-1">
+            <span class="text-xs sm:text-sm font-bold ${isSelected ? 'text-[#8C735B]' : 'text-[#3D352E]'}">${d}</span>
+            ${dayBks.length > 0 ? `<span class="text-[10px] text-[#8C735B]">${dayBks.length}筆</span>` : ''}
+          </div>
+          <div class="w-full space-y-1">${itemsHtml}</div>
+          ${extraHtml}
         </button>
       `;
     }
@@ -828,7 +836,6 @@
     renderDayBookings();
   }
 
-  // 單筆預約卡片：尚未到來 / 已報到 / 爽約 三段切換
   function renderDayBookings() {
     document.getElementById("selectedDateLabel").textContent = `${selectedDateStr} 預約排程`;
     const list = document.getElementById("dayBookingsList");
@@ -855,9 +862,9 @@
           <div class="flex justify-between items-start">
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-[#8C735B]">${b.startTime} - ${b.endTime}</span>
-                <span class="text-[11px] text-[#8C735B]">(${b.duration || 60}分)</span>
-                <span class="text-[11px] px-1.5 py-0.5 rounded bg-white border border-[#EAE2D6] text-[#735D48]">${b.staff || 'Ruby'}</span>
+                <span class="text-sm font-bold text-[#8C735B]">${b.startTime} - ${b.endTime}</span>
+                <span class="text-xs text-[#8C735B]">(${b.duration || 60}分)</span>
+                <span class="text-xs px-1.5 py-0.5 rounded bg-white border border-[#EAE2D6] text-[#735D48]">${b.staff || 'Ruby'}</span>
               </div>
               <h4 class="font-bold text-base text-[#3D352E] mt-0.5">
                 ${b.customerName}
@@ -867,7 +874,6 @@
             <span class="text-xs font-bold px-2 py-0.5 rounded bg-white border border-[#EAE2D6]">${st}</span>
           </div>
 
-          <!-- 三段狀態快速切換：尚未到來 / 已報到 / 爽約 -->
           <div class="grid grid-cols-3 gap-1.5 text-xs">
             <button onclick="quickStatus('${b.id}', '尚未到來')" class="py-1.5 rounded-lg transition ${btnClass('尚未到來')}">尚未到來</button>
             <button onclick="quickStatus('${b.id}', '已報到')" class="py-1.5 rounded-lg transition ${btnClass('已報到')}">已報到</button>
@@ -1011,7 +1017,6 @@
     `).join("");
   }
 
-  // 價目表管理渲染
   function renderCatalogManageList() {
     const box = document.getElementById("catalogManageList");
     const list = appData.catalog || [];
@@ -1049,7 +1054,7 @@
   // 預約彈窗與多項服務購物車
   function openBookingModal(existingBk = null) {
     if (appData.customers.length === 0) {
-      showToast("請先到「客戶與儲值金」新增第一位客人資料");
+      showToast("請先到「客戶儲值」新增第一位客人資料");
       switchTab('customers');
       return;
     }
@@ -1071,7 +1076,6 @@
       document.getElementById("bkStatus").value = existingBk.status;
       document.getElementById("bkNote").value = existingBk.note;
 
-      // 將現有服務字串拆回購物車顯示，並保留原設定價格與分鐘數
       const parts = String(existingBk.service || "").split(" + ").filter(Boolean);
       adminCart = parts.map((name, idx) => {
         const found = (appData.catalog || []).find(c => c.name === name);
@@ -1240,7 +1244,6 @@
     }
   }
 
-  // 客戶 / 儲值 / 支出 / 價目表彈窗
   function openCustomerModal(custId = null) {
     if (custId) {
       const c = appData.customers.find(x => x.id === custId);
@@ -1349,12 +1352,47 @@
     }
   }
 
+  // 價目表彈窗：下拉選單選現有分類，或選「+ 新增自訂分類」輸入新分類
+  function populateCatalogCategorySelect(selectedCat = "") {
+    const existingCats = [...new Set((appData.catalog || []).map(x => x.category).filter(Boolean))];
+    const sel = document.getElementById("catSelect");
+    const customBox = document.getElementById("catCustomBox");
+    const customInput = document.getElementById("catCustomInput");
+
+    let optionsHtml = existingCats.map(c => `<option value="${c}">${c}</option>`).join("");
+    optionsHtml += `<option value="__CUSTOM__">＋ 自訂新分類...</option>`;
+    sel.innerHTML = optionsHtml;
+
+    if (selectedCat && existingCats.includes(selectedCat)) {
+      sel.value = selectedCat;
+      customBox.classList.add("hidden");
+      customInput.value = "";
+    } else if (selectedCat) {
+      sel.value = "__CUSTOM__";
+      customBox.classList.remove("hidden");
+      customInput.value = selectedCat;
+    } else {
+      sel.value = existingCats.includes("加購護理與美肌項目") ? "加購護理與美肌項目" : (existingCats[0] || "__CUSTOM__");
+      toggleCustomCategoryInput();
+    }
+  }
+
+  function toggleCustomCategoryInput() {
+    const sel = document.getElementById("catSelect");
+    const customBox = document.getElementById("catCustomBox");
+    const isCustom = (sel.value === "__CUSTOM__");
+    customBox.classList.toggle("hidden", !isCustom);
+    if (isCustom) {
+      document.getElementById("catCustomInput").focus();
+    }
+  }
+
   function openCatalogModal(itemId = null) {
     if (itemId) {
       const it = (appData.catalog || []).find(x => x.id === itemId);
       document.getElementById("catModalTitle").textContent = "編輯服務項目價格與時長";
       document.getElementById("catItemId").value = it.id;
-      document.getElementById("catName").value = it.category;
+      populateCatalogCategorySelect(it.category);
       document.getElementById("catServiceName").value = it.name;
       document.getElementById("catPrice").value = it.price;
       document.getElementById("catDuration").value = it.duration;
@@ -1362,7 +1400,7 @@
     } else {
       document.getElementById("catModalTitle").textContent = "新增服務項目";
       document.getElementById("catItemId").value = "";
-      document.getElementById("catName").value = "加購護理與美肌項目";
+      populateCatalogCategorySelect("");
       document.getElementById("catServiceName").value = "";
       document.getElementById("catPrice").value = "0";
       document.getElementById("catDuration").value = "20";
@@ -1372,7 +1410,10 @@
   }
 
   async function saveCatalogItem() {
-    const category = document.getElementById("catName").value.trim() || "其他項目";
+    const selVal = document.getElementById("catSelect").value;
+    const category = (selVal === "__CUSTOM__")
+      ? (document.getElementById("catCustomInput").value.trim() || "其他項目")
+      : selVal;
     const name = document.getElementById("catServiceName").value.trim();
     if (!name) return showToast("請輸入服務項目名稱");
     const item = {
@@ -1397,7 +1438,6 @@
     }
   }
 
-  // 共用輔助函式
   function initTimeSelects() {
     const times = [];
     for (let h = 9; h <= 21; h++) {
@@ -1441,8 +1481,8 @@
       const btn = document.getElementById(`tabBtn-${t}`);
       if (btn) {
         btn.className = (t === tabName)
-          ? "tab-btn px-4 py-2 rounded-lg text-sm font-bold bg-white text-[#3D352E] shadow-xs"
-          : "tab-btn px-4 py-2 rounded-lg text-sm font-medium text-[#735D48]";
+          ? "tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-bold bg-white text-[#3D352E] shadow-xs"
+          : "tab-btn flex-1 sm:flex-initial px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium text-[#735D48]";
       }
     });
   }
