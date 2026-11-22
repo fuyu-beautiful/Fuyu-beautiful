@@ -205,27 +205,26 @@
       <div id="pendingList" class="space-y-2"></div>
     </div>
 
-    <!-- 分頁 1（預設首頁）：預約月曆（單行顯示：時間 + 符號） -->
+    <!-- 分頁 1（預設首頁）：預約月曆（完整時間＋顏色區分：熱蠟／冰肌／熱蠟+冰肌） -->
     <div id="tab-calendar" class="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5">
-      <div class="xl:col-span-7 card-warm rounded-2xl p-2.5 sm:p-5">
+      <div class="xl:col-span-7 card-warm rounded-2xl p-2 sm:p-5">
         <div class="flex justify-between items-center mb-2">
           <button onclick="changeMonth(-1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">◀</button>
           <h2 class="font-bold text-base sm:text-lg" id="calendarMonthLabel">2026年 11月</h2>
           <button onclick="changeMonth(1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">▶</button>
         </div>
 
-        <!-- 項目符號說明列（單行/精簡） -->
-        <div class="flex items-center justify-between gap-2 text-[11px] text-[#735D48] bg-[#FAF7F2] border border-[#EAE2D6] rounded-lg px-2.5 py-1 mb-2 whitespace-nowrap overflow-x-auto">
-          <span><strong class="text-[#8C735B]">符號：</strong></span>
-          <span><strong class="text-amber-800">蠟</strong> 熱蠟</span>
-          <span><strong class="text-sky-800">冰</strong> 冰肌/日式</span>
-          <span><strong class="text-rose-700">＋</strong> 加購/護理/粉嫩</span>
+        <!-- 色塊圖例（單行不跳行） -->
+        <div class="flex items-center justify-around gap-1.5 text-[11px] bg-[#FAF7F2] border border-[#EAE2D6] rounded-lg px-2 py-1 mb-2 whitespace-nowrap">
+          <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-medium">熱蠟</span>
+          <span class="px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-300 font-medium">冰肌</span>
+          <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-900 border border-rose-300 font-medium">熱蠟+冰肌</span>
         </div>
 
         <div class="grid grid-cols-7 text-center text-xs text-[#8C735B] font-bold mb-1">
           <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
         </div>
-        <div id="calendarGrid" class="grid grid-cols-7 gap-1"></div>
+        <div id="calendarGrid" class="grid grid-cols-7 gap-0.5 sm:gap-1.5"></div>
       </div>
 
       <div class="xl:col-span-5 card-warm rounded-2xl p-4 sm:p-5">
@@ -561,18 +560,34 @@
     }
   };
 
-  // 服務大項目符號（蠟＝熱蠟、冰＝冰肌/日式、＋＝加購/護理/粉嫩）
-  function getServiceSymbols(booking) {
+  // 依照預約內容判斷類別色系：熱蠟 / 冰肌 / 熱蠟+冰肌
+  function getBookingTypeInfo(booking) {
     const text = `${booking.category || ""} ${booking.service || ""}`;
     const hasWax = /熱蠟|RICA/i.test(text);
     const hasIce = /冰肌|日式|淨毛/i.test(text);
-    const hasAddon = /加購|軟膜|護理|粉嫩|\+/i.test(text);
 
-    const marks = [];
-    if (hasWax) marks.push("蠟");
-    if (hasIce) marks.push("冰");
-    if (hasAddon) marks.push("＋");
-    return marks.length > 0 ? `[${marks.join("")}]` : "";
+    if (hasWax && hasIce) {
+      return {
+        label: "熱蠟+冰肌",
+        pillClass: "bg-rose-100 text-rose-900 border-rose-300"
+      };
+    }
+    if (hasWax) {
+      return {
+        label: "熱蠟",
+        pillClass: "bg-amber-100 text-amber-900 border-amber-300"
+      };
+    }
+    if (hasIce) {
+      return {
+        label: "冰肌",
+        pillClass: "bg-sky-100 text-sky-900 border-sky-300"
+      };
+    }
+    return {
+      label: "其他",
+      pillClass: "bg-[#F5EFE6] text-[#3D352E] border-[#EAE2D6]"
+    };
   }
 
   // =========================================================
@@ -803,7 +818,7 @@
     `).join("");
   }
 
-  // 預約月曆：每筆只顯示「時間＋符號」單行不跳行，確保符號一定看得到
+  // 預約月曆：只顯示完整時間＋類別色系（熱蠟／冰肌／熱蠟+冰肌），單行不跳行
   function renderCalendar() {
     document.getElementById("calendarMonthLabel").textContent = `${currentYear}年 ${currentMonth + 1}月`;
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -822,10 +837,10 @@
 
       const visibleBks = dayBks.slice(0, 3);
       const itemsHtml = visibleBks.map(b => {
-        const sym = getServiceSymbols(b);
+        const info = getBookingTypeInfo(b);
         return `
-          <div class="w-full whitespace-nowrap px-1 py-0.5 rounded bg-[#F5EFE6] text-[#3D352E] text-[10px] sm:text-[11px] leading-tight text-center font-medium" title="${b.startTime} ${b.customerName} ${sym} - ${b.service}">
-            <span class="font-bold text-[#634F3C]">${b.startTime}</span><span class="font-bold text-[#8C735B] ml-0.5">${sym}</span>
+          <div class="w-full whitespace-nowrap px-1 py-0.5 rounded border ${info.pillClass} text-[10px] sm:text-xs leading-tight text-center font-bold tracking-tight" title="${b.startTime} ${b.customerName} (${info.label})">
+            ${b.startTime}
           </div>
         `;
       }).join("");
@@ -835,8 +850,8 @@
         : "";
 
       grid.innerHTML += `
-        <button onclick="selectDate('${dateStr}')" class="min-h-[92px] sm:min-h-[108px] rounded-xl border p-1 flex flex-col justify-start items-center overflow-hidden transition ${isSelected ? 'border-[#8C735B] bg-[#FDFBF7] ring-2 ring-[#8C735B]/40' : 'border-[#EAE2D6] bg-white hover:bg-[#FAF7F2]'}">
-          <div class="w-full flex justify-between items-baseline px-0.5 mb-1 whitespace-nowrap">
+        <button onclick="selectDate('${dateStr}')" class="min-h-[92px] sm:min-h-[108px] rounded-xl border p-0.5 sm:p-1.5 flex flex-col justify-start items-center overflow-hidden transition ${isSelected ? 'border-[#8C735B] bg-[#FDFBF7] ring-2 ring-[#8C735B]/40' : 'border-[#EAE2D6] bg-white hover:bg-[#FAF7F2]'}">
+          <div class="w-full flex justify-between items-baseline px-1 mb-1 whitespace-nowrap">
             <span class="text-xs sm:text-sm font-bold ${isSelected ? 'text-[#8C735B]' : 'text-[#3D352E]'}">${d}</span>
             ${dayBks.length > 0 ? `<span class="text-[10px] text-[#8C735B]">${dayBks.length}筆</span>` : ''}
           </div>
@@ -877,7 +892,7 @@
       const cust = appData.customers.find(c => c.id === b.customerId);
       const visits = cust ? cust.visitCount : 0;
       const st = b.status;
-      const sym = getServiceSymbols(b);
+      const typeInfo = getBookingTypeInfo(b);
 
       const btnClass = (target) => st === target
         ? "bg-[#8C735B] text-white font-bold shadow-2xs"
@@ -885,20 +900,20 @@
 
       return `
         <div class="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] space-y-2.5">
-          <div class="flex justify-between items-start">
+          <div class="flex justify-between items-start gap-2">
             <div>
-              <div class="flex items-center gap-2">
+              <div class="flex flex-wrap items-center gap-1.5">
                 <span class="text-sm font-bold text-[#8C735B]">${b.startTime} - ${b.endTime}</span>
                 <span class="text-xs text-[#8C735B]">(${b.duration || 60}分)</span>
-                <span class="text-xs px-1.5 py-0.5 rounded bg-white border border-[#EAE2D6] text-[#735D48]">${b.staff || 'Ruby'}</span>
+                <span class="text-[11px] px-2 py-0.5 rounded border font-bold ${typeInfo.pillClass}">${typeInfo.label}</span>
+                <span class="text-[11px] px-1.5 py-0.5 rounded bg-white border border-[#EAE2D6] text-[#735D48]">${b.staff || 'Ruby'}</span>
               </div>
               <h4 class="font-bold text-base text-[#3D352E] mt-0.5">
                 ${b.customerName}
                 <span class="text-xs font-normal text-[#8C735B] ml-1">${visits}次</span>
-                ${sym ? `<span class="text-xs font-bold text-[#8C735B] ml-1.5">${sym}</span>` : ''}
               </h4>
             </div>
-            <span class="text-xs font-bold px-2 py-0.5 rounded bg-white border border-[#EAE2D6]">${st}</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded bg-white border border-[#EAE2D6] shrink-0">${st}</span>
           </div>
 
           <div class="grid grid-cols-3 gap-1.5 text-xs">
