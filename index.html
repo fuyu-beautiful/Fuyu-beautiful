@@ -115,13 +115,16 @@
           <div class="grid grid-cols-2 gap-2.5">
             <div>
               <label class="block text-xs text-[#735D48] mb-1">希望日期</label>
-              <input type="date" id="reqDate" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
+              <input type="date" id="reqDate" onchange="renderPortalDateBlockedHint()" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
             </div>
             <div>
               <label class="block text-xs text-[#735D48] mb-1">希望時段 (09:00-21:00)</label>
-              <select id="reqTime" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
+              <select id="reqTime" onchange="renderPortalDateBlockedHint()" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
             </div>
           </div>
+
+          <div id="reqBlockedHint" class="hidden px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"></div>
+
           <div>
             <label class="block text-xs text-[#735D48] mb-1">服務分類</label>
             <select id="reqCategory" onchange="updateCatalogDropdown('reqCategory', 'reqService')" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
@@ -205,39 +208,86 @@
     </div>
 
     <!-- 分頁 1（預設首頁）：預約月曆 -->
-    <div id="tab-calendar" class="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5">
-      <div class="xl:col-span-7 card-warm rounded-2xl p-2 sm:p-5">
-        <div class="flex justify-between items-center mb-2">
-          <button onclick="changeMonth(-1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">◀</button>
-          <h2 class="font-bold text-base sm:text-lg" id="calendarMonthLabel">2026年 11月</h2>
-          <button onclick="changeMonth(1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">▶</button>
+    <div id="tab-calendar" class="space-y-4">
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5">
+        <div class="xl:col-span-7 card-warm rounded-2xl p-2 sm:p-5">
+          <div class="flex justify-between items-center mb-2">
+            <button onclick="changeMonth(-1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">◀</button>
+            <h2 class="font-bold text-base sm:text-lg" id="calendarMonthLabel">2026年 11月</h2>
+            <button onclick="changeMonth(1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">▶</button>
+          </div>
+
+          <div class="flex items-center justify-around gap-1.5 text-[11px] bg-[#FAF7F2] border border-[#EAE2D6] rounded-lg px-2 py-1 mb-2 whitespace-nowrap">
+            <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-medium">熱蠟</span>
+            <span class="px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-300 font-medium">冰肌</span>
+            <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-900 border border-rose-300 font-medium">熱蠟+冰肌</span>
+            <span class="px-2 py-0.5 rounded bg-stone-200 text-stone-800 border border-stone-300 font-medium">🚫 不可約</span>
+          </div>
+
+          <div class="grid grid-cols-7 text-center text-xs text-[#8C735B] font-bold mb-1">
+            <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+          </div>
+          <div id="calendarGrid" class="grid grid-cols-7 gap-0.5 sm:gap-1.5"></div>
         </div>
 
-        <div class="flex items-center justify-around gap-1.5 text-[11px] bg-[#FAF7F2] border border-[#EAE2D6] rounded-lg px-2 py-1 mb-2 whitespace-nowrap">
-          <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-medium">熱蠟</span>
-          <span class="px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-300 font-medium">冰肌</span>
-          <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-900 border border-rose-300 font-medium">熱蠟+冰肌</span>
-        </div>
+        <div class="xl:col-span-5 card-warm rounded-2xl p-4 sm:p-5">
+          <div class="flex justify-between items-center mb-2.5 gap-2">
+            <div>
+              <h3 class="font-bold text-base sm:text-lg" id="selectedDateLabel">今日排程</h3>
+              <p class="text-xs text-[#8C735B]">點「已報到」完成結帳；誤按點回「尚未到來」自動退回</p>
+            </div>
+            <button onclick="openBookingModal()" class="btn-primary whitespace-nowrap text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl">+ 新增預約</button>
+          </div>
 
-        <div class="grid grid-cols-7 text-center text-xs text-[#8C735B] font-bold mb-1">
-          <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+          <div id="dayBlockedBanner" class="hidden mb-2.5 px-3.5 py-2 rounded-xl bg-stone-100 border border-stone-300 text-xs text-stone-800 font-medium"></div>
+
+          <!-- 當日排程時段重疊醒目警示區 -->
+          <div id="dayOverlapBanner" class="hidden mb-3 px-3.5 py-2.5 rounded-xl bg-red-50 border-2 border-red-300 text-xs text-red-800 space-y-1"></div>
+
+          <div id="dayBookingsList" class="space-y-3 max-h-[620px] overflow-y-auto pr-1"></div>
         </div>
-        <div id="calendarGrid" class="grid grid-cols-7 gap-0.5 sm:gap-1.5"></div>
       </div>
 
-      <div class="xl:col-span-5 card-warm rounded-2xl p-4 sm:p-5">
-        <div class="flex justify-between items-center mb-2.5">
+      <!-- 客人不可預約日期／時段設定區 -->
+      <div class="card-warm rounded-2xl p-4 sm:p-5 space-y-3">
+        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-[#F3EFEA] pb-2.5">
           <div>
-            <h3 class="font-bold text-base sm:text-lg" id="selectedDateLabel">今日排程</h3>
-            <p class="text-xs text-[#8C735B]">點「已報到」完成結帳；誤按點回「尚未到來」自動退回</p>
+            <h3 class="font-bold text-sm sm:text-base text-[#3D352E]">🚫 客人不可預約日期／時段設定（同步至線上預約）</h3>
+            <p class="text-xs text-[#8C735B]">設定某天全天或特定時段不開放客人線上預約；後台排程仍可依需要彈性調整</p>
           </div>
-          <button onclick="openBookingModal()" class="btn-primary whitespace-nowrap text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl">+ 新增預約</button>
+          <button type="button" onclick="useSelectedDateForBlocked()" class="text-xs px-3 py-1.5 rounded-lg bg-[#FAF7F2] border border-[#EAE2D6] text-[#735D48] font-medium hover:bg-[#EFE9DF]">帶入目前選取日期</button>
         </div>
 
-        <!-- 當日排程時段重疊醒目警示區 -->
-        <div id="dayOverlapBanner" class="hidden mb-3 px-3.5 py-2.5 rounded-xl bg-red-50 border-2 border-red-300 text-xs text-red-800 space-y-1"></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5 text-xs items-end bg-[#FAF7F2] p-3 rounded-xl border border-[#EAE2D6]">
+          <div>
+            <label class="block text-[#735D48] mb-1">日期</label>
+            <input type="date" id="blkDate" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white">
+          </div>
+          <div>
+            <label class="block text-[#735D48] mb-1">類型</label>
+            <select id="blkFullDay" onchange="toggleBlockedTimeInputs()" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white">
+              <option value="true">整天不可預約</option>
+              <option value="false">指定時段不可預約</option>
+            </select>
+          </div>
+          <div id="blkStartBox" class="hidden">
+            <label class="block text-[#735D48] mb-1">開始時間</label>
+            <select id="blkStartTime" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white"></select>
+          </div>
+          <div id="blkEndBox" class="hidden">
+            <label class="block text-[#735D48] mb-1">結束時間</label>
+            <select id="blkEndTime" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white"></select>
+          </div>
+          <div class="lg:col-span-2">
+            <label class="block text-[#735D48] mb-1">原因說明（選填）</label>
+            <div class="flex gap-2">
+              <input type="text" id="blkReason" placeholder="例如：店休、進修、保留時段" class="flex-1 border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white">
+              <button type="button" onclick="submitBlockedSlot()" class="btn-primary px-3.5 py-2 rounded-lg font-bold shrink-0">+ 加入限制</button>
+            </div>
+          </div>
+        </div>
 
-        <div id="dayBookingsList" class="space-y-3 max-h-[620px] overflow-y-auto pr-1"></div>
+        <div id="blockedSlotsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs"></div>
       </div>
     </div>
 
@@ -356,15 +406,25 @@
         </div>
       </div>
 
-      <!-- 子分頁 3-3：⚖️ 收支比較（近 6 個月現金實收 vs 營運支出對照表） -->
+      <!-- 子分頁 3-3：⚖️ 收支比較（自選區間＋每月來客數＋實收／支出／淨流） -->
       <div id="finSub-compare" class="hidden card-warm rounded-2xl p-4 sm:p-5 space-y-3">
-        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-[#F3EFEA] pb-3">
+        <div class="flex flex-wrap justify-between items-start gap-3 border-b border-[#F3EFEA] pb-3">
           <div>
-            <h3 class="font-bold text-sm sm:text-base text-[#3D352E]">⚖️ 近 6 個月現金實收 vs 營運支出比較</h3>
-            <p class="text-xs text-[#8C735B]" id="compareRangeSubtext">以目前所選年月往前推算 6 個月（紅字實收、綠字支出）</p>
+            <h3 class="font-bold text-sm sm:text-base text-[#3D352E]">⚖️ 收支與來客數比較（自選區間）</h3>
+            <p class="text-xs text-[#8C735B]" id="compareRangeSubtext">紅字實收、綠字支出；來客數統計該月「已報到」預約（若有多筆同日同人亦會清楚列出）</p>
           </div>
-          <div class="text-xs font-bold text-[#3D352E]" id="compareSixMonthSummary">近6月合計</div>
+          <div class="flex flex-wrap items-center gap-1.5 text-xs">
+            <span class="text-[#735D48]">起：</span>
+            <select id="cmpStartYear" onchange="renderFinanceCompareTable()" class="border border-[#EAE2D6] rounded-lg px-2 py-1 bg-[#FAF7F2] font-bold"></select>
+            <select id="cmpStartMonth" onchange="renderFinanceCompareTable()" class="border border-[#EAE2D6] rounded-lg px-2 py-1 bg-[#FAF7F2] font-bold"></select>
+            <span class="text-[#735D48] ml-1">迄：</span>
+            <select id="cmpEndYear" onchange="renderFinanceCompareTable()" class="border border-[#EAE2D6] rounded-lg px-2 py-1 bg-[#FAF7F2] font-bold"></select>
+            <select id="cmpEndMonth" onchange="renderFinanceCompareTable()" class="border border-[#EAE2D6] rounded-lg px-2 py-1 bg-[#FAF7F2] font-bold"></select>
+            <button type="button" onclick="resetCompareToLast6Months()" class="px-2.5 py-1 rounded-lg bg-[#F5EFE6] text-[#735D48] font-medium hover:bg-[#EFE9DF]">近6月</button>
+          </div>
         </div>
+
+        <div class="text-xs sm:text-sm font-bold text-[#3D352E]" id="compareRangeSummary">區間合計</div>
         <div id="financeCompareTableBox" class="overflow-x-auto"></div>
       </div>
     </div>
@@ -392,7 +452,7 @@
         <div class="bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl p-3 space-y-2">
           <label class="block text-xs font-bold text-[#735D48]">1. 選擇客戶</label>
           <input type="text" id="bkCustomerSearch" oninput="filterBookingCustomerOptions()" placeholder="🔍 輸入姓名或電話篩選客戶..." class="w-full border border-[#EAE2D6] rounded-lg px-3 py-2 bg-white text-sm">
-          <select id="bkCustomer" onchange="recalculateBookingTotal()" class="w-full border border-[#EAE2D6] rounded-lg px-3 py-2 bg-white text-sm font-medium"></select>
+          <select id="bkCustomer" onchange="onBookingCustomerOrPaymentChange()" class="w-full border border-[#EAE2D6] rounded-lg px-3 py-2 bg-white text-sm font-medium"></select>
           <div id="bkCustomerCard" class="bg-white border border-[#EAE2D6] rounded-lg px-3 py-2 text-xs text-[#735D48] space-y-1"></div>
 
           <!-- 客戶三堂套票剩餘堂數專區 -->
@@ -449,13 +509,16 @@
         <div class="bg-[#FAF7F2] p-3 rounded-xl border border-[#EAE2D6] space-y-2">
           <div class="flex justify-between items-center flex-wrap gap-1">
             <label class="text-xs font-bold text-[#735D48]">3. 本次實收 / 扣點金額 ($)</label>
-            <span id="bkDiscountBadge" class="hidden text-[11px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold"></span>
+            <div class="flex items-center gap-1.5">
+              <span id="bkDiscountBadge" class="hidden text-[11px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold"></span>
+              <button type="button" onclick="recalculateBookingTotal(true)" class="text-[11px] px-2 py-0.5 rounded bg-white border border-[#EAE2D6] text-[#735D48] hover:bg-[#EFE9DF]">依項目重算</button>
+            </div>
           </div>
           <input type="hidden" id="bkOriginalPrice">
           <input type="hidden" id="bkUsedPackageId">
           <div class="grid grid-cols-2 gap-2.5">
-            <input type="number" id="bkFinalPrice" oninput="checkBookingBalanceWarning()" placeholder="0" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-white text-base font-bold income-red">
-            <select id="bkPayMethod" onchange="checkBookingBalanceWarning()" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-white text-sm font-medium">
+            <input type="number" id="bkFinalPrice" oninput="onManualFinalPriceInput()" placeholder="0" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-white text-base font-bold income-red">
+            <select id="bkPayMethod" onchange="onBookingCustomerOrPaymentChange()" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-white text-sm font-medium">
               <option value="扣儲值金">扣儲值金</option>
               <option value="現金">現金</option>
               <option value="轉帳">轉帳</option>
@@ -706,11 +769,14 @@
     transactions: [],
     expenses: [],
     packages: [],
-    deletedPackageSourceIds: []
+    deletedPackageSourceIds: [],
+    blockedSlots: []
   };
   let portalCatalog = [];
+  let portalBlockedSlots = [];
   let adminCart = [];
   let portalCart = [];
+  let manualPriceOverride = false;
   let selectedPkgCatalogIds = new Set();
   let currentDetailCustomerId = "";
   let currentYear = new Date().getFullYear();
@@ -730,6 +796,7 @@
   window.onload = function() {
     initTimeSelects();
     initFinanceYearMonthSelects();
+    initCompareRangeSelects();
 
     if (PORTAL_CID && PORTAL_CID.trim() !== "") {
       document.getElementById("customerPortalView").classList.remove("hidden");
@@ -738,6 +805,8 @@
     } else {
       document.getElementById("adminLoginView").classList.remove("hidden");
       document.getElementById("expDate").value = selectedDateStr;
+      document.getElementById("blkDate").value = selectedDateStr;
+      toggleBlockedTimeInputs();
     }
   };
 
@@ -773,6 +842,156 @@
     const mSel = document.getElementById("financeMonthSelect");
     if (!ySel || !mSel) return;
     jumpToSpecificFinanceMonth(Number(ySel.value), Number(mSel.value));
+  }
+
+  function initCompareRangeSelects() {
+    const sy = document.getElementById("cmpStartYear");
+    const sm = document.getElementById("cmpStartMonth");
+    const ey = document.getElementById("cmpEndYear");
+    const em = document.getElementById("cmpEndMonth");
+    if (!sy || !sm || !ey || !em) return;
+
+    const nowY = new Date().getFullYear();
+    const years = [];
+    for (let y = nowY - 3; y <= nowY + 1; y++) years.push(y);
+    const yHtml = years.map(y => `<option value="${y}">${y}年</option>`).join("");
+    const mHtml = Array.from({ length: 12 }, (_, m) => `<option value="${m}">${m + 1}月</option>`).join("");
+
+    sy.innerHTML = yHtml;
+    ey.innerHTML = yHtml;
+    sm.innerHTML = mHtml;
+    em.innerHTML = mHtml;
+    resetCompareToLast6Months(false);
+  }
+
+  function resetCompareToLast6Months(shouldRender = true) {
+    const startD = new Date(financeYear, financeMonth - 5, 1);
+    document.getElementById("cmpStartYear").value = String(startD.getFullYear());
+    document.getElementById("cmpStartMonth").value = String(startD.getMonth());
+    document.getElementById("cmpEndYear").value = String(financeYear);
+    document.getElementById("cmpEndMonth").value = String(financeMonth);
+    if (shouldRender) renderFinanceCompareTable();
+  }
+
+  function toggleBlockedTimeInputs() {
+    const isFullDay = document.getElementById("blkFullDay").value === "true";
+    document.getElementById("blkStartBox").classList.toggle("hidden", isFullDay);
+    document.getElementById("blkEndBox").classList.toggle("hidden", isFullDay);
+  }
+
+  function useSelectedDateForBlocked() {
+    document.getElementById("blkDate").value = selectedDateStr;
+    showToast(`已帶入日期 ${selectedDateStr}`);
+  }
+
+  async function submitBlockedSlot() {
+    const date = document.getElementById("blkDate").value;
+    if (!date) return showToast("請先選擇日期");
+    const fullDay = document.getElementById("blkFullDay").value === "true";
+    const startTime = document.getElementById("blkStartTime").value || "09:00";
+    const endTime = document.getElementById("blkEndTime").value || "21:00";
+    if (!fullDay && timeToMinutes(endTime) <= timeToMinutes(startTime)) {
+      return showToast("結束時間必須晚於開始時間");
+    }
+    const reason = (document.getElementById("blkReason").value || "").trim() || (fullDay ? "全天不可預約" : "保留時段");
+
+    showLoading("儲存不可預約設定中...");
+    try {
+      const res = await callGasApi({
+        action: "saveBlockedSlotAdmin",
+        password: adminPassword,
+        payload: { date, startTime, endTime, fullDay, reason }
+      });
+      appData = res;
+      hideLoading();
+      document.getElementById("blkReason").value = "";
+      renderAllAdminViews();
+      showToast("已更新不可預約設定！");
+    } catch (err) {
+      hideLoading();
+      showToast("儲存失敗：" + err.message);
+    }
+  }
+
+  async function deleteBlockedSlot(blockId) {
+    showLoading("移除限制中...");
+    try {
+      const res = await callGasApi({
+        action: "deleteBlockedSlotAdmin",
+        password: adminPassword,
+        blockId
+      });
+      appData = res;
+      hideLoading();
+      renderAllAdminViews();
+      showToast("已移除該不可預約設定");
+    } catch (err) {
+      hideLoading();
+      showToast("移除失敗：" + err.message);
+    }
+  }
+
+  function getBlockedSlotsForDate(dateStr, slotsList = null) {
+    const source = slotsList || appData.blockedSlots || [];
+    return source.filter(s => s && s.date === dateStr);
+  }
+
+  function findBlockedSlotForWindow(dateStr, startStr, durationMins, slotsList = null) {
+    const s1 = timeToMinutes(startStr);
+    const e1 = s1 + Math.max(15, Number(durationMins || 60));
+    return getBlockedSlotsForDate(dateStr, slotsList).find(blk => {
+      if (blk.fullDay) return true;
+      const s2 = timeToMinutes(blk.startTime);
+      const e2 = Math.max(s2 + 15, timeToMinutes(blk.endTime));
+      return s1 < e2 && s2 < e1;
+    }) || null;
+  }
+
+  function renderBlockedSlotsList() {
+    const box = document.getElementById("blockedSlotsList");
+    if (!box) return;
+    const list = appData.blockedSlots || [];
+    if (list.length === 0) {
+      box.innerHTML = `<p class="text-xs text-[#8C735B] col-span-full py-2">目前尚未設定不可預約日期或時段（客人可於 09:00-21:00 提出預約申請）</p>`;
+      return;
+    }
+
+    box.innerHTML = list.map(blk => {
+      const timeLabel = blk.fullDay ? "全天不可預約" : `${blk.startTime} - ${blk.endTime}`;
+      return `
+        <div class="p-2.5 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] flex justify-between items-center gap-2">
+          <div class="min-w-0">
+            <p class="font-bold text-[#3D352E]">${blk.date}｜<span class="text-stone-700">${timeLabel}</span></p>
+            <p class="text-[11px] text-[#8C735B] truncate">${blk.reason || '不可預約'}</p>
+          </div>
+          <button type="button" onclick="deleteBlockedSlot('${String(blk.id).replace(/'/g, "\\'")}')" class="px-2 py-1 rounded bg-white border border-[#EAE2D6] text-red-600 text-[11px] font-bold shrink-0 hover:bg-red-50">解除</button>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderPortalDateBlockedHint() {
+    const hintEl = document.getElementById("reqBlockedHint");
+    if (!hintEl) return;
+    const dateVal = document.getElementById("reqDate").value;
+    const timeVal = document.getElementById("reqTime").value;
+    const estDur = portalCart.reduce((s, x) => s + x.duration, 0) || 60;
+
+    const matched = findBlockedSlotForWindow(dateVal, timeVal, estDur, portalBlockedSlots);
+    if (matched) {
+      const rangeStr = matched.fullDay ? "整天" : `${matched.startTime}-${matched.endTime}`;
+      hintEl.textContent = `⚠️ 您選擇的日期或時段（${rangeStr}）目前不開放預約（${matched.reason}），請改選其他時段`;
+      hintEl.classList.remove("hidden");
+    } else {
+      const dayBlks = getBlockedSlotsForDate(dateVal, portalBlockedSlots);
+      if (dayBlks.length > 0) {
+        const desc = dayBlks.map(b => b.fullDay ? `全天（${b.reason}）` : `${b.startTime}-${b.endTime}（${b.reason}）`).join("、");
+        hintEl.textContent = `ℹ️ ${dateVal} 不可預約時段：${desc}`;
+        hintEl.classList.remove("hidden");
+      } else {
+        hintEl.classList.add("hidden");
+      }
+    }
   }
 
   function getBookingTypeInfo(booking) {
@@ -1023,8 +1242,10 @@
       document.getElementById("pCustBalance").textContent = res.customer.balance.toLocaleString();
 
       portalCatalog = res.catalog || [];
+      portalBlockedSlots = res.blockedSlots || [];
       initCategorySelectsFromCatalog("reqCategory", "reqService", portalCatalog);
       renderPortalCart();
+      renderPortalDateBlockedHint();
 
       const bList = document.getElementById("pBookingsList");
       if (res.bookings.length === 0) {
@@ -1084,11 +1305,13 @@
       duration: Number(opt.dataset.duration || 30)
     });
     renderPortalCart();
+    renderPortalDateBlockedHint();
   }
 
   function removePortalCartItem(idx) {
     portalCart.splice(idx, 1);
     renderPortalCart();
+    renderPortalDateBlockedHint();
   }
 
   function renderPortalCart() {
@@ -1117,9 +1340,15 @@
     if (!date) return showToast("請選擇希望日期");
     if (portalCart.length === 0) return showToast("請先加入至少一項服務");
 
+    const totalDuration = portalCart.reduce((s, x) => s + x.duration, 0) || 60;
+    const blocked = findBlockedSlotForWindow(date, startTime, totalDuration, portalBlockedSlots);
+    if (blocked) {
+      const rangeStr = blocked.fullDay ? "整天不可預約" : `${blocked.startTime}-${blocked.endTime} 不可預約`;
+      return showToast(`該日期或時段（${rangeStr}）目前不開放預約，請改選其他時間`);
+    }
+
     const servicesText = portalCart.map(x => x.name).join(" + ");
     const totalPrice = portalCart.reduce((s, x) => s + x.price, 0);
-    const totalDuration = portalCart.reduce((s, x) => s + x.duration, 0);
 
     showLoading("正在送出預約申請...");
     try {
@@ -1172,6 +1401,7 @@
     renderExpenseMonthlyPieChart();
     renderExpenseMonthlyDetails();
     renderPendingRequests();
+    renderBlockedSlotsList();
     renderCalendar();
     renderDayBookings();
     renderCustomersList();
@@ -1209,9 +1439,19 @@
     return { income, expense };
   }
 
-  function calcMonthCashIncomeAndExpense(year, monthIdx) {
+  function calcMonthMetrics(year, monthIdx) {
     const ymPrefix = `${year}-${String(monthIdx + 1).padStart(2, '0')}`;
-    return calcPeriodCashIncomeAndExpense(ymPrefix);
+    const { income, expense } = calcPeriodCashIncomeAndExpense(ymPrefix);
+
+    const monthCheckedIn = (appData.bookings || []).filter(b =>
+      String(b.date || "").startsWith(ymPrefix) && (b.status === "已報到" || b.status === "已完成")
+    );
+    const totalVisits = monthCheckedIn.length;
+    const uniqueCustomers = new Set(
+      monthCheckedIn.map(b => b.customerId || b.customerName).filter(Boolean)
+    ).size;
+
+    return { income, expense, totalVisits, uniqueCustomers };
   }
 
   function renderFinanceYearSummary() {
@@ -1231,38 +1471,60 @@
     const box = document.getElementById("financeCompareTableBox");
     if (!box) return;
 
+    const sy = Number(document.getElementById("cmpStartYear").value);
+    const sm = Number(document.getElementById("cmpStartMonth").value);
+    const ey = Number(document.getElementById("cmpEndYear").value);
+    const em = Number(document.getElementById("cmpEndMonth").value);
+
+    let startIdx = sy * 12 + sm;
+    let endIdx = ey * 12 + em;
+    if (startIdx > endIdx) {
+      const tmp = startIdx;
+      startIdx = endIdx;
+      endIdx = tmp;
+    }
+
+    const monthSpan = endIdx - startIdx + 1;
+    if (monthSpan > 36) {
+      startIdx = endIdx - 35;
+    }
+
     const rows = [];
     let sumInc = 0;
     let sumExp = 0;
+    let sumVisits = 0;
 
-    for (let offset = -5; offset <= 0; offset++) {
-      const d = new Date(financeYear, financeMonth + offset, 1);
-      const y = d.getFullYear();
-      const m = d.getMonth();
-      const { income, expense } = calcMonthCashIncomeAndExpense(y, m);
+    for (let idx = startIdx; idx <= endIdx; idx++) {
+      const y = Math.floor(idx / 12);
+      const m = idx % 12;
+      const { income, expense, totalVisits, uniqueCustomers } = calcMonthMetrics(y, m);
       const net = income - expense;
       sumInc += income;
       sumExp += expense;
+      sumVisits += totalVisits;
       rows.push({
         ymLabel: `${y}/${String(m + 1).padStart(2, '0')}`,
-        isCurrent: (y === financeYear && m === financeMonth),
+        isSelected: (y === financeYear && m === financeMonth),
         income,
         expense,
-        net
+        net,
+        totalVisits,
+        uniqueCustomers
       });
     }
 
     const sumNet = sumInc - sumExp;
     document.getElementById("compareRangeSubtext").textContent =
-      `統計區間：${rows[0].ymLabel} ～ ${rows[rows.length - 1].ymLabel}（紅字實收、綠字支出）`;
-    document.getElementById("compareSixMonthSummary").innerHTML =
-      `近6月合計：實收 <span class="income-red">$${sumInc.toLocaleString()}</span> / 支出 <span class="expense-green">$${sumExp.toLocaleString()}</span> / 淨流 <span class="${sumNet >= 0 ? 'income-red' : 'expense-green'}">${sumNet >= 0 ? '+' : '-'}$${Math.abs(sumNet).toLocaleString()}</span>`;
+      `自選區間：${rows[0].ymLabel} ～ ${rows[rows.length - 1].ymLabel}（共 ${rows.length} 個月｜紅字實收、綠字支出）`;
+    document.getElementById("compareRangeSummary").innerHTML =
+      `區間合計：實收 <span class="income-red">$${sumInc.toLocaleString()}</span> / 支出 <span class="expense-green">$${sumExp.toLocaleString()}</span> / 淨流 <span class="${sumNet >= 0 ? 'income-red' : 'expense-green'}">${sumNet >= 0 ? '+' : '-'}$${Math.abs(sumNet).toLocaleString()}</span> / 來客 <span class="text-[#8C735B]">${sumVisits} 人次</span>`;
 
     box.innerHTML = `
       <table class="w-full text-xs sm:text-sm border-collapse">
         <thead>
           <tr class="bg-[#FAF7F2] border-b border-[#EAE2D6] text-[#735D48]">
             <th class="text-left py-2.5 px-3 font-bold">月份</th>
+            <th class="text-right py-2.5 px-3 font-bold text-[#8C735B]">來客數</th>
             <th class="text-right py-2.5 px-3 font-bold income-red">現金實收</th>
             <th class="text-right py-2.5 px-3 font-bold expense-green">營運支出</th>
             <th class="text-right py-2.5 px-3 font-bold">當月淨流</th>
@@ -1271,12 +1533,16 @@
         <tbody>
           ${rows.map(r => {
             const netStr = `${r.net >= 0 ? '+' : '-'}$${Math.abs(r.net).toLocaleString()}`;
+            const visitorText = r.uniqueCustomers !== r.totalVisits
+              ? `${r.totalVisits} 人次（${r.uniqueCustomers}人）`
+              : `${r.totalVisits} 人次`;
             return `
-              <tr class="border-b border-[#F3EFEA] ${r.isCurrent ? 'bg-[#FDFBF7] font-bold' : 'bg-white'}">
+              <tr class="border-b border-[#F3EFEA] ${r.isSelected ? 'bg-[#FDFBF7] font-bold' : 'bg-white'}">
                 <td class="py-2.5 px-3 whitespace-nowrap">
                   ${r.ymLabel}
-                  ${r.isCurrent ? '<span class="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-[#8C735B] text-white font-normal">所選月</span>' : ''}
+                  ${r.isSelected ? '<span class="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-[#8C735B] text-white font-normal">所選月</span>' : ''}
                 </td>
+                <td class="py-2.5 px-3 text-right whitespace-nowrap text-[#8C735B] font-bold">${visitorText}</td>
                 <td class="py-2.5 px-3 text-right whitespace-nowrap font-bold income-red">$${r.income.toLocaleString()}</td>
                 <td class="py-2.5 px-3 text-right whitespace-nowrap font-bold expense-green">$${r.expense.toLocaleString()}</td>
                 <td class="py-2.5 px-3 text-right whitespace-nowrap font-bold ${r.net >= 0 ? 'income-red' : 'expense-green'}">${netStr}</td>
@@ -1286,7 +1552,8 @@
         </tbody>
         <tfoot>
           <tr class="bg-[#FAF7F2] border-t-2 border-[#EAE2D6] font-bold">
-            <td class="py-2.5 px-3 whitespace-nowrap">近 6 個月合計</td>
+            <td class="py-2.5 px-3 whitespace-nowrap">區間合計 (${rows.length}月)</td>
+            <td class="py-2.5 px-3 text-right whitespace-nowrap text-[#8C735B]">${sumVisits} 人次</td>
             <td class="py-2.5 px-3 text-right whitespace-nowrap income-red">$${sumInc.toLocaleString()}</td>
             <td class="py-2.5 px-3 text-right whitespace-nowrap expense-green">$${sumExp.toLocaleString()}</td>
             <td class="py-2.5 px-3 text-right whitespace-nowrap ${sumNet >= 0 ? 'income-red' : 'expense-green'}">${sumNet >= 0 ? '+' : '-'}$${Math.abs(sumNet).toLocaleString()}</td>
@@ -1340,7 +1607,7 @@
     document.getElementById("statExpenseLabel").textContent = `${financeMonth + 1}月營運支出`;
     document.getElementById("statNetLabel").textContent = `${financeMonth + 1}月淨現金流`;
 
-    const { income: monthIncome, expense: monthExpense } = calcMonthCashIncomeAndExpense(financeYear, financeMonth);
+    const { income: monthIncome, expense: monthExpense } = calcMonthMetrics(financeYear, financeMonth);
     const totalLiability = appData.customers.reduce((sum, c) => sum + c.balance, 0);
     const net = monthIncome - monthExpense;
 
@@ -1488,6 +1755,10 @@
       const conflictHtml = conflicts.length > 0
         ? `<div class="mt-1 text-xs font-bold text-red-700 bg-red-50 border border-red-200 px-2 py-1 rounded">⚠️ 與 ${conflicts.map(c => `${c.startTime}-${c.endTime} ${c.customerName}`).join("、")} 時段重疊</div>`
         : "";
+      const blkMatch = findBlockedSlotForWindow(b.date, b.startTime, b.duration || 60);
+      const blkHtml = blkMatch
+        ? `<div class="mt-1 text-xs font-bold text-stone-800 bg-stone-100 border border-stone-300 px-2 py-1 rounded">🚫 位於設定之不可預約時段（${blkMatch.fullDay ? '全天' : blkMatch.startTime + '-' + blkMatch.endTime}｜${blkMatch.reason}）</div>`
+        : "";
       return `
         <div class="bg-white rounded-xl p-3 border border-amber-200 flex flex-wrap justify-between items-center gap-2 text-sm">
           <div>
@@ -1495,6 +1766,7 @@
             <span class="text-xs text-[#735D48] ml-2">${b.date} ${b.startTime}｜${b.service}</span>
             ${b.note ? `<p class="text-xs text-amber-800 mt-0.5">備註：${b.note}</p>` : ''}
             ${conflictHtml}
+            ${blkHtml}
           </div>
           <div class="flex gap-1.5">
             <button onclick="quickStatus('${b.id}', '尚未到來')" class="px-3 py-1 bg-emerald-600 text-white text-xs font-bold rounded-lg">✓ 核准排入</button>
@@ -1522,6 +1794,9 @@
       const isSelected = dateStr === selectedDateStr;
 
       const hasOverlapOnDay = dayBks.some(b => findOverlappingBookings(dateStr, b.startTime, b.endTime, b.id).length > 0);
+      const dayBlks = getBlockedSlotsForDate(dateStr);
+      const isFullDayBlocked = dayBlks.some(s => s.fullDay);
+      const hasPartialBlocked = dayBlks.some(s => !s.fullDay);
 
       const visibleBks = dayBks.slice(0, 3);
       const itemsHtml = visibleBks.map(b => {
@@ -1533,12 +1808,16 @@
         `;
       }).join("");
 
+      const blockBadgeHtml = isFullDayBlocked
+        ? `<div class="w-full whitespace-nowrap px-1 py-0.5 rounded bg-stone-200 text-stone-800 border border-stone-300 text-[10px] leading-tight text-center font-bold">🚫 全天不可約</div>`
+        : (hasPartialBlocked ? `<div class="w-full whitespace-nowrap px-1 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300 text-[10px] leading-tight text-center font-medium">🚫 部分不可約</div>` : "");
+
       const extraHtml = dayBks.length > 3
         ? `<div class="whitespace-nowrap text-[10px] font-medium text-[#8C735B] mt-0.5">+${dayBks.length - 3}</div>`
         : "";
 
       grid.innerHTML += `
-        <button onclick="selectDate('${dateStr}')" class="min-h-[92px] sm:min-h-[108px] rounded-xl border p-0.5 sm:p-1.5 flex flex-col justify-start items-center overflow-hidden transition ${isSelected ? 'border-[#8C735B] bg-[#FDFBF7] ring-2 ring-[#8C735B]/40' : 'border-[#EAE2D6] bg-white hover:bg-[#FAF7F2]'}">
+        <button onclick="selectDate('${dateStr}')" class="min-h-[92px] sm:min-h-[108px] rounded-xl border p-0.5 sm:p-1.5 flex flex-col justify-start items-center overflow-hidden transition ${isSelected ? 'border-[#8C735B] bg-[#FDFBF7] ring-2 ring-[#8C735B]/40' : (isFullDayBlocked ? 'border-stone-300 bg-stone-50/80 hover:bg-stone-100/70' : 'border-[#EAE2D6] bg-white hover:bg-[#FAF7F2]')}">
           <div class="w-full flex justify-between items-baseline px-1 mb-1 whitespace-nowrap">
             <span class="text-xs sm:text-sm font-bold ${isSelected ? 'text-[#8C735B]' : 'text-[#3D352E]'}">${d}</span>
             <span class="flex items-center gap-0.5">
@@ -1546,7 +1825,7 @@
               ${dayBks.length > 0 ? `<span class="text-[10px] text-[#8C735B]">${dayBks.length}筆</span>` : ''}
             </span>
           </div>
-          <div class="w-full space-y-1">${itemsHtml}</div>
+          <div class="w-full space-y-1">${blockBadgeHtml}${itemsHtml}</div>
           ${extraHtml}
         </button>
       `;
@@ -1568,8 +1847,19 @@
 
   function renderDayBookings() {
     document.getElementById("selectedDateLabel").textContent = `${selectedDateStr} 預約排程`;
+    const blockedBanner = document.getElementById("dayBlockedBanner");
     const overlapBanner = document.getElementById("dayOverlapBanner");
     const list = document.getElementById("dayBookingsList");
+
+    const dayBlks = getBlockedSlotsForDate(selectedDateStr);
+    if (dayBlks.length > 0) {
+      const desc = dayBlks.map(s => s.fullDay ? `全天不可預約（${s.reason}）` : `${s.startTime}-${s.endTime} 不可預約（${s.reason}）`).join("、");
+      blockedBanner.textContent = `🚫 客人不可預約設定：${desc}`;
+      blockedBanner.classList.remove("hidden");
+    } else {
+      blockedBanner.classList.add("hidden");
+    }
+
     const dayBks = appData.bookings
       .filter(b => b.date === selectedDateStr)
       .sort((a, b) => a.startTime.localeCompare(b.startTime));
@@ -1983,7 +2273,45 @@
     } else {
       sel.selectedIndex = 0;
     }
-    recalculateBookingTotal();
+    onBookingCustomerOrPaymentChange();
+  }
+
+  function onBookingCustomerOrPaymentChange() {
+    manualPriceOverride = false;
+    recalculateBookingTotal(false);
+  }
+
+  function onManualFinalPriceInput() {
+    manualPriceOverride = true;
+    checkBookingBalanceWarning();
+  }
+
+  function parseBookingServiceParts(rawService, fallbackDuration, fallbackOriginalPrice) {
+    const text = String(rawService || "").trim();
+    if (!text) return [];
+    const tokens = text.split(/\s\+\s/);
+    const items = [];
+    let buffer = "";
+
+    for (let i = 0; i < tokens.length; i++) {
+      const part = buffer ? `${buffer} + ${tokens[i]}` : tokens[i];
+      const isGift = /\[\s*贈送(?:\s*\$0)?\s*\]/.test(part);
+      const cleanName = part.replace(/\s*\[\s*贈送(?:\s*\$0)?\s*\]\s*/g, "").trim();
+      const found = (appData.catalog || []).find(c => c.name === cleanName);
+
+      if (found || i === tokens.length - 1) {
+        items.push({
+          name: cleanName,
+          price: found ? Number(found.price || 0) : (items.length === 0 ? Number(fallbackOriginalPrice || 0) : 0),
+          isGift,
+          duration: found ? Number(found.duration || 30) : Math.max(15, Math.round(Number(fallbackDuration || 60) / tokens.length))
+        });
+        buffer = "";
+      } else {
+        buffer = part;
+      }
+    }
+    return items;
   }
 
   function openBookingModal(existingBk = null) {
@@ -1994,6 +2322,7 @@
     }
     document.getElementById("bkCustomerSearch").value = "";
     document.getElementById("bkUsedPackageId").value = "";
+    manualPriceOverride = false;
 
     if (existingBk) {
       document.getElementById("bkModalTitle").textContent = "編輯預約 / 改期 / 結帳";
@@ -2009,26 +2338,14 @@
       document.getElementById("bkNote").value = existingBk.note;
       document.getElementById("bkUsedPackageId").value = existingBk.usedPackageId || "";
 
-      const rawService = String(existingBk.service || "");
-      const parts = rawService.split(" + ").filter(Boolean);
-      adminCart = parts.map((rawPart, idx) => {
-        const isGift = /\[\s*贈送(?:\s*\$0)?\s*\]/.test(rawPart);
-        const cleanName = rawPart.replace(/\s*\[\s*贈送(?:\s*\$0)?\s*\]\s*/g, "").trim();
-        const found = (appData.catalog || []).find(c => c.name === cleanName);
-        const basePrice = found ? Number(found.price || 0) : (idx === 0 ? Number(existingBk.originalPrice || 0) : 0);
-        return {
-          name: cleanName,
-          price: basePrice,
-          isGift,
-          duration: found ? Number(found.duration || 30) : Math.round((Number(existingBk.duration || 60)) / parts.length)
-        };
-      });
+      adminCart = parseBookingServiceParts(existingBk.service, existingBk.duration, existingBk.originalPrice);
       renderAdminCart();
       document.getElementById("bkOriginalPrice").value = existingBk.originalPrice;
       document.getElementById("bkFinalPrice").value = existingBk.finalPrice;
       document.getElementById("bkTotalDuration").textContent = existingBk.duration || 60;
       const calcSub = adminCart.reduce((s, x) => s + (x.isGift ? 0 : x.price), 0);
       document.getElementById("bkSubtotalText").textContent = `小計 $${calcSub.toLocaleString()}`;
+      manualPriceOverride = true;
       updateCustomerCardPreview(existingBk.customerId);
     } else {
       document.getElementById("bkModalTitle").textContent = "新增預約";
@@ -2044,7 +2361,7 @@
       document.getElementById("bkNote").value = "";
       adminCart = [];
       renderAdminCart();
-      recalculateBookingTotal();
+      recalculateBookingTotal(true);
     }
     checkBookingOverlapPreview();
     checkBookingBalanceWarning();
@@ -2067,7 +2384,7 @@
       duration: Number(opt.dataset.duration || 30)
     });
     renderAdminCart();
-    recalculateBookingTotal();
+    recalculateBookingTotal(true);
     syncEndTimeByDuration();
   }
 
@@ -2075,13 +2392,13 @@
     if (!adminCart[idx]) return;
     adminCart[idx].isGift = !adminCart[idx].isGift;
     renderAdminCart();
-    recalculateBookingTotal();
+    recalculateBookingTotal(true);
   }
 
   function removeAdminCartItem(idx) {
     adminCart.splice(idx, 1);
     renderAdminCart();
-    recalculateBookingTotal();
+    recalculateBookingTotal(true);
     syncEndTimeByDuration();
   }
 
@@ -2173,6 +2490,10 @@
         pkgSelect.innerHTML = activePkgs.map(p =>
           `<option value="${p.id}">${p.title}（剩 ${p.remainingSessions}/${p.totalSessions} 堂）</option>`
         ).join("");
+        const currentUsedPkgId = document.getElementById("bkUsedPackageId").value;
+        if (currentUsedPkgId && activePkgs.some(p => String(p.id) === String(currentUsedPkgId))) {
+          pkgSelect.value = currentUsedPkgId;
+        }
         pkgSelect.classList.remove("hidden");
         document.getElementById("bkUsePackageBtn").classList.remove("hidden");
       } else {
@@ -2196,11 +2517,12 @@
     document.getElementById("bkUsedPackageId").value = pkg.id;
     document.getElementById("bkPayMethod").value = "三堂套票";
     document.getElementById("bkFinalPrice").value = 0;
+    manualPriceOverride = true;
     checkBookingBalanceWarning();
     showToast(`已套用「${pkg.title}」（本次扣 1 堂，扣完剩 ${pkg.remainingSessions - 1} 堂）`);
   }
 
-  function recalculateBookingTotal() {
+  function recalculateBookingTotal(forceRecalc = false) {
     const custId = document.getElementById("bkCustomer").value;
     const cust = appData.customers.find(c => c.id === custId);
     updateCustomerCardPreview(custId);
@@ -2234,7 +2556,11 @@
     if (document.getElementById("bkPayMethod").value === "三堂套票") {
       final = 0;
     }
-    document.getElementById("bkFinalPrice").value = final;
+
+    if (!manualPriceOverride || forceRecalc) {
+      document.getElementById("bkFinalPrice").value = final;
+      manualPriceOverride = false;
+    }
     checkBookingBalanceWarning();
   }
 
@@ -2592,10 +2918,12 @@
       times.push(`${String(h).padStart(2, '0')}:45`);
       times.push(`${String(h).padStart(2, '0')}:50`);
     }
-    ["reqTime", "bkStartTime", "bkEndTime"].forEach(id => {
+    ["reqTime", "bkStartTime", "bkEndTime", "blkStartTime", "blkEndTime"].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.innerHTML = times.map(t => `<option value="${t}">${t}</option>`).join("");
     });
+    if (document.getElementById("blkStartTime")) document.getElementById("blkStartTime").value = "09:00";
+    if (document.getElementById("blkEndTime")) document.getElementById("blkEndTime").value = "12:00";
   }
 
   function initCategorySelectsFromCatalog(catId, srvId, catalogList) {
