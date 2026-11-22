@@ -2,6 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>馥語美學 | Beautiful every day</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
@@ -12,7 +13,6 @@
       color: #3D352E;
     }
     .brand-serif { font-family: 'Cormorant Garamond', serif; }
-    /* 台灣習慣：紅收綠支 */
     .income-red { color: #DC2626; }
     .expense-green { color: #16A34A; }
     .card-warm {
@@ -39,9 +39,27 @@
 </head>
 <body class="min-h-screen pb-16">
 
-  <!-- 後端傳入的客戶 ID (若有值則進入客人專屬查詢視角) -->
   <script>
-    const PORTAL_CID = "<?= cid ?>";
+    // 綁定你的 Google Apps Script API 網址與 GitHub Pages 網址
+    const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzvobWMdW_reX803Sn0lldJZF0VfSVkr0tWI1oDAr8urJK3hZ0964mAcxqaq1W27VA-Jg/exec";
+    const GITHUB_PAGES_URL = "https://fuyu-beautiful.github.io/Fuyu-beautiful/";
+
+    // 從網址參數讀取 ?cid=xxx
+    const urlParams = new URLSearchParams(window.location.search);
+    const PORTAL_CID = urlParams.get("cid") || "";
+
+    // 通用 API 呼叫函式 (使用 text/plain 避開 CORS 預檢請求)
+    async function callGasApi(bodyData) {
+      const response = await fetch(GAS_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(bodyData)
+      });
+      if (!response.ok) throw new Error("伺服器連線異常 (" + response.status + ")");
+      const json = await response.json();
+      if (json.error) throw new Error(json.error);
+      return json;
+    }
   </script>
 
   <!-- Loading 遮罩 -->
@@ -57,7 +75,6 @@
   <!-- 視角 A：客人專屬查詢與預約申請頁 (?cid=xxx)                -->
   <!-- ========================================================= -->
   <div id="customerPortalView" class="hidden max-w-md mx-auto px-4 pt-6">
-    <!-- 品牌標頭 -->
     <div class="text-center mb-6">
       <div class="inline-flex items-center justify-center gap-2 mb-1">
         <span class="brand-serif text-3xl font-bold tracking-wider text-[#8C735B]">Fy</span>
@@ -75,7 +92,6 @@
     <div id="portalErrorBox" class="hidden card-warm rounded-2xl p-6 text-center text-red-600 text-sm"></div>
 
     <div id="portalContent" class="hidden space-y-5">
-      <!-- 會員 VIP 儲值卡片 -->
       <div class="rounded-2xl p-6 text-white shadow-md relative overflow-hidden" style="background: linear-gradient(135deg, #8C735B 0%, #634F3C 100%);">
         <div class="flex justify-between items-start mb-4">
           <div>
@@ -93,7 +109,6 @@
         </div>
       </div>
 
-      <!-- 線上預約申請區塊 -->
       <div class="card-warm rounded-2xl p-5">
         <h3 class="font-bold text-[#3D352E] mb-3 flex items-center gap-1.5">✨ 線上預約申請</h3>
         <div class="space-y-3 text-sm">
@@ -123,13 +138,11 @@
         </div>
       </div>
 
-      <!-- 我的預約紀錄 -->
       <div class="card-warm rounded-2xl p-5">
         <h3 class="font-bold text-[#3D352E] mb-3">📅 我的預約紀錄</h3>
         <div id="pBookingsList" class="space-y-2.5 text-sm"></div>
       </div>
 
-      <!-- 儲值與扣款明細 -->
       <div class="card-warm rounded-2xl p-5">
         <h3 class="font-bold text-[#3D352E] mb-3">💳 儲值與扣點明細</h3>
         <div id="pTxList" class="space-y-2 text-sm"></div>
@@ -151,7 +164,6 @@
   </div>
 
   <div id="adminDashboardView" class="hidden max-w-5xl mx-auto px-4 pt-5">
-    <!-- 頂部導覽列 -->
     <header class="flex flex-wrap justify-between items-center gap-3 mb-5 pb-4 border-b border-[#EAE2D6]">
       <div class="flex items-center gap-2.5">
         <span class="brand-serif text-3xl font-bold text-[#8C735B]">Fy</span>
@@ -166,7 +178,6 @@
       </div>
     </header>
 
-    <!-- 紅收綠支財務摘要卡片 -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
       <div class="card-warm rounded-2xl p-4">
         <p class="text-xs text-[#735D48]">本月現金實收 (含儲值現金)</p>
@@ -186,7 +197,6 @@
       </div>
     </div>
 
-    <!-- 待審核線上預約提醒橫幅 -->
     <div id="pendingBanner" class="hidden mb-5 bg-amber-50 border border-amber-200 rounded-2xl p-4">
       <div class="flex justify-between items-center mb-2">
         <h3 class="font-bold text-amber-900 text-sm">🔔 客人線上預約申請（待審核）</h3>
@@ -195,16 +205,14 @@
       <div id="pendingList" class="space-y-2"></div>
     </div>
 
-    <!-- 主功能分頁切換 -->
     <div class="flex gap-2 mb-5 bg-[#EFE9DF] p-1 rounded-xl w-fit">
       <button onclick="switchTab('calendar')" id="tabBtn-calendar" class="tab-btn px-4 py-2 rounded-lg text-sm font-bold bg-white text-[#3D352E] shadow-xs">📅 預約月曆</button>
       <button onclick="switchTab('customers')" id="tabBtn-customers" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-[#735D48]">👩🏻 客戶與儲值金</button>
       <button onclick="switchTab('finance')" id="tabBtn-finance" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium text-[#735D48]">💰 收支記帳明細</button>
     </div>
 
-    <!-- 分頁 1：預約月曆與當日排程 -->
+    <!-- 分頁 1：預約月曆 -->
     <div id="tab-calendar" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
-      <!-- 左側月曆 -->
       <div class="lg:col-span-7 card-warm rounded-2xl p-5">
         <div class="flex justify-between items-center mb-4">
           <button onclick="changeMonth(-1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF]">◀</button>
@@ -217,7 +225,6 @@
         <div id="calendarGrid" class="grid grid-cols-7 gap-1.5"></div>
       </div>
 
-      <!-- 右側單日行程表 -->
       <div class="lg:col-span-5 card-warm rounded-2xl p-5">
         <div class="flex justify-between items-center mb-4">
           <div>
@@ -230,7 +237,7 @@
       </div>
     </div>
 
-    <!-- 分頁 2：客戶管理、專屬優惠與儲值金 -->
+    <!-- 分頁 2：客戶管理 -->
     <div id="tab-customers" class="hidden space-y-4">
       <div class="flex flex-wrap justify-between items-center gap-3">
         <input type="text" id="custSearchInput" oninput="renderCustomersList()" placeholder="🔍 搜尋客人姓名或電話..." class="border border-[#EAE2D6] rounded-xl px-4 py-2 text-sm bg-white w-full sm:w-72">
@@ -239,7 +246,7 @@
       <div id="customersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
     </div>
 
-    <!-- 分頁 3：收支記帳明細 -->
+    <!-- 分頁 3：收支記帳 -->
     <div id="tab-finance" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-5">
       <div class="lg:col-span-4 card-warm rounded-2xl p-5 h-fit">
         <h3 class="font-bold text-base mb-3 expense-green">+ 登記營運支出</h3>
@@ -277,9 +284,7 @@
     </div>
   </div>
 
-  <!-- ========================================================= -->
-  <!-- 彈窗 1：新增 / 編輯預約 (自動帶入客人優惠與儲值餘額)      -->
-  <!-- ========================================================= -->
+  <!-- 彈窗 1：新增 / 編輯預約 -->
   <div id="bookingModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
       <h3 class="font-bold text-lg mb-4" id="bkModalTitle">新增除毛預約</h3>
@@ -354,9 +359,7 @@
     </div>
   </div>
 
-  <!-- ========================================================= -->
-  <!-- 彈窗 2：新增 / 編輯客戶與專屬優惠                         -->
-  <!-- ========================================================= -->
+  <!-- 彈窗 2：新增 / 編輯客戶 -->
   <div id="customerModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-md w-full p-6">
       <h3 class="font-bold text-lg mb-4" id="custModalTitle">新增客戶建檔</h3>
@@ -403,9 +406,7 @@
     </div>
   </div>
 
-  <!-- ========================================================= -->
-  <!-- 彈窗 3：客戶儲值入帳                                      -->
-  <!-- ========================================================= -->
+  <!-- 彈窗 3：客戶儲值入帳 -->
   <div id="topUpModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6">
       <h3 class="font-bold text-lg mb-1">💳 客戶儲值入帳</h3>
@@ -432,9 +433,7 @@
     </div>
   </div>
 
-  <!-- ========================================================= -->
-  <!-- 彈窗 4：馥語美學完整價目表參考                            -->
-  <!-- ========================================================= -->
+  <!-- 彈窗 4：完整價目表參考 -->
   <div id="priceModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 max-h-[85vh] overflow-y-auto">
       <div class="flex justify-between items-center mb-4">
@@ -446,9 +445,6 @@
   </div>
 
 <script>
-  // =========================================================
-  // 馥語美學完整價目表資料庫 (依據官方 Price List 建置)
-  // =========================================================
   const SERVICE_CATALOG = {
     "日式無痛淨毛（單堂）": [
       { name: "鬍子 (單堂)", price: 850 },
@@ -494,98 +490,84 @@
   };
 
   let adminPassword = "";
-  let appData = { webAppUrl: "", customers: [], bookings: [], transactions: [], expenses: [] };
+  let appData = { webAppUrl: GITHUB_PAGES_URL, customers: [], bookings: [], transactions: [], expenses: [] };
   let currentYear = new Date().getFullYear();
   let currentMonth = new Date().getMonth();
   let selectedDateStr = formatDateLocal(new Date());
 
-  // 初始化入口判斷
   window.onload = function() {
     initTimeSelects();
     initCategorySelects();
 
     if (PORTAL_CID && PORTAL_CID.trim() !== "") {
-      // 客人專屬查詢視角
       document.getElementById("customerPortalView").classList.remove("hidden");
       document.getElementById("reqDate").value = selectedDateStr;
       loadCustomerPortal(PORTAL_CID);
     } else {
-      // 闆娘後台登入視角
       document.getElementById("adminLoginView").classList.remove("hidden");
       document.getElementById("expDate").value = selectedDateStr;
     }
   };
 
-  // =========================================================
-  // 客人專屬查詢端邏輯
-  // =========================================================
-  function loadCustomerPortal(cid) {
+  async function loadCustomerPortal(cid) {
     showLoading("正在讀取您的專屬會員資料...");
-    google.script.run
-      .withSuccessHandler(res => {
-        hideLoading();
-        if (res.error) {
-          const errBox = document.getElementById("portalErrorBox");
-          errBox.textContent = res.error;
-          errBox.classList.remove("hidden");
-          return;
-        }
-        document.getElementById("portalContent").classList.remove("hidden");
-        document.getElementById("pCustName").textContent = res.customer.name;
-        document.getElementById("pCustPromo").textContent = res.customer.promoTitle || "馥語專屬會員";
-        document.getElementById("pCustBalance").textContent = res.customer.balance.toLocaleString();
+    try {
+      const res = await callGasApi({ action: "getCustomerPortalData", cid });
+      hideLoading();
+      document.getElementById("portalContent").classList.remove("hidden");
+      document.getElementById("pCustName").textContent = res.customer.name;
+      document.getElementById("pCustPromo").textContent = res.customer.promoTitle || "馥語專屬會員";
+      document.getElementById("pCustBalance").textContent = res.customer.balance.toLocaleString();
 
-        // 渲染預約列表
-        const bList = document.getElementById("pBookingsList");
-        if (res.bookings.length === 0) {
-          bList.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-3">尚無預約紀錄，可直接使用上方表單預約 ✨</p>`;
-        } else {
-          bList.innerHTML = res.bookings.map(b => {
-            const badgeColor = b.status === "已確認" ? "bg-emerald-50 text-emerald-700" :
-                               b.status === "待審核" ? "bg-amber-50 text-amber-700" :
-                               b.status === "已完成" ? "bg-stone-100 text-stone-600" : "bg-red-50 text-red-600";
-            return `
-              <div class="p-3 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] flex justify-between items-center">
-                <div>
-                  <p class="font-bold text-[#3D352E]">${b.date} ${b.startTime}</p>
-                  <p class="text-xs text-[#735D48] mt-0.5">${b.service} ($${b.finalPrice.toLocaleString()})</p>
-                </div>
-                <span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeColor}">${b.status}</span>
+      const bList = document.getElementById("pBookingsList");
+      if (res.bookings.length === 0) {
+        bList.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-3">尚無預約紀錄，可直接使用上方表單預約 ✨</p>`;
+      } else {
+        bList.innerHTML = res.bookings.map(b => {
+          const badgeColor = b.status === "已確認" ? "bg-emerald-50 text-emerald-700" :
+                             b.status === "待審核" ? "bg-amber-50 text-amber-700" :
+                             b.status === "已完成" ? "bg-stone-100 text-stone-600" : "bg-red-50 text-red-600";
+          return `
+            <div class="p-3 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] flex justify-between items-center">
+              <div>
+                <p class="font-bold text-[#3D352E]">${b.date} ${b.startTime}</p>
+                <p class="text-xs text-[#735D48] mt-0.5">${b.service} ($${b.finalPrice.toLocaleString()})</p>
               </div>
-            `;
-          }).join("");
-        }
+              <span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeColor}">${b.status}</span>
+            </div>
+          `;
+        }).join("");
+      }
 
-        // 渲染儲值扣款明細
-        const tList = document.getElementById("pTxList");
-        if (res.transactions.length === 0) {
-          tList.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-3">尚無儲值或扣點明細</p>`;
-        } else {
-          tList.innerHTML = res.transactions.map(t => {
-            const isPlus = t.pointsChange >= 0;
-            return `
-              <div class="py-2.5 border-b border-[#F3EFEA] last:border-0 flex justify-between items-center">
-                <div>
-                  <p class="font-medium text-[#3D352E]">${t.type} <span class="text-xs text-[#8C735B]">(${t.note})</span></p>
-                  <p class="text-[11px] text-[#8C735B]">${t.time}</p>
-                </div>
-                <div class="text-right">
-                  <p class="font-bold ${isPlus ? 'income-red' : 'text-[#3D352E]'}">${isPlus ? '+' : ''}${t.pointsChange.toLocaleString()}</p>
-                  <p class="text-[11px] text-[#8C735B]">餘額 $${t.balanceAfter.toLocaleString()}</p>
-                </div>
+      const tList = document.getElementById("pTxList");
+      if (res.transactions.length === 0) {
+        tList.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-3">尚無儲值或扣點明細</p>`;
+      } else {
+        tList.innerHTML = res.transactions.map(t => {
+          const isPlus = t.pointsChange >= 0;
+          return `
+            <div class="py-2.5 border-b border-[#F3EFEA] last:border-0 flex justify-between items-center">
+              <div>
+                <p class="font-medium text-[#3D352E]">${t.type} <span class="text-xs text-[#8C735B]">(${t.note})</span></p>
+                <p class="text-[11px] text-[#8C735B]">${t.time}</p>
               </div>
-            `;
-          }).join("");
-        }
-      })
-      .withFailureHandler(err => {
-        hideLoading();
-        showToast("讀取失敗：" + err.message);
-      })
-      .getCustomerPortalData(cid);
+              <div class="text-right">
+                <p class="font-bold ${isPlus ? 'income-red' : 'text-[#3D352E]'}">${isPlus ? '+' : ''}${t.pointsChange.toLocaleString()}</p>
+                <p class="text-[11px] text-[#8C735B]">餘額 $${t.balanceAfter.toLocaleString()}</p>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+    } catch (err) {
+      hideLoading();
+      const errBox = document.getElementById("portalErrorBox");
+      errBox.textContent = err.message;
+      errBox.classList.remove("hidden");
+    }
   }
 
-  function submitPortalBooking() {
+  async function submitPortalBooking() {
     const date = document.getElementById("reqDate").value;
     const startTime = document.getElementById("reqTime").value;
     const category = document.getElementById("reqCategory").value;
@@ -596,23 +578,21 @@
 
     if (!date) return showToast("請選擇希望日期");
     showLoading("正在送出預約申請...");
-    google.script.run
-      .withSuccessHandler(() => {
-        hideLoading();
-        showToast("已送出預約申請！闆娘確認後會通知您");
-        document.getElementById("reqNote").value = "";
-        loadCustomerPortal(PORTAL_CID);
-      })
-      .withFailureHandler(err => {
-        hideLoading();
-        showToast("送出失敗：" + err.message);
-      })
-      .submitCustomerBookingRequest({ cid: PORTAL_CID, date, startTime, category, service, price, note });
+    try {
+      await callGasApi({
+        action: "submitCustomerBookingRequest",
+        payload: { cid: PORTAL_CID, date, startTime, category, service, price, note }
+      });
+      hideLoading();
+      showToast("已送出預約申請！闆娘確認後會通知您");
+      document.getElementById("reqNote").value = "";
+      loadCustomerPortal(PORTAL_CID);
+    } catch (err) {
+      hideLoading();
+      showToast("送出失敗：" + err.message);
+    }
   }
 
-  // =========================================================
-  // 闆娘管理後台邏輯
-  // =========================================================
   function loginAdmin() {
     const pwd = document.getElementById("adminPwdInput").value;
     if (!pwd) return showToast("請輸入管理密碼");
@@ -620,27 +600,21 @@
     refreshAdminData(true);
   }
 
-  function refreshAdminData(isLogin = false) {
+  async function refreshAdminData(isLogin = false) {
     showLoading("同步 Google 試算表資料...");
-    google.script.run
-      .withSuccessHandler(res => {
-        hideLoading();
-        if (res.error) {
-          showToast(res.error);
-          return;
-        }
-        appData = res;
-        if (isLogin) {
-          document.getElementById("adminLoginView").classList.add("hidden");
-          document.getElementById("adminDashboardView").classList.remove("hidden");
-        }
-        renderAllAdminViews();
-      })
-      .withFailureHandler(err => {
-        hideLoading();
-        showToast("發生錯誤：" + err.message);
-      })
-      .verifyAdminAndLoadAll(adminPassword);
+    try {
+      const res = await callGasApi({ action: "verifyAdminAndLoadAll", password: adminPassword });
+      hideLoading();
+      appData = res;
+      if (isLogin) {
+        document.getElementById("adminLoginView").classList.add("hidden");
+        document.getElementById("adminDashboardView").classList.remove("hidden");
+      }
+      renderAllAdminViews();
+    } catch (err) {
+      hideLoading();
+      showToast(err.message);
+    }
   }
 
   function renderAllAdminViews() {
@@ -652,34 +626,29 @@
     renderFinanceHistory();
   }
 
-  // 統計紅收綠支與未消化儲值金
   function renderFinanceStats() {
     const ymPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
     let monthIncome = 0;
     let monthExpense = 0;
 
-    // 1. 直接現金/轉帳結帳的已完成預約 (扣儲值金不重複算入現金營收)
     appData.bookings.forEach(b => {
       if (b.date.startsWith(ymPrefix) && b.status === "已完成" && (b.payMethod === "現金" || b.payMethod === "轉帳")) {
         monthIncome += b.finalPrice;
       }
     });
 
-    // 2. 本月儲值實際收現
     appData.transactions.forEach(t => {
       if (t.time.startsWith(ymPrefix) && t.type === "儲值入帳") {
         monthIncome += t.cashReceived;
       }
     });
 
-    // 3. 本月營運支出
     appData.expenses.forEach(e => {
       if (e.date.startsWith(ymPrefix)) {
         monthExpense += e.amount;
       }
     });
 
-    // 4. 全店未消化儲值金總額
     const totalLiability = appData.customers.reduce((sum, c) => sum + c.balance, 0);
     const net = monthIncome - monthExpense;
 
@@ -691,7 +660,6 @@
     document.getElementById("statLiability").textContent = `$${totalLiability.toLocaleString()}`;
   }
 
-  // 渲染待審核線上預約
   function renderPendingRequests() {
     const pendings = appData.bookings.filter(b => b.status === "待審核");
     const banner = document.getElementById("pendingBanner");
@@ -716,22 +684,22 @@
     `).join("");
   }
 
-  function approvePendingBooking(bookingId) {
+  async function approvePendingBooking(bookingId) {
     const bk = appData.bookings.find(b => b.id === bookingId);
     if (!bk) return;
     bk.status = "已確認";
     showLoading("核准預約中...");
-    google.script.run
-      .withSuccessHandler(res => {
-        hideLoading();
-        appData = res;
-        renderAllAdminViews();
-        showToast("已核准並排入月曆！");
-      })
-      .saveBookingAdmin(adminPassword, bk);
+    try {
+      appData = await callGasApi({ action: "saveBookingAdmin", password: adminPassword, payload: bk });
+      hideLoading();
+      renderAllAdminViews();
+      showToast("已核准並排入月曆！");
+    } catch (err) {
+      hideLoading();
+      showToast(err.message);
+    }
   }
 
-  // 渲染月曆
   function renderCalendar() {
     document.getElementById("calendarMonthLabel").textContent = `${currentYear}年 ${currentMonth + 1}月`;
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
@@ -739,9 +707,7 @@
     const grid = document.getElementById("calendarGrid");
     grid.innerHTML = "";
 
-    for (let i = 0; i < firstDay; i++) {
-      grid.innerHTML += `<div></div>`;
-    }
+    for (let i = 0; i < firstDay; i++) grid.innerHTML += `<div></div>`;
 
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -809,16 +775,14 @@
     }).join("");
   }
 
-  // 一鍵複製 LINE 預約確認訊息
   function copyLineConfirm(bookingId) {
     const b = appData.bookings.find(x => x.id === bookingId);
     if (!b) return;
-    const portalUrl = `${appData.webAppUrl}?cid=${b.customerId}`;
+    const portalUrl = `${GITHUB_PAGES_URL}?cid=${b.customerId}`;
     const msg = `✨【馥語美學 預約確認通知】✨\n親愛的 ${b.customerName} 您好，已為您保留以下時段：\n\n📅 日期：${b.date}\n⏰ 時間：${b.startTime}\n💆🏻‍♀️ 項目：${b.service}\n💰 金額：$${b.finalPrice.toLocaleString()} (${b.payMethod})\n\n📍 店面導航：https://maps.app.goo.gl/T5TZ3H2ASTdWra1n6?g_st=ic\n💳 查詢個人儲值金與預約紀錄：\n${portalUrl}\n\n期待為您服務，Beautiful every day 🤍`;
     copyToClipboard(msg, "已複製 LINE 預約確認訊息！");
   }
 
-  // 渲染客戶卡片與專屬查詢網址複製
   function renderCustomersList() {
     const kw = (document.getElementById("custSearchInput").value || "").trim().toLowerCase();
     const filtered = appData.customers.filter(c =>
@@ -857,12 +821,11 @@
   }
 
   function copyCustomerPortalLink(cid, name) {
-    const url = `${appData.webAppUrl}?cid=${cid}`;
+    const url = `${GITHUB_PAGES_URL}?cid=${cid}`;
     const msg = `親愛的 ${name} 您好～這是您在【馥語美學】的專屬會員查詢連結，點開即可隨時查看剩餘儲值金與線上預約喔：\n${url}`;
     copyToClipboard(msg, `已複製 ${name} 的專屬查詢連結！`);
   }
 
-  // 渲染財務流水帳
   function renderFinanceHistory() {
     const list = document.getElementById("financeHistoryList");
     const items = [];
@@ -872,7 +835,6 @@
         time: t.time,
         title: `${t.type} - ${t.customerName}`,
         note: t.note,
-        amount: t.type === "儲值入帳" ? t.cashReceived : 0,
         isExpense: false,
         tag: t.type === "儲值入帳" ? `實收現金 +$${t.cashReceived}` : `扣點 ${t.pointsChange}`
       });
@@ -884,7 +846,6 @@
           time: `${b.date} ${b.startTime}`,
           title: `現場結帳 - ${b.customerName} (${b.service})`,
           note: b.payMethod,
-          amount: b.finalPrice,
           isExpense: false,
           tag: `+ $${b.finalPrice.toLocaleString()}`
         });
@@ -896,7 +857,6 @@
         time: e.date,
         title: `支出：${e.category}`,
         note: e.note,
-        amount: e.amount,
         isExpense: true,
         tag: `- $${e.amount.toLocaleString()}`
       });
@@ -920,9 +880,6 @@
     `).join("");
   }
 
-  // =========================================================
-  // 彈窗操作與計價邏輯
-  // =========================================================
   function openBookingModal(existingBk = null) {
     if (appData.customers.length === 0) {
       showToast("請先到「客戶與儲值金」新增第一位客人資料");
@@ -977,9 +934,7 @@
       ? Number(document.getElementById("bkOriginalPrice").value || 0)
       : Number(serviceSel.options[serviceSel.selectedIndex]?.dataset.price || 0);
 
-    if (!manualOriginal) {
-      document.getElementById("bkOriginalPrice").value = orig;
-    }
+    if (!manualOriginal) document.getElementById("bkOriginalPrice").value = orig;
 
     let final = orig;
     if (cust) {
@@ -994,7 +949,7 @@
     document.getElementById("bkFinalPrice").value = final;
   }
 
-  function saveBooking() {
+  async function saveBooking() {
     const custId = document.getElementById("bkCustomer").value;
     const cust = appData.customers.find(c => c.id === custId);
     const payload = {
@@ -1015,18 +970,15 @@
 
     closeModal('bookingModal');
     showLoading("儲存預約中...");
-    google.script.run
-      .withSuccessHandler(res => {
-        hideLoading();
-        appData = res;
-        renderAllAdminViews();
-        showToast("預約已儲存！");
-      })
-      .withFailureHandler(err => {
-        hideLoading();
-        showToast("儲存失敗：" + err.message);
-      })
-      .saveBookingAdmin(adminPassword, payload);
+    try {
+      appData = await callGasApi({ action: "saveBookingAdmin", password: adminPassword, payload });
+      hideLoading();
+      renderAllAdminViews();
+      showToast("預約已儲存！");
+    } catch (err) {
+      hideLoading();
+      showToast("儲存失敗：" + err.message);
+    }
   }
 
   function openCustomerModal(custId = null) {
@@ -1053,10 +1005,10 @@
     openModal('customerModal');
   }
 
-  function saveCustomer() {
+  async function saveCustomer() {
     const name = document.getElementById("custName").value.trim();
     if (!name) return showToast("請輸入客人姓名");
-    const payload = {
+    const data = {
       id: document.getElementById("custId").value,
       name: name,
       contact: document.getElementById("custContact").value,
@@ -1067,14 +1019,15 @@
     };
     closeModal('customerModal');
     showLoading("儲存客戶資料...");
-    google.script.run
-      .withSuccessHandler(res => {
-        hideLoading();
-        appData = res;
-        renderAllAdminViews();
-        showToast("客戶資料已更新！");
-      })
-      .saveCustomerAdmin(adminPassword, payload);
+    try {
+      appData = await callGasApi({ action: "saveCustomerAdmin", password: adminPassword, data });
+      hideLoading();
+      renderAllAdminViews();
+      showToast("客戶資料已更新！");
+    } catch (err) {
+      hideLoading();
+      showToast(err.message);
+    }
   }
 
   function openTopUpModal(custId) {
@@ -1087,7 +1040,7 @@
     openModal('topUpModal');
   }
 
-  function submitTopUp() {
+  async function submitTopUp() {
     const customerId = document.getElementById("topUpCustId").value;
     const cashPaid = Number(document.getElementById("topUpCash").value || 0);
     const bonusPoints = Number(document.getElementById("topUpBonus").value || 0);
@@ -1096,17 +1049,22 @@
 
     closeModal('topUpModal');
     showLoading("儲值入帳中...");
-    google.script.run
-      .withSuccessHandler(res => {
-        hideLoading();
-        appData = res;
-        renderAllAdminViews();
-        showToast("儲值入帳完成！");
-      })
-      .addTopUpAdmin(adminPassword, { customerId, cashPaid, bonusPoints, note });
+    try {
+      appData = await callGasApi({
+        action: "addTopUpAdmin",
+        password: adminPassword,
+        payload: { customerId, cashPaid, bonusPoints, note }
+      });
+      hideLoading();
+      renderAllAdminViews();
+      showToast("儲值入帳完成！");
+    } catch (err) {
+      hideLoading();
+      showToast(err.message);
+    }
   }
 
-  function submitExpense() {
+  async function submitExpense() {
     const date = document.getElementById("expDate").value;
     const category = document.getElementById("expCategory").value;
     const amount = Number(document.getElementById("expAmount").value || 0);
@@ -1114,16 +1072,21 @@
     if (!date || amount <= 0) return showToast("請填寫日期與正確支出金額");
 
     showLoading("記錄支出中...");
-    google.script.run
-      .withSuccessHandler(res => {
-        hideLoading();
-        appData = res;
-        document.getElementById("expAmount").value = "";
-        document.getElementById("expNote").value = "";
-        renderAllAdminViews();
-        showToast("支出已記錄！");
-      })
-      .addExpenseAdmin(adminPassword, { date, category, amount, note });
+    try {
+      appData = await callGasApi({
+        action: "addExpenseAdmin",
+        password: adminPassword,
+        payload: { date, category, amount, note }
+      });
+      hideLoading();
+      document.getElementById("expAmount").value = "";
+      document.getElementById("expNote").value = "";
+      renderAllAdminViews();
+      showToast("支出已記錄！");
+    } catch (err) {
+      hideLoading();
+      showToast(err.message);
+    }
   }
 
   function openPriceModal() {
@@ -1144,9 +1107,6 @@
     openModal('priceModal');
   }
 
-  // =========================================================
-  // 輔助工具函式
-  // =========================================================
   function initTimeSelects() {
     const times = [];
     for (let h = 9; h <= 21; h++) {
