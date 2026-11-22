@@ -42,6 +42,7 @@
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzvobWMdW_reX803Sn0lldJZF0VfSVkr0tWI1oDAr8urJK3hZ0964mAcxqaq1W27VA-Jg/exec";
     const GITHUB_PAGES_URL = "https://fuyu-beautiful.github.io/Fuyu-beautiful/";
+    const BUFFER_MINUTES = 10;
 
     const urlParams = new URLSearchParams(window.location.search);
     const PORTAL_CID = urlParams.get("cid") || "";
@@ -123,7 +124,7 @@
             </div>
           </div>
 
-          <div id="reqBlockedHint" class="hidden px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900"></div>
+          <div id="reqBlockedHint" class="hidden px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-bold"></div>
 
           <div>
             <label class="block text-xs text-[#735D48] mb-1">服務分類</label>
@@ -148,7 +149,7 @@
             <label class="block text-xs text-[#735D48] mb-1">備註需求（選填）</label>
             <input type="text" id="reqNote" placeholder="例如：想加做軟膜、或特殊時間需求" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
           </div>
-          <button onclick="submitPortalBooking()" class="w-full btn-primary font-bold py-2.5 rounded-xl mt-1">送出預約申請（由闆娘確認）</button>
+          <button id="reqSubmitBtn" onclick="submitPortalBooking()" class="w-full btn-primary font-bold py-2.5 rounded-xl mt-1">送出預約申請（由闆娘確認）</button>
         </div>
       </div>
 
@@ -196,7 +197,7 @@
       <button onclick="switchTab('calendar')" id="tabBtn-calendar" class="tab-btn whitespace-nowrap px-1.5 py-2 rounded-lg text-xs font-bold bg-white text-[#3D352E] shadow-xs text-center">📅 預約月曆</button>
       <button onclick="switchTab('customers')" id="tabBtn-customers" class="tab-btn whitespace-nowrap px-1.5 py-2 rounded-lg text-xs font-medium text-[#735D48] text-center">👩🏻 客戶資料</button>
       <button onclick="switchTab('finance')" id="tabBtn-finance" class="tab-btn whitespace-nowrap px-1.5 py-2 rounded-lg text-xs font-medium text-[#735D48] text-center">💰 收支帳本</button>
-      <button onclick="switchTab('catalog')" id="tabBtn-catalog" class="tab-btn whitespace-nowrap px-1.5 py-2 rounded-lg text-xs font-medium text-[#735D48] text-center">📋 服務價目</button>
+      <button onclick="switchTab('catalog')" id="tabBtn-catalog" class="tab-btn whitespace-nowrap px-1.5 py-2 rounded-lg text-xs font-medium text-[#735D48] text-center">📋 價目與禁約</button>
     </div>
 
     <div id="pendingBanner" class="hidden mb-4 bg-amber-50 border border-amber-200 rounded-2xl p-4">
@@ -207,87 +208,43 @@
       <div id="pendingList" class="space-y-2"></div>
     </div>
 
-    <!-- 分頁 1（預設首頁）：預約月曆 -->
-    <div id="tab-calendar" class="space-y-4">
-      <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5">
-        <div class="xl:col-span-7 card-warm rounded-2xl p-2 sm:p-5">
-          <div class="flex justify-between items-center mb-2">
-            <button onclick="changeMonth(-1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">◀</button>
-            <h2 class="font-bold text-base sm:text-lg" id="calendarMonthLabel">2026年 11月</h2>
-            <button onclick="changeMonth(1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">▶</button>
-          </div>
-
-          <div class="flex items-center justify-around gap-1.5 text-[11px] bg-[#FAF7F2] border border-[#EAE2D6] rounded-lg px-2 py-1 mb-2 whitespace-nowrap">
-            <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-medium">熱蠟</span>
-            <span class="px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-300 font-medium">冰肌</span>
-            <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-900 border border-rose-300 font-medium">熱蠟+冰肌</span>
-            <span class="px-2 py-0.5 rounded bg-stone-200 text-stone-800 border border-stone-300 font-medium">🚫 不可約</span>
-          </div>
-
-          <div class="grid grid-cols-7 text-center text-xs text-[#8C735B] font-bold mb-1">
-            <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
-          </div>
-          <div id="calendarGrid" class="grid grid-cols-7 gap-0.5 sm:gap-1.5"></div>
+    <!-- 分頁 1（預設首頁）：純淨預約月曆＋當日排程 -->
+    <div id="tab-calendar" class="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5">
+      <div class="xl:col-span-7 card-warm rounded-2xl p-2 sm:p-5">
+        <div class="flex justify-between items-center mb-2">
+          <button onclick="changeMonth(-1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">◀</button>
+          <h2 class="font-bold text-base sm:text-lg" id="calendarMonthLabel">2026年 11月</h2>
+          <button onclick="changeMonth(1)" class="px-3 py-1 rounded-lg bg-[#FAF7F2] hover:bg-[#EFE9DF] text-sm font-bold">▶</button>
         </div>
 
-        <div class="xl:col-span-5 card-warm rounded-2xl p-4 sm:p-5">
-          <div class="flex justify-between items-center mb-2.5 gap-2">
-            <div>
-              <h3 class="font-bold text-base sm:text-lg" id="selectedDateLabel">今日排程</h3>
-              <p class="text-xs text-[#8C735B]">點「已報到」完成結帳；誤按點回「尚未到來」自動退回</p>
-            </div>
-            <button onclick="openBookingModal()" class="btn-primary whitespace-nowrap text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl">+ 新增預約</button>
-          </div>
-
-          <div id="dayBlockedBanner" class="hidden mb-2.5 px-3.5 py-2 rounded-xl bg-stone-100 border border-stone-300 text-xs text-stone-800 font-medium"></div>
-
-          <!-- 當日排程時段重疊醒目警示區 -->
-          <div id="dayOverlapBanner" class="hidden mb-3 px-3.5 py-2.5 rounded-xl bg-red-50 border-2 border-red-300 text-xs text-red-800 space-y-1"></div>
-
-          <div id="dayBookingsList" class="space-y-3 max-h-[620px] overflow-y-auto pr-1"></div>
+        <div class="flex items-center justify-around gap-1.5 text-[11px] bg-[#FAF7F2] border border-[#EAE2D6] rounded-lg px-2 py-1 mb-2 whitespace-nowrap">
+          <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-medium">熱蠟</span>
+          <span class="px-2 py-0.5 rounded bg-sky-100 text-sky-900 border border-sky-300 font-medium">冰肌</span>
+          <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-900 border border-rose-300 font-medium">熱蠟+冰肌</span>
+          <span class="px-2 py-0.5 rounded bg-red-100 text-red-800 border border-red-300 font-bold">✕ 整天拒約</span>
         </div>
+
+        <div class="grid grid-cols-7 text-center text-xs text-[#8C735B] font-bold mb-1">
+          <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+        </div>
+        <div id="calendarGrid" class="grid grid-cols-7 gap-0.5 sm:gap-1.5"></div>
       </div>
 
-      <!-- 客人不可預約日期／時段設定區 -->
-      <div class="card-warm rounded-2xl p-4 sm:p-5 space-y-3">
-        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-[#F3EFEA] pb-2.5">
+      <div class="xl:col-span-5 card-warm rounded-2xl p-4 sm:p-5">
+        <div class="flex justify-between items-center mb-2.5 gap-2">
           <div>
-            <h3 class="font-bold text-sm sm:text-base text-[#3D352E]">🚫 客人不可預約日期／時段設定（同步至線上預約）</h3>
-            <p class="text-xs text-[#8C735B]">設定某天全天或特定時段不開放客人線上預約；後台排程仍可依需要彈性調整</p>
+            <h3 class="font-bold text-base sm:text-lg" id="selectedDateLabel">今日排程</h3>
+            <p class="text-xs text-[#8C735B]">點「已報到」完成結帳；誤按點回「尚未到來」自動退回</p>
           </div>
-          <button type="button" onclick="useSelectedDateForBlocked()" class="text-xs px-3 py-1.5 rounded-lg bg-[#FAF7F2] border border-[#EAE2D6] text-[#735D48] font-medium hover:bg-[#EFE9DF]">帶入目前選取日期</button>
+          <button onclick="openBookingModal()" class="btn-primary whitespace-nowrap text-xs sm:text-sm font-bold px-3.5 py-2 rounded-xl">+ 新增預約</button>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5 text-xs items-end bg-[#FAF7F2] p-3 rounded-xl border border-[#EAE2D6]">
-          <div>
-            <label class="block text-[#735D48] mb-1">日期</label>
-            <input type="date" id="blkDate" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white">
-          </div>
-          <div>
-            <label class="block text-[#735D48] mb-1">類型</label>
-            <select id="blkFullDay" onchange="toggleBlockedTimeInputs()" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white">
-              <option value="true">整天不可預約</option>
-              <option value="false">指定時段不可預約</option>
-            </select>
-          </div>
-          <div id="blkStartBox" class="hidden">
-            <label class="block text-[#735D48] mb-1">開始時間</label>
-            <select id="blkStartTime" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white"></select>
-          </div>
-          <div id="blkEndBox" class="hidden">
-            <label class="block text-[#735D48] mb-1">結束時間</label>
-            <select id="blkEndTime" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white"></select>
-          </div>
-          <div class="lg:col-span-2">
-            <label class="block text-[#735D48] mb-1">原因說明（選填）</label>
-            <div class="flex gap-2">
-              <input type="text" id="blkReason" placeholder="例如：店休、進修、保留時段" class="flex-1 border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white">
-              <button type="button" onclick="submitBlockedSlot()" class="btn-primary px-3.5 py-2 rounded-lg font-bold shrink-0">+ 加入限制</button>
-            </div>
-          </div>
-        </div>
+        <div id="dayBlockedBanner" class="hidden mb-2.5 px-3.5 py-2 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 font-bold"></div>
 
-        <div id="blockedSlotsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs"></div>
+        <!-- 當日排程時段重疊醒目警示區 -->
+        <div id="dayOverlapBanner" class="hidden mb-3 px-3.5 py-2.5 rounded-xl bg-red-50 border-2 border-red-300 text-xs text-red-800 space-y-1"></div>
+
+        <div id="dayBookingsList" class="space-y-3 max-h-[620px] overflow-y-auto pr-1"></div>
       </div>
     </div>
 
@@ -411,7 +368,7 @@
         <div class="flex flex-wrap justify-between items-start gap-3 border-b border-[#F3EFEA] pb-3">
           <div>
             <h3 class="font-bold text-sm sm:text-base text-[#3D352E]">⚖️ 收支與來客數比較（自選區間）</h3>
-            <p class="text-xs text-[#8C735B]" id="compareRangeSubtext">紅字實收、綠字支出；來客數統計該月「已報到」預約（若有多筆同日同人亦會清楚列出）</p>
+            <p class="text-xs text-[#8C735B]" id="compareRangeSubtext">紅字實收、綠字支出；來客數統計該月「已報到」預約</p>
           </div>
           <div class="flex flex-wrap items-center gap-1.5 text-xs">
             <span class="text-[#735D48]">起：</span>
@@ -429,20 +386,64 @@
       </div>
     </div>
 
-    <!-- 分頁 4：動態價目表與預估時間管理 -->
-    <div id="tab-catalog" class="hidden space-y-4">
-      <div class="flex flex-wrap justify-between items-center gap-3">
-        <div>
-          <h3 class="font-bold text-base">服務價目與預估分鐘數設定</h3>
-          <p class="text-xs text-[#8C735B]">新增項目或修改價格/分鐘數後即時生效，也可直接在 Google 試算表「服務價目表」分頁調整</p>
+    <!-- 分頁 4：服務價目表、預估時間與客人不可預約設定 -->
+    <div id="tab-catalog" class="hidden space-y-6">
+      <div class="space-y-4">
+        <div class="flex flex-wrap justify-between items-center gap-3">
+          <div>
+            <h3 class="font-bold text-base">服務價目與預估分鐘數設定</h3>
+            <p class="text-xs text-[#8C735B]">新增預約時，結束時間會依所選項目總分鐘數 + 10 分鐘緩衝自動推算</p>
+          </div>
+          <button onclick="openCatalogModal()" class="btn-primary text-sm font-bold px-4 py-2 rounded-xl">+ 新增服務項目</button>
         </div>
-        <button onclick="openCatalogModal()" class="btn-primary text-sm font-bold px-4 py-2 rounded-xl">+ 新增服務項目</button>
+        <div id="catalogManageList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
-      <div id="catalogManageList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+      <!-- 客人不可預約日期／時段設定區（放於價目分頁，不佔首頁月曆空間） -->
+      <div class="card-warm rounded-2xl p-4 sm:p-5 space-y-3">
+        <div class="flex flex-wrap justify-between items-center gap-2 border-b border-[#F3EFEA] pb-2.5">
+          <div>
+            <h3 class="font-bold text-sm sm:text-base text-[#3D352E]">🚫 客人不可預約日期／時段設定</h3>
+            <p class="text-xs text-[#8C735B]">設定某天整天或特定時段不可預約，客人線上預約頁會直接阻擋；整天不可預約會在月曆做明顯拒絕標示</p>
+          </div>
+          <button type="button" onclick="useSelectedDateForBlocked()" class="text-xs px-3 py-1.5 rounded-lg bg-[#FAF7F2] border border-[#EAE2D6] text-[#735D48] font-medium hover:bg-[#EFE9DF]">帶入月曆選取日期</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2.5 text-xs items-end bg-[#FAF7F2] p-3 rounded-xl border border-[#EAE2D6]">
+          <div>
+            <label class="block text-[#735D48] mb-1">日期</label>
+            <input type="date" id="blkDate" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white">
+          </div>
+          <div>
+            <label class="block text-[#735D48] mb-1">限制方式</label>
+            <select id="blkFullDay" onchange="toggleBlockedTimeInputs()" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white">
+              <option value="true">整天不可預約</option>
+              <option value="false">指定時段不可預約</option>
+            </select>
+          </div>
+          <div id="blkStartBox" class="hidden">
+            <label class="block text-[#735D48] mb-1">開始時間</label>
+            <select id="blkStartTime" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white"></select>
+          </div>
+          <div id="blkEndBox" class="hidden">
+            <label class="block text-[#735D48] mb-1">結束時間</label>
+            <select id="blkEndTime" class="w-full border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white"></select>
+          </div>
+          <div class="lg:col-span-2">
+            <label class="block text-[#735D48] mb-1">原因說明（選填）</label>
+            <div class="flex gap-2">
+              <input type="text" id="blkReason" placeholder="例如：店休、進修、保留時段" class="flex-1 border border-[#EAE2D6] rounded-lg px-2.5 py-2 bg-white">
+              <button type="button" onclick="submitBlockedSlot()" class="btn-primary px-3.5 py-2 rounded-lg font-bold shrink-0">+ 加入限制</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="blockedSlotsList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs"></div>
+      </div>
     </div>
   </div>
 
-  <!-- 彈窗 1：新增 / 編輯預約 -->
+  <!-- 彈窗 1：新增 / 編輯預約（移除結束時間主欄位，改由項目加總 + 10 分鐘緩衝自動推算，負責人可手動微調） -->
   <div id="bookingModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 max-h-[92vh] overflow-y-auto">
       <h3 class="font-bold text-lg mb-3" id="bkModalTitle">新增預約</h3>
@@ -469,19 +470,29 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-2">
+        <div class="grid grid-cols-2 gap-2.5">
           <div>
             <label class="block text-xs text-[#735D48] mb-1">預約日期</label>
-            <input type="date" id="bkDate" onchange="checkBookingOverlapPreview()" class="w-full border border-[#EAE2D6] rounded-xl px-2.5 py-2 bg-[#FAF7F2]">
+            <input type="date" id="bkDate" onchange="checkBookingOverlapPreview()" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]">
           </div>
           <div>
             <label class="block text-xs text-[#735D48] mb-1">開始時間</label>
-            <select id="bkStartTime" onchange="syncEndTimeByDuration(); checkBookingOverlapPreview();" class="w-full border border-[#EAE2D6] rounded-xl px-2.5 py-2 bg-[#FAF7F2]"></select>
+            <select id="bkStartTime" onchange="onBookingStartTimeOrDurationChange()" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-[#FAF7F2]"></select>
           </div>
+        </div>
+
+        <!-- 自動推算結束時間（項目總分鐘數 + 10 分鐘緩衝），負責人可點開手動微調 -->
+        <div class="bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl px-3 py-2 text-xs flex flex-wrap justify-between items-center gap-2">
           <div>
-            <label class="block text-xs text-[#735D48] mb-1">結束時間</label>
-            <select id="bkEndTime" onchange="checkBookingOverlapPreview()" class="w-full border border-[#EAE2D6] rounded-xl px-2.5 py-2 bg-[#FAF7F2]"></select>
+            <span class="text-[#735D48]">預估結束（含10分緩衝）：</span>
+            <strong id="bkComputedEndLabel" class="text-[#3D352E] text-sm">11:10</strong>
+            <span class="text-[#8C735B] ml-1" id="bkDurationBreakdownText">(項目 0 分 + 緩衝 10 分)</span>
           </div>
+          <button type="button" onclick="toggleManualEndTimeAdjust()" class="text-[11px] px-2 py-0.5 rounded bg-white border border-[#EAE2D6] text-[#735D48] hover:bg-[#EFE9DF]">手動改結束時間</button>
+        </div>
+        <div id="bkManualEndBox" class="hidden bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl p-2.5 text-xs flex items-center justify-between gap-2">
+          <span class="text-[#735D48] font-medium">負責人手動指定結束時間：</span>
+          <select id="bkEndTime" onchange="onManualEndTimeChange()" class="border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white font-bold"></select>
         </div>
 
         <!-- 彈窗內時段重疊醒目警示 -->
@@ -777,6 +788,7 @@
   let adminCart = [];
   let portalCart = [];
   let manualPriceOverride = false;
+  let manualEndTimeOverride = false;
   let selectedPkgCatalogIds = new Set();
   let currentDetailCustomerId = "";
   let currentYear = new Date().getFullYear();
@@ -893,7 +905,7 @@
     if (!fullDay && timeToMinutes(endTime) <= timeToMinutes(startTime)) {
       return showToast("結束時間必須晚於開始時間");
     }
-    const reason = (document.getElementById("blkReason").value || "").trim() || (fullDay ? "全天不可預約" : "保留時段");
+    const reason = (document.getElementById("blkReason").value || "").trim() || (fullDay ? "整天不可預約" : "不可預約時段");
 
     showLoading("儲存不可預約設定中...");
     try {
@@ -938,7 +950,7 @@
 
   function findBlockedSlotForWindow(dateStr, startStr, durationMins, slotsList = null) {
     const s1 = timeToMinutes(startStr);
-    const e1 = s1 + Math.max(15, Number(durationMins || 60));
+    const e1 = s1 + Math.max(15, Number(durationMins || 60)) + BUFFER_MINUTES;
     return getBlockedSlotsForDate(dateStr, slotsList).find(blk => {
       if (blk.fullDay) return true;
       const s2 = timeToMinutes(blk.startTime);
@@ -952,16 +964,16 @@
     if (!box) return;
     const list = appData.blockedSlots || [];
     if (list.length === 0) {
-      box.innerHTML = `<p class="text-xs text-[#8C735B] col-span-full py-2">目前尚未設定不可預約日期或時段（客人可於 09:00-21:00 提出預約申請）</p>`;
+      box.innerHTML = `<p class="text-xs text-[#8C735B] col-span-full py-2">目前尚未設定不可預約日期或時段</p>`;
       return;
     }
 
     box.innerHTML = list.map(blk => {
-      const timeLabel = blk.fullDay ? "全天不可預約" : `${blk.startTime} - ${blk.endTime}`;
+      const timeLabel = blk.fullDay ? "整天不可預約" : `${blk.startTime} - ${blk.endTime} 不可預約`;
       return `
         <div class="p-2.5 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] flex justify-between items-center gap-2">
           <div class="min-w-0">
-            <p class="font-bold text-[#3D352E]">${blk.date}｜<span class="text-stone-700">${timeLabel}</span></p>
+            <p class="font-bold text-[#3D352E]">${blk.date}｜<span class="text-red-700">${timeLabel}</span></p>
             <p class="text-[11px] text-[#8C735B] truncate">${blk.reason || '不可預約'}</p>
           </div>
           <button type="button" onclick="deleteBlockedSlot('${String(blk.id).replace(/'/g, "\\'")}')" class="px-2 py-1 rounded bg-white border border-[#EAE2D6] text-red-600 text-[11px] font-bold shrink-0 hover:bg-red-50">解除</button>
@@ -972,6 +984,7 @@
 
   function renderPortalDateBlockedHint() {
     const hintEl = document.getElementById("reqBlockedHint");
+    const submitBtn = document.getElementById("reqSubmitBtn");
     if (!hintEl) return;
     const dateVal = document.getElementById("reqDate").value;
     const timeVal = document.getElementById("reqTime").value;
@@ -979,17 +992,25 @@
 
     const matched = findBlockedSlotForWindow(dateVal, timeVal, estDur, portalBlockedSlots);
     if (matched) {
-      const rangeStr = matched.fullDay ? "整天" : `${matched.startTime}-${matched.endTime}`;
-      hintEl.textContent = `⚠️ 您選擇的日期或時段（${rangeStr}）目前不開放預約（${matched.reason}），請改選其他時段`;
+      const rangeStr = matched.fullDay ? "整天不可預約" : `${matched.startTime}-${matched.endTime} 不可預約`;
+      hintEl.textContent = `✕ 此日期／時段（${rangeStr}）已設為不可預約（${matched.reason}），無法送出申請，請改選其他日期或時段`;
       hintEl.classList.remove("hidden");
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+      }
     } else {
       const dayBlks = getBlockedSlotsForDate(dateVal, portalBlockedSlots);
       if (dayBlks.length > 0) {
-        const desc = dayBlks.map(b => b.fullDay ? `全天（${b.reason}）` : `${b.startTime}-${b.endTime}（${b.reason}）`).join("、");
-        hintEl.textContent = `ℹ️ ${dateVal} 不可預約時段：${desc}`;
+        const desc = dayBlks.map(b => b.fullDay ? `全天不可約（${b.reason}）` : `${b.startTime}-${b.endTime} 不可約（${b.reason}）`).join("、");
+        hintEl.textContent = `✕ ${dateVal} 不可預約時段：${desc}（含10分鐘緩衝）`;
         hintEl.classList.remove("hidden");
       } else {
         hintEl.classList.add("hidden");
+      }
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
       }
     }
   }
@@ -1344,7 +1365,8 @@
     const blocked = findBlockedSlotForWindow(date, startTime, totalDuration, portalBlockedSlots);
     if (blocked) {
       const rangeStr = blocked.fullDay ? "整天不可預約" : `${blocked.startTime}-${blocked.endTime} 不可預約`;
-      return showToast(`該日期或時段（${rangeStr}）目前不開放預約，請改選其他時間`);
+      renderPortalDateBlockedHint();
+      return showToast(`此日期或時段（${rangeStr}）已設為不可預約，無法送出申請`);
     }
 
     const servicesText = portalCart.map(x => x.name).join(" + ");
@@ -1757,7 +1779,7 @@
         : "";
       const blkMatch = findBlockedSlotForWindow(b.date, b.startTime, b.duration || 60);
       const blkHtml = blkMatch
-        ? `<div class="mt-1 text-xs font-bold text-stone-800 bg-stone-100 border border-stone-300 px-2 py-1 rounded">🚫 位於設定之不可預約時段（${blkMatch.fullDay ? '全天' : blkMatch.startTime + '-' + blkMatch.endTime}｜${blkMatch.reason}）</div>`
+        ? `<div class="mt-1 text-xs font-bold text-red-800 bg-red-50 border border-red-200 px-2 py-1 rounded">✕ 位於不可預約時段（${blkMatch.fullDay ? '整天拒約' : blkMatch.startTime + '-' + blkMatch.endTime}｜${blkMatch.reason}）</div>`
         : "";
       return `
         <div class="bg-white rounded-xl p-3 border border-amber-200 flex flex-wrap justify-between items-center gap-2 text-sm">
@@ -1809,17 +1831,23 @@
       }).join("");
 
       const blockBadgeHtml = isFullDayBlocked
-        ? `<div class="w-full whitespace-nowrap px-1 py-0.5 rounded bg-stone-200 text-stone-800 border border-stone-300 text-[10px] leading-tight text-center font-bold">🚫 全天不可約</div>`
-        : (hasPartialBlocked ? `<div class="w-full whitespace-nowrap px-1 py-0.5 rounded bg-stone-100 text-stone-700 border border-stone-300 text-[10px] leading-tight text-center font-medium">🚫 部分不可約</div>` : "");
+        ? `<div class="w-full whitespace-nowrap px-1 py-1 rounded bg-red-100 text-red-800 border border-red-300 text-[10px] sm:text-xs leading-tight text-center font-bold">✕ 整天拒約</div>`
+        : (hasPartialBlocked ? `<div class="w-full whitespace-nowrap px-1 py-0.5 rounded bg-red-50 text-red-700 border border-red-200 text-[10px] leading-tight text-center font-medium">✕ 部分不可約</div>` : "");
 
       const extraHtml = dayBks.length > 3
         ? `<div class="whitespace-nowrap text-[10px] font-medium text-[#8C735B] mt-0.5">+${dayBks.length - 3}</div>`
         : "";
 
+      const cellTone = isSelected
+        ? "border-[#8C735B] bg-[#FDFBF7] ring-2 ring-[#8C735B]/40"
+        : (isFullDayBlocked
+            ? "border-red-300 bg-red-50/75 hover:bg-red-100/70"
+            : "border-[#EAE2D6] bg-white hover:bg-[#FAF7F2]");
+
       grid.innerHTML += `
-        <button onclick="selectDate('${dateStr}')" class="min-h-[92px] sm:min-h-[108px] rounded-xl border p-0.5 sm:p-1.5 flex flex-col justify-start items-center overflow-hidden transition ${isSelected ? 'border-[#8C735B] bg-[#FDFBF7] ring-2 ring-[#8C735B]/40' : (isFullDayBlocked ? 'border-stone-300 bg-stone-50/80 hover:bg-stone-100/70' : 'border-[#EAE2D6] bg-white hover:bg-[#FAF7F2]')}">
+        <button onclick="selectDate('${dateStr}')" class="min-h-[92px] sm:min-h-[108px] rounded-xl border p-0.5 sm:p-1.5 flex flex-col justify-start items-center overflow-hidden transition ${cellTone}">
           <div class="w-full flex justify-between items-baseline px-1 mb-1 whitespace-nowrap">
-            <span class="text-xs sm:text-sm font-bold ${isSelected ? 'text-[#8C735B]' : 'text-[#3D352E]'}">${d}</span>
+            <span class="text-xs sm:text-sm font-bold ${isFullDayBlocked && !isSelected ? 'text-red-700' : (isSelected ? 'text-[#8C735B]' : 'text-[#3D352E]')}">${d}</span>
             <span class="flex items-center gap-0.5">
               ${hasOverlapOnDay ? '<span class="text-[10px] font-bold text-red-600" title="當日時段有重疊">⚠️</span>' : ''}
               ${dayBks.length > 0 ? `<span class="text-[10px] text-[#8C735B]">${dayBks.length}筆</span>` : ''}
@@ -1853,8 +1881,8 @@
 
     const dayBlks = getBlockedSlotsForDate(selectedDateStr);
     if (dayBlks.length > 0) {
-      const desc = dayBlks.map(s => s.fullDay ? `全天不可預約（${s.reason}）` : `${s.startTime}-${s.endTime} 不可預約（${s.reason}）`).join("、");
-      blockedBanner.textContent = `🚫 客人不可預約設定：${desc}`;
+      const desc = dayBlks.map(s => s.fullDay ? `✕ 整天拒絕預約（${s.reason}）` : `✕ ${s.startTime}-${s.endTime} 不可預約（${s.reason}）`).join("、");
+      blockedBanner.textContent = desc;
       blockedBanner.classList.remove("hidden");
     } else {
       blockedBanner.classList.add("hidden");
@@ -2286,6 +2314,48 @@
     checkBookingBalanceWarning();
   }
 
+  function computeBufferedEndTimeStr(startStr, serviceDurationMins) {
+    const [h, m] = String(startStr || "10:00").split(":").map(Number);
+    const totalMins = Math.min(22 * 60, (h || 10) * 60 + (m || 0) + Number(serviceDurationMins || 0) + BUFFER_MINUTES);
+    return `${String(Math.floor(totalMins / 60)).padStart(2, "0")}:${String(totalMins % 60).padStart(2, "0")}`;
+  }
+
+  function toggleManualEndTimeAdjust() {
+    const box = document.getElementById("bkManualEndBox");
+    box.classList.toggle("hidden");
+  }
+
+  function onManualEndTimeChange() {
+    manualEndTimeOverride = true;
+    const endVal = document.getElementById("bkEndTime").value;
+    document.getElementById("bkComputedEndLabel").textContent = endVal;
+    checkBookingOverlapPreview();
+  }
+
+  function syncEndTimeByDuration(forceAuto = false) {
+    const startVal = document.getElementById("bkStartTime").value;
+    const svcDur = Number(document.getElementById("bkTotalDuration").textContent || 0);
+    document.getElementById("bkDurationBreakdownText").textContent = `(項目 ${svcDur} 分 + 緩衝 ${BUFFER_MINUTES} 分)`;
+
+    if (!startVal) return;
+    if (!manualEndTimeOverride || forceAuto) {
+      manualEndTimeOverride = false;
+      const computedEnd = computeBufferedEndTimeStr(startVal, svcDur);
+      const endSel = document.getElementById("bkEndTime");
+      if (endSel && [...endSel.options].some(o => o.value === computedEnd)) {
+        endSel.value = computedEnd;
+      }
+      document.getElementById("bkComputedEndLabel").textContent = computedEnd;
+    } else {
+      document.getElementById("bkComputedEndLabel").textContent = document.getElementById("bkEndTime").value;
+    }
+  }
+
+  function onBookingStartTimeOrDurationChange() {
+    syncEndTimeByDuration(false);
+    checkBookingOverlapPreview();
+  }
+
   function parseBookingServiceParts(rawService, fallbackDuration, fallbackOriginalPrice) {
     const text = String(rawService || "").trim();
     if (!text) return [];
@@ -2322,7 +2392,9 @@
     }
     document.getElementById("bkCustomerSearch").value = "";
     document.getElementById("bkUsedPackageId").value = "";
+    document.getElementById("bkManualEndBox").classList.add("hidden");
     manualPriceOverride = false;
+    manualEndTimeOverride = false;
 
     if (existingBk) {
       document.getElementById("bkModalTitle").textContent = "編輯預約 / 改期 / 結帳";
@@ -2332,7 +2404,6 @@
       document.getElementById("bkStaff").value = existingBk.staff || "Ruby";
       document.getElementById("bkDate").value = existingBk.date;
       document.getElementById("bkStartTime").value = existingBk.startTime;
-      document.getElementById("bkEndTime").value = existingBk.endTime;
       document.getElementById("bkPayMethod").value = existingBk.payMethod;
       document.getElementById("bkStatus").value = existingBk.status;
       document.getElementById("bkNote").value = existingBk.note;
@@ -2340,9 +2411,23 @@
 
       adminCart = parseBookingServiceParts(existingBk.service, existingBk.duration, existingBk.originalPrice);
       renderAdminCart();
+      const svcDur = adminCart.reduce((s, x) => s + x.duration, 0) || Number(existingBk.duration || 60);
+      document.getElementById("bkTotalDuration").textContent = svcDur;
+
+      const autoEnd = computeBufferedEndTimeStr(existingBk.startTime, svcDur);
+      const endSel = document.getElementById("bkEndTime");
+      if (existingBk.endTime && existingBk.endTime !== autoEnd && [...endSel.options].some(o => o.value === existingBk.endTime)) {
+        endSel.value = existingBk.endTime;
+        manualEndTimeOverride = true;
+        document.getElementById("bkComputedEndLabel").textContent = existingBk.endTime;
+      } else {
+        endSel.value = autoEnd;
+        document.getElementById("bkComputedEndLabel").textContent = autoEnd;
+      }
+      document.getElementById("bkDurationBreakdownText").textContent = `(項目 ${svcDur} 分 + 緩衝 ${BUFFER_MINUTES} 分)`;
+
       document.getElementById("bkOriginalPrice").value = existingBk.originalPrice;
       document.getElementById("bkFinalPrice").value = existingBk.finalPrice;
-      document.getElementById("bkTotalDuration").textContent = existingBk.duration || 60;
       const calcSub = adminCart.reduce((s, x) => s + (x.isGift ? 0 : x.price), 0);
       document.getElementById("bkSubtotalText").textContent = `小計 $${calcSub.toLocaleString()}`;
       manualPriceOverride = true;
@@ -2355,12 +2440,12 @@
       document.getElementById("bkStaff").value = "Ruby";
       document.getElementById("bkDate").value = selectedDateStr;
       document.getElementById("bkStartTime").value = "10:00";
-      document.getElementById("bkEndTime").value = "11:00";
       document.getElementById("bkPayMethod").value = "扣儲值金";
       document.getElementById("bkStatus").value = "尚未到來";
       document.getElementById("bkNote").value = "";
       adminCart = [];
       renderAdminCart();
+      syncEndTimeByDuration(true);
       recalculateBookingTotal(true);
     }
     checkBookingOverlapPreview();
@@ -2385,7 +2470,8 @@
     });
     renderAdminCart();
     recalculateBookingTotal(true);
-    syncEndTimeByDuration();
+    syncEndTimeByDuration(true);
+    checkBookingOverlapPreview();
   }
 
   function toggleAdminCartItemGift(idx) {
@@ -2399,7 +2485,8 @@
     adminCart.splice(idx, 1);
     renderAdminCart();
     recalculateBookingTotal(true);
-    syncEndTimeByDuration();
+    syncEndTimeByDuration(true);
+    checkBookingOverlapPreview();
   }
 
   function formatAdminCartItemLabel(item) {
@@ -2434,19 +2521,6 @@
         </div>
       </div>
     `).join("");
-  }
-
-  function syncEndTimeByDuration() {
-    const startVal = document.getElementById("bkStartTime").value;
-    const dur = Number(document.getElementById("bkTotalDuration").textContent || 0);
-    if (!startVal || dur <= 0) return;
-    const [h, m] = startVal.split(':').map(Number);
-    const endTotal = Math.min(22 * 60, h * 60 + m + dur);
-    const endStr = `${String(Math.floor(endTotal / 60)).padStart(2, '0')}:${String(endTotal % 60).padStart(2, '0')}`;
-    const endSel = document.getElementById("bkEndTime");
-    if ([...endSel.options].some(o => o.value === endStr)) {
-      endSel.value = endStr;
-    }
   }
 
   function updateCustomerCardPreview(custId) {
@@ -2599,17 +2673,26 @@
     });
   }
 
+  function getActiveBookingEndTime() {
+    const svcDur = Number(document.getElementById("bkTotalDuration").textContent || 0);
+    const startStr = document.getElementById("bkStartTime").value;
+    if (manualEndTimeOverride) {
+      return document.getElementById("bkEndTime").value || computeBufferedEndTimeStr(startStr, svcDur);
+    }
+    return computeBufferedEndTimeStr(startStr, svcDur);
+  }
+
   function checkBookingOverlapPreview() {
     const dateStr = document.getElementById("bkDate").value;
     const startStr = document.getElementById("bkStartTime").value;
-    const endStr = document.getElementById("bkEndTime").value;
+    const endStr = getActiveBookingEndTime();
     const bkId = document.getElementById("bkId").value;
     const alertEl = document.getElementById("bkOverlapAlert");
 
     const conflicts = findOverlappingBookings(dateStr, startStr, endStr, bkId);
     if (conflicts.length > 0) {
       const desc = conflicts.map(c => `${c.startTime}-${c.endTime} ${c.customerName}`).join("、");
-      alertEl.textContent = `⚠️ 時段重疊提醒：與「${desc}」時間重疊`;
+      alertEl.textContent = `⚠️ 時段重疊提醒（含10分緩衝 ${endStr}）：與「${desc}」時間重疊`;
       alertEl.classList.remove("hidden");
     } else {
       alertEl.classList.add("hidden");
@@ -2626,14 +2709,14 @@
     const finalPrice = Number(document.getElementById("bkFinalPrice").value || 0);
     const dateVal = document.getElementById("bkDate").value;
     const startVal = document.getElementById("bkStartTime").value;
-    const endVal = document.getElementById("bkEndTime").value;
+    const endVal = getActiveBookingEndTime();
     const bkId = document.getElementById("bkId").value;
     const payMethodVal = document.getElementById("bkPayMethod").value;
 
     const conflicts = findOverlappingBookings(dateVal, startVal, endVal, bkId);
     if (conflicts.length > 0) {
       const desc = conflicts.map(c => `${c.startTime}-${c.endTime} ${c.customerName}`).join("、");
-      const ok = window.confirm(`此時段與「${desc}」重疊，確定仍要儲存預約嗎？`);
+      const ok = window.confirm(`此時段（含10分緩衝至 ${endVal}）與「${desc}」重疊，確定仍要儲存預約嗎？`);
       if (!ok) return;
     }
 
