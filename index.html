@@ -140,12 +140,12 @@
     </div>
   </header>
 
-  <!-- 全域提示 Toast（最頂層 z-[9999]，確保不被任何視窗遮擋） -->
+  <!-- 全域提示 Toast -->
   <div id="toastBox" class="fixed top-5 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:top-16 sm:right-4 z-[9999] max-w-sm w-[90%] sm:w-auto hidden pointer-events-none">
     <div id="toastInner" class="px-4 py-3 rounded-2xl shadow-2xl text-sm font-bold text-white bg-[#2f2622] border border-white/15 text-center sm:text-left"></div>
   </div>
 
-  <!-- 全域載入遮罩（最頂層 z-[9999]，確保在所有彈窗前方顯示） -->
+  <!-- 全域載入遮罩 -->
   <div id="loadingOverlay" class="fixed inset-0 z-[9999] modal-backdrop flex items-center justify-center hidden">
     <div class="bg-white rounded-2xl px-6 py-5 shadow-2xl border border-[#eadfd4] flex items-center gap-3.5">
       <div class="w-5 h-5 border-2 border-[#8c5e43] border-t-transparent rounded-full animate-spin"></div>
@@ -514,7 +514,7 @@
           </div>
           <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-1.5 text-xs"></div>
 
-          <!-- 圖例列 + 本月壽星（移至最右側並調整為適當大小） -->
+          <!-- 圖例列 + 本月壽星 -->
           <div class="mt-3 pt-2.5 border-t border-[#f2e8df] flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#6d5648]">
             <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
               <span class="inline-flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-sm bg-rose-400"></i>熱蠟</span>
@@ -581,7 +581,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
             <h2 class="text-base font-extrabold text-[#33241d]">🎟️ 優惠券與自動發放中心</h2>
-            <p class="text-xs text-[#8b7365] mt-0.5">設定固定自動發放規則（生日禮、新客見面禮），或手動發送專屬優惠券</p>
+            <p class="text-xs text-[#8b7365] mt-0.5">調整固定自動發放金額與期限，或手動發送專屬優惠券</p>
           </div>
           <button type="button" onclick="openIssueCouponModal()" class="px-4 py-2 rounded-xl text-xs font-bold btn-primary shadow whitespace-nowrap">
             + 手動發放優惠券
@@ -604,18 +604,7 @@
         </div>
       </div>
 
-      <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-3">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-[#8c5e43]"></span>
-            <h3 class="text-sm font-extrabold text-[#33241d]">⚙️ 固定自動發放規則設定</h3>
-          </div>
-          <span class="text-[11px] text-[#8b7365]">符合條件時系統自動發放，不重複發送</span>
-        </div>
-
-        <div id="couponRulesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-      </div>
-
+      <!-- 優惠券擁有名單與使用紀錄（移至上方） -->
       <div class="glass-card rounded-3xl p-4 sm:p-5">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
           <h3 class="text-sm font-extrabold text-[#33241d]">📋 優惠券擁有名單與使用紀錄</h3>
@@ -631,6 +620,19 @@
           </div>
         </div>
         <div id="couponsListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-2.5"></div>
+      </div>
+
+      <!-- 固定自動發放規則設定（移至最下面） -->
+      <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-[#8c5e43]"></span>
+            <h3 class="text-sm font-extrabold text-[#33241d]">⚙️ 固定自動發放規則設定</h3>
+          </div>
+          <span class="text-[11px] text-[#8b7365]">發放條件已鎖定，可調整折抵金額與有效期限</span>
+        </div>
+
+        <div id="couponRulesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
       </div>
     </section>
 
@@ -691,7 +693,7 @@
           </div>
         </div>
 
-        <!-- 年分析 12 個月趨勢與明細表（切換至「年分析」時展開） -->
+        <!-- 年分析 12 個月趨勢與明細表 -->
         <div id="financeYearAnalysisPanel" class="hidden pt-2 border-t border-[#ead9c8] space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <h3 id="finYearAnalysisTitle" class="text-sm font-extrabold text-[#33241d]">📊 年度各月營收、來客數與收支分析</h3>
@@ -1132,11 +1134,11 @@
     </div>
   </div>
 
-  <!-- ==================== 彈窗 7：編輯固定自動發放規則 ==================== -->
+  <!-- ==================== 彈窗 7：設定固定自動發放金額與期限（發放條件已鎖定） ==================== -->
   <div id="couponRuleModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-xl">
       <div class="flex items-center justify-between mb-3">
-        <h3 id="cr_modalTitle" class="text-base font-extrabold text-[#33241d]">設定自動發放規則</h3>
+        <h3 id="cr_modalTitle" class="text-base font-extrabold text-[#33241d]">設定金額/期限</h3>
         <button type="button" onclick="closeCouponRuleModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
       </div>
 
@@ -1165,13 +1167,13 @@
         </div>
 
         <div>
-          <label class="block font-bold text-[#4a382f] mb-1">發放條件與使用說明</label>
-          <input type="text" id="cr_conditionNote" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" placeholder="例如：當月壽星當月1號自動發放" />
+          <label class="block font-bold text-[#4a382f] mb-1">🔒 發放條件與使用說明（已鎖定）</label>
+          <div id="cr_conditionNoteLocked" class="w-full px-3 py-2.5 rounded-xl border border-[#e5d9ce] bg-[#f4efe9] text-[#6d5648] font-semibold select-none"></div>
         </div>
 
         <div class="flex justify-end gap-2 pt-2 border-t border-[#f1e7dc]">
-          <button type="button" onclick="closeCouponRuleModal()" class="px-3.5 py-2 rounded-xl bg-[#f3ece5] text-[#6b5344] font-bold">取消</button>
-          <button type="submit" class="px-4 py-2 rounded-xl font-bold btn-primary shadow">儲存規則設定</button>
+          <button type="button" onclick="closeCouponRuleModal()" class="px-4 py-2 rounded-xl bg-[#f3ece5] text-[#6b5344] font-bold">取消</button>
+          <button type="submit" class="px-4 py-2 rounded-xl font-bold btn-primary shadow">儲存金額/期限</button>
         </div>
       </form>
     </div>
@@ -1289,6 +1291,11 @@
       yesNo: ["是", "否"]
     };
 
+    const LOCKED_RULE_CONDITIONS = {
+      birthday: "當月壽星於當月 1 號自動發放（限當月使用）",
+      new_customer: "首次完成填寫諮詢表與同意書自動發放"
+    };
+
     const state = {
       isAdmin: false,
       adminPassword: "",
@@ -1305,7 +1312,7 @@
       coupons: [],
       couponRules: {},
       financeSubTab: "income",
-      financePeriodMode: "month", // "month" | "year"
+      financePeriodMode: "month",
       calYear: new Date().getFullYear(),
       calMonth: new Date().getMonth(),
       blockedCalYear: new Date().getFullYear(),
@@ -1345,7 +1352,16 @@
       return Number.isFinite(n) ? n : fallback;
     }
 
-    // 過濾週年慶／周年慶優惠券
+    // 過濾誤帶入日期字串或無效值的 LINE 顯示名稱
+    function sanitizeLineDisplayName(raw) {
+      if (!raw) return "";
+      const s = String(raw).trim();
+      if (!s) return "";
+      if (/GMT[+-]\d{4}|台北標準時間|Invalid Date/i.test(s)) return "";
+      if (/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\s+[A-Z][a-z]{2}\s+\d{1,2}\s+\d{4}/.test(s)) return "";
+      return s;
+    }
+
     function isAnniversaryCoupon(cp) {
       if (!cp) return false;
       const combined = `${cp.title || ""} ${cp.type || ""} ${cp.note || ""}`;
@@ -1495,7 +1511,6 @@
       showAdminLoginPage();
     }
 
-    // 計算並同步每位會員的實際來客數（以已完成預約數為準，取較大值避免低估）
     function getCustomerCompletedBookings(cust) {
       if (!cust) return [];
       return state.bookings
@@ -1519,7 +1534,10 @@
     function applyAdminSnapshot(snap) {
       state.webAppUrl = snap.webAppUrl || state.webAppUrl || "";
       state.catalog = snap.catalog || [];
-      state.customers = snap.customers || [];
+      state.customers = (snap.customers || []).map(c => ({
+        ...c,
+        lineDisplayName: sanitizeLineDisplayName(c.lineDisplayName)
+      }));
       state.bookings = snap.bookings || [];
       state.transactions = snap.transactions || [];
       state.expenses = snap.expenses || [];
@@ -1529,7 +1547,6 @@
       state.coupons = getVisibleCoupons(snap.coupons || []);
       state.couponRules = snap.couponRules || {};
 
-      // 即時校正前端會員來客數顯示
       state.customers.forEach(c => {
         c.visitCount = getCustomerEffectiveVisitCount(c);
       });
@@ -1570,6 +1587,17 @@
     function isApprovedCalendarStatus(status) {
       const st = String(status || "").trim();
       return st === "尚未到來" || st === "已報到" || st === "已完成";
+    }
+
+    function sortBookingsChronologicalCompletedLast(list) {
+      return [...(list || [])].sort((a, b) => {
+        const aDone = String(a.status || "").trim() === "已完成" ? 1 : 0;
+        const bDone = String(b.status || "").trim() === "已完成" ? 1 : 0;
+        if (aDone !== bDone) return aDone - bDone;
+        const timeCmp = String(a.startTime || "").localeCompare(String(b.startTime || ""));
+        if (timeCmp !== 0) return timeCmp;
+        return String(a.endTime || "").localeCompare(String(b.endTime || ""));
+      });
     }
 
     function getBirthdayCustomersThisMonth() {
@@ -1620,6 +1648,7 @@
             ? `<div class="text-xs text-[#8b7365] py-6 text-center">本月暫無壽星資料</div>`
             : `<div class="space-y-2 text-xs mt-3">${list.map(c => {
                 const bDay = String(c.birthday).slice(5);
+                const lineClean = sanitizeLineDisplayName(c.lineDisplayName);
                 const bdayCoupon = getVisibleCoupons().find(cp =>
                   String(cp.customerId) === String(c.id) &&
                   cp.type === "生日優惠" &&
@@ -1630,7 +1659,7 @@
                   <div class="p-3 rounded-xl bg-[#fcf8f4] border border-[#f0e5da] flex items-center justify-between gap-2">
                     <div>
                       <div class="font-bold text-sm text-[#3a2a22]">${esc(c.name)} <span class="text-xs text-[#9c5733]">(${esc(bDay)})</span></div>
-                      <div class="text-[#7c6557]">${c.lineDisplayName ? `LINE：${esc(c.lineDisplayName)} · ` : ""}${esc(c.contact || "無電話")}</div>
+                      <div class="text-[#7c6557]">${lineClean ? `LINE：${esc(lineClean)} · ` : ""}${esc(c.contact || "無電話")}</div>
                       ${bdayCoupon ? `<div class="text-[11px] text-emerald-700 mt-0.5">發放日：${esc(bdayCoupon.issuedDate)}（${esc(bdayCoupon.status)}）</div>` : ""}
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0">
@@ -1737,9 +1766,9 @@
 
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-        const dayBks = approvedBookings
-          .filter(b => b.date === dateStr)
-          .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
+        const dayBks = sortBookingsChronologicalCompletedLast(
+          approvedBookings.filter(b => b.date === dateStr)
+        );
         const dayBlocks = state.blockedSlots
           .filter(blk => blk.date === dateStr)
           .sort((a, b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
@@ -1747,7 +1776,6 @@
         const fullBlockObj = dayBlocks.find(blk => blk.fullDay);
         const partialBlocks = dayBlocks.filter(blk => !blk.fullDay);
 
-        // 禁約視覺標籤清晰化
         let blockBanner = "";
         if (fullBlockObj) {
           const reasonTxt = esc(fullBlockObj.reason || "公休／不開放");
@@ -1776,8 +1804,9 @@
           const st = getServiceColorStyle(b);
           const timeText = esc(b.startTime || "--:--");
           const nameText = esc(b.customerName || "");
+          const doneDim = b.status === "已完成" ? "opacity-65" : "";
           return `
-            <div class="w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight ${st.pillClass}" title="${timeText} ${nameText} (${esc(b.service || "")})">
+            <div class="w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight ${st.pillClass} ${doneDim}" title="${timeText} ${nameText} (${esc(b.service || "")})">
               <span class="font-extrabold shrink-0 tabular-nums">${timeText}</span>
               <span class="truncate font-semibold">${nameText}</span>
             </div>
@@ -1862,9 +1891,9 @@
         blockedCardEl.innerHTML = "";
       }
 
-      const list = state.bookings
-        .filter(b => b.date === dateStr && isApprovedCalendarStatus(b.status))
-        .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
+      const list = sortBookingsChronologicalCompletedLast(
+        state.bookings.filter(b => b.date === dateStr && isApprovedCalendarStatus(b.status))
+      );
 
       const container = document.getElementById("dayBookingsList");
       if (list.length === 0) {
@@ -1877,12 +1906,15 @@
         const visits = cust ? getCustomerEffectiveVisitCount(cust) : 0;
         const rev = safeNumber(b.finalPrice, 0);
         const colorStyle = getServiceColorStyle(b);
+        const isCompleted = b.status === "已完成";
+        const lineClean = cust ? sanitizeLineDisplayName(cust.lineDisplayName) : "";
         const statusColor =
-          (b.status === "已完成" || b.status === "已報到") ? "bg-emerald-100 text-emerald-800" :
+          isCompleted ? "bg-stone-200 text-stone-700" :
+          b.status === "已報到" ? "bg-emerald-100 text-emerald-800" :
           "bg-[#f1e7dd] text-[#6a4f3f]";
 
         return `
-          <div class="p-3.5 rounded-xl border border-[#eee3d8] bg-[#fcfaf8] flex flex-col gap-2.5">
+          <div class="p-3.5 rounded-xl border ${isCompleted ? "border-[#e6ddd3] bg-[#f6f3ef]/85 opacity-80" : "border-[#eee3d8] bg-[#fcfaf8]"} flex flex-col gap-2.5">
             <div class="space-y-1">
               <div class="flex flex-wrap items-center gap-1.5">
                 <span class="font-extrabold text-sm text-[#3a2a22] tabular-nums">${esc(b.startTime)} - ${esc(b.endTime)}</span>
@@ -1892,7 +1924,7 @@
               </div>
               <div class="text-xs text-[#4a382f]">${esc(b.service || "未填項目")} · <span class="font-semibold">$${rev.toLocaleString()}</span>（${esc(b.payMethod)}）</div>
               <div class="text-[11px] text-[#8b7365]">
-                累計來店 ${visits} 次${cust && cust.lineDisplayName ? ` · LINE：${esc(cust.lineDisplayName)}` : ""}${b.note ? ` · 備註：${esc(b.note)}` : ""}
+                累計來店 ${visits} 次${lineClean ? ` · LINE：${esc(lineClean)}` : ""}${b.note ? ` · 備註：${esc(b.note)}` : ""}
               </div>
             </div>
             <div class="flex flex-wrap items-center justify-end gap-1.5 pt-1 border-t border-[#f2e8dd]">
@@ -1931,7 +1963,6 @@
       }
     }
 
-    // 同步增加來客數並記錄在會員資料中
     async function syncCustomerVisitRecordAfterCompletion(customerId, customerName, serviceSummary, dateStr, finalPrice) {
       if (!customerId) return;
       const cust = state.customers.find(c => String(c.id) === String(customerId));
@@ -1945,7 +1976,7 @@
           data: {
             id: cust.id,
             name: cust.name,
-            lineDisplayName: cust.lineDisplayName || "",
+            lineDisplayName: sanitizeLineDisplayName(cust.lineDisplayName),
             nickname: cust.nickname || "",
             contact: cust.contact || "",
             birthday: cust.birthday || "",
@@ -2145,12 +2176,14 @@
 
       const list = state.customers.filter(c => {
         if (!q) return true;
-        return `${c.name} ${c.lineDisplayName} ${c.nickname} ${c.contact}`.toLowerCase().includes(q);
+        const lineClean = sanitizeLineDisplayName(c.lineDisplayName);
+        return `${c.name} ${lineClean} ${c.nickname} ${c.contact}`.toLowerCase().includes(q);
       });
 
-      custSel.innerHTML = `<option value="">-- 散客／非會員 --</option>` + list.map(c =>
-        `<option value="${esc(c.id)}" ${String(c.id) === String(currentVal) ? "selected" : ""}>${esc(c.name)}${c.lineDisplayName ? `（${esc(c.lineDisplayName)}）` : ""}${c.contact ? ` · ${esc(c.contact)}` : ""}</option>`
-      ).join("");
+      custSel.innerHTML = `<option value="">-- 散客／非會員 --</option>` + list.map(c => {
+        const lineClean = sanitizeLineDisplayName(c.lineDisplayName);
+        return `<option value="${esc(c.id)}" ${String(c.id) === String(currentVal) ? "selected" : ""}>${esc(c.name)}${lineClean ? `（${esc(lineClean)}）` : ""}${c.contact ? ` · ${esc(c.contact)}` : ""}</option>`;
+      }).join("");
 
       if (q && list.length === 1 && autoFillName) {
         custSel.value = list[0].id;
@@ -2413,23 +2446,24 @@
       }
     }
 
-    /* ==================== 分頁 2：會員資料（優化美化 + 店家內部備註外顯） ==================== */
+    /* ==================== 分頁 2：會員資料（防遮擋 + 美化） ==================== */
     function renderCustomersTab() {
       const q = (document.getElementById("customerSearchInput").value || "").trim().toLowerCase();
       const filter = document.getElementById("customerFilterSelect").value;
 
-      const boundCount = state.customers.filter(c => c.lineUserId || c.lineDisplayName).length;
+      const boundCount = state.customers.filter(c => c.lineUserId || sanitizeLineDisplayName(c.lineDisplayName)).length;
       const totalBal = state.customers.reduce((s, c) => s + safeNumber(c.balance, 0), 0);
       document.getElementById("customersSummaryStats").textContent =
         `共 ${state.customers.length} 位會員 · 已串連 LINE ${boundCount} 位 · 總儲值餘額 $${totalBal.toLocaleString()}`;
 
       const filtered = state.customers.filter(c => {
-        const hay = `${c.name} ${c.lineDisplayName} ${c.nickname} ${c.contact} ${c.privateNote || ""}`.toLowerCase();
+        const lineClean = sanitizeLineDisplayName(c.lineDisplayName);
+        const hay = `${c.name} ${lineClean} ${c.nickname} ${c.contact} ${c.privateNote || ""}`.toLowerCase();
         if (q && !hay.includes(q)) return false;
         if (filter === "hasNote" && !String(c.privateNote || "").trim()) return false;
         if (filter === "hasBalance" && safeNumber(c.balance, 0) <= 0) return false;
-        if (filter === "lineBound" && !c.lineUserId && !c.lineDisplayName) return false;
-        if (filter === "lineUnbound" && (c.lineUserId || c.lineDisplayName)) return false;
+        if (filter === "lineBound" && !c.lineUserId && !lineClean) return false;
+        if (filter === "lineUnbound" && (c.lineUserId || lineClean)) return false;
         return true;
       });
 
@@ -2447,8 +2481,8 @@
         const cons = state.consultations.find(cn => String(cn.customerId) === String(c.id));
         const availCpCount = getVisibleCoupons().filter(cp => String(cp.customerId) === String(c.id) && cp.status === "可使用").length;
         const avatarChar = esc((c.name || "會").slice(0, 1));
-        const isLineBound = !!(c.lineUserId || c.lineDisplayName);
-        const lineNameText = c.lineDisplayName ? c.lineDisplayName : (c.lineUserId ? "已串連 LINE" : "尚未串連");
+        const lineClean = sanitizeLineDisplayName(c.lineDisplayName);
+        const isLineBound = !!(c.lineUserId || lineClean);
         const privateNote = String(c.privateNote || "").trim();
         const portalLink = buildCustomerRebindLink(c.id, false);
 
@@ -2457,42 +2491,58 @@
             <div class="h-1.5 w-full ${isLineBound ? "bg-gradient-to-r from-[#8c5e43] via-[#b88668] to-emerald-500" : "bg-gradient-to-r from-[#c7ab95] to-[#e5d4c3]"}"></div>
 
             <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-3">
-              <div>
-                <div class="flex items-start justify-between gap-2.5">
+              <div class="space-y-2.5">
+                <!-- 頂部：頭像 + 姓名/暱稱 + 諮詢狀態徽章 -->
+                <div class="flex items-start justify-between gap-2">
                   <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#9f7156] to-[#744c36] text-white font-extrabold text-base flex items-center justify-center shrink-0 shadow-sm">
+                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#9f7156] to-[#744c36] text-white font-extrabold text-base flex items-center justify-center shrink-0 shadow-sm">
                       ${avatarChar}
                     </div>
                     <div class="min-w-0">
                       <div class="flex items-center gap-1.5 flex-wrap">
-                        <span class="font-extrabold text-base text-[#33241d] truncate">${esc(c.name)}</span>
-                        ${c.nickname ? `<span class="text-xs px-2 py-0.5 rounded-full bg-[#f5ece3] text-[#7a5743] font-semibold">${esc(c.nickname)}</span>` : ""}
+                        <span class="font-extrabold text-base text-[#33241d] leading-snug">${esc(c.name)}</span>
+                        ${c.nickname ? `<span class="text-[11px] px-2 py-0.5 rounded-full bg-[#f5ece3] text-[#7a5743] font-semibold">${esc(c.nickname)}</span>` : ""}
                       </div>
-                      <div class="text-xs text-[#7c6557] mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                        <span>📱 ${esc(c.contact || "未留電話")}</span>
-                        ${c.birthday ? `<span>🎂 ${esc(c.birthday)}</span>` : ""}
-                      </div>
+                      ${lineClean ? `
+                        <div class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50/90 border border-emerald-200/80 text-[11px] font-semibold text-emerald-900 max-w-full">
+                          <span class="shrink-0">LINE</span>
+                          <span class="truncate">${esc(lineClean)}</span>
+                        </div>
+                      ` : `
+                        <div class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#f7f3ef] text-[10px] font-medium text-[#8b7365]">
+                          ${c.lineUserId ? "已串連 LINE" : "尚未串連 LINE"}
+                        </div>
+                      `}
                     </div>
                   </div>
 
-                  <div class="flex flex-col items-end gap-1 shrink-0">
-                    <span class="text-[11px] px-2.5 py-0.5 rounded-full font-bold ${cons ? "bg-emerald-100 text-emerald-800" : "bg-amber-50 text-amber-800 border border-amber-200"}">
-                      ${cons ? "📋 已簽諮詢表" : "未填諮詢表"}
-                    </span>
-                    <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${isLineBound ? "bg-[#f3ece5] text-[#6a4f3f]" : "bg-stone-100 text-stone-500"}">
-                      LINE：${esc(lineNameText)}
-                    </span>
-                  </div>
+                  <span class="text-[11px] px-2.5 py-1 rounded-full font-bold shrink-0 ${cons ? "bg-emerald-100 text-emerald-800" : "bg-amber-50 text-amber-800 border border-amber-200"}">
+                    ${cons ? "✓ 已簽諮詢表" : "未填諮詢表"}
+                  </span>
                 </div>
 
+                <!-- 聯絡與生日列（獨立一行，不被任何徽章覆蓋） -->
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#5c4638] bg-[#fcf9f5] border border-[#f1e7dc] rounded-xl px-3 py-2">
+                  <span class="inline-flex items-center gap-1">
+                    <span class="text-[#8b7365]">📞</span>
+                    <span class="font-medium tabular-nums">${esc(c.contact || "未留電話")}</span>
+                  </span>
+                  <span class="inline-flex items-center gap-1">
+                    <span class="text-[#8b7365]">🎂</span>
+                    <span class="font-medium tabular-nums">${esc(c.birthday || "未填生日")}</span>
+                  </span>
+                </div>
+
+                <!-- 店家內部備註 -->
                 ${privateNote ? `
-                  <div class="mt-3 px-3 py-2 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-xs flex items-start gap-2">
+                  <div class="px-3 py-2 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-xs flex items-start gap-2">
                     <span class="shrink-0 text-amber-700 font-extrabold">📌 備註：</span>
                     <span class="text-amber-950 font-semibold leading-snug break-words">${esc(privateNote)}</span>
                   </div>
                 ` : ""}
 
-                <div class="grid grid-cols-3 gap-2 mt-3 text-center bg-[#faf6f2] border border-[#efe4d8] rounded-2xl p-2.5 text-xs">
+                <!-- 儲值 / 來店 / 優惠券三欄 -->
+                <div class="grid grid-cols-3 gap-2 text-center bg-[#faf6f2] border border-[#efe4d8] rounded-2xl p-2.5 text-xs">
                   <div>
                     <div class="text-[10px] text-[#8b7365]">儲值金餘額</div>
                     <div class="font-extrabold text-[#8c5e43] tabular-nums mt-0.5 text-sm">$${bal.toLocaleString()}</div>
@@ -2508,13 +2558,14 @@
                 </div>
 
                 ${lastVisit ? `
-                  <div class="mt-2 text-[11px] text-[#7c6557] flex items-center justify-between px-1">
+                  <div class="text-[11px] text-[#7c6557] flex items-center justify-between px-1">
                     <span class="truncate">✨ 最近來店：${esc(lastVisit.date)} · ${esc(lastVisit.service || "")}</span>
                   </div>
                 ` : ""}
               </div>
 
-              <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#f2e8df]">
+              <!-- 底部操作按鈕 -->
+              <div class="flex flex-wrap items-center gap-1.5 pt-2.5 border-t border-[#f2e8df]">
                 <button onclick="openBookingModal(null, '${escJs(c.id)}')" class="py-1.5 px-3 rounded-xl text-xs font-extrabold btn-primary shadow-sm">
                   📅 預約
                 </button>
@@ -2544,7 +2595,7 @@
       document.getElementById("customerEditTitle").textContent = c ? "編輯會員資料" : "新增會員";
       document.getElementById("ce_id").value = c ? c.id : "";
       document.getElementById("ce_name").value = c ? c.name : "";
-      document.getElementById("ce_lineDisplayName").value = c ? (c.lineDisplayName || "") : "";
+      document.getElementById("ce_lineDisplayName").value = c ? sanitizeLineDisplayName(c.lineDisplayName) : "";
       document.getElementById("ce_nickname").value = c ? (c.nickname || "") : "";
       document.getElementById("ce_contact").value = c ? (c.contact || "") : "";
       document.getElementById("ce_birthday").value = c ? (c.birthday || "") : "";
@@ -2564,7 +2615,7 @@
       const data = {
         id: custId,
         name: document.getElementById("ce_name").value.trim(),
-        lineDisplayName: document.getElementById("ce_lineDisplayName").value.trim(),
+        lineDisplayName: sanitizeLineDisplayName(document.getElementById("ce_lineDisplayName").value.trim()),
         nickname: document.getElementById("ce_nickname").value.trim(),
         contact: document.getElementById("ce_contact").value.trim(),
         birthday: document.getElementById("ce_birthday").value,
@@ -2601,6 +2652,7 @@
       const completedBks = getCustomerCompletedBookings(c);
       const visits = getCustomerEffectiveVisitCount(c);
       const privateNote = String(c.privateNote || "").trim();
+      const lineClean = sanitizeLineDisplayName(c.lineDisplayName);
 
       const visitHistoryHtml = `
         <div class="p-3.5 rounded-xl bg-[#fcf9f5] border border-[#e7d8c8] space-y-2 text-xs mb-4">
@@ -2695,7 +2747,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div class="p-2.5 rounded-xl bg-white border border-[#e6d7c8]">
               <div class="text-[11px] text-[#8b7365]">LINE 名稱</div>
-              <div class="text-sm font-extrabold text-[#2f2622] mt-0.5">${esc(c.lineDisplayName || "尚未串連 LINE 名稱")}</div>
+              <div class="text-sm font-extrabold text-[#2f2622] mt-0.5">${esc(lineClean || "尚未串連 LINE 名稱")}</div>
             </div>
             <div class="p-2.5 rounded-xl bg-white border border-[#e6d7c8]">
               <div class="text-[11px] text-[#8b7365]">LINE 綁定狀態</div>
@@ -2993,6 +3045,11 @@
     }
 
     /* ==================== 分頁 3：優惠券管理＋固定自動發放規則設定 ==================== */
+    function getLockedRuleCondition(ruleKey, fallbackNote = "") {
+      if (LOCKED_RULE_CONDITIONS[ruleKey]) return LOCKED_RULE_CONDITIONS[ruleKey];
+      return fallbackNote || "系統固定發放條件（已鎖定）";
+    }
+
     function renderCouponsTab() {
       const visibleList = getVisibleCoupons();
       const availCnt = visibleList.filter(cp => cp.status === "可使用").length;
@@ -3056,21 +3113,24 @@
 
     function renderCouponRulesSection() {
       const box = document.getElementById("couponRulesContainer");
-      const bdayRule = state.couponRules.birthday || {
+      const bdayRaw = state.couponRules.birthday || {};
+      const bdayRule = {
         ruleKey: "birthday",
-        enabled: true,
-        title: "生日禮折 $100",
-        discountAmount: 100,
-        validityMonths: 1,
-        conditionNote: "當月壽星於當月 1 號自動發放（限當月使用）"
+        enabled: bdayRaw.enabled !== undefined ? !!bdayRaw.enabled : true,
+        title: bdayRaw.title || "生日禮折 $100",
+        discountAmount: bdayRaw.discountAmount !== undefined ? safeNumber(bdayRaw.discountAmount, 100) : 100,
+        validityMonths: bdayRaw.validityMonths !== undefined ? safeNumber(bdayRaw.validityMonths, 1) : 1,
+        conditionNote: getLockedRuleCondition("birthday", bdayRaw.conditionNote)
       };
-      const newRule = state.couponRules.new_customer || {
+
+      const newRaw = state.couponRules.new_customer || {};
+      const newRule = {
         ruleKey: "new_customer",
-        enabled: true,
-        title: "新客見面禮折 $100",
-        discountAmount: 100,
-        validityMonths: 3,
-        conditionNote: "首次完成填寫諮詢表與同意書自動發放"
+        enabled: newRaw.enabled !== undefined ? !!newRaw.enabled : true,
+        title: newRaw.title || "新客見面禮折 $100",
+        discountAmount: newRaw.discountAmount !== undefined ? safeNumber(newRaw.discountAmount, 100) : 100,
+        validityMonths: newRaw.validityMonths !== undefined ? safeNumber(newRaw.validityMonths, 3) : 3,
+        conditionNote: getLockedRuleCondition("new_customer", newRaw.conditionNote)
       };
 
       const cards = [
@@ -3091,11 +3151,11 @@
               </div>
               <div class="font-bold text-[#8c5e43] text-sm">${esc(r.title)} · 折抵 $${safeNumber(r.discountAmount, 0).toLocaleString()}</div>
               <div class="text-[11px] text-[#6d5648] mt-1">有效期限：自發放日起 <strong>${safeNumber(r.validityMonths, 1)} 個月</strong></div>
-              <div class="text-[11px] text-[#8b7365] mt-0.5">條件：${esc(r.conditionNote || "-")}</div>
+              <div class="text-[11px] text-[#8b7365] mt-0.5">🔒 條件：${esc(r.conditionNote)}</div>
             </div>
             <div class="flex justify-end pt-1">
               <button type="button" onclick="openCouponRuleModal('${escJs(r.ruleKey)}')" class="px-3 py-1.5 rounded-xl bg-white border border-[#decbb9] text-[#5c4638] font-bold hover:bg-[#f5eee7]">
-                ✏️ 設定條件 / 金額 / 期限
+                ✏️ 設定金額/期限
               </button>
             </div>
           </div>
@@ -3104,22 +3164,16 @@
     }
 
     function openCouponRuleModal(ruleKey) {
-      const r = state.couponRules[ruleKey] || {
-        ruleKey,
-        enabled: true,
-        title: ruleKey === "birthday" ? "生日禮折 $100" : "新客見面禮折 $100",
-        discountAmount: 100,
-        validityMonths: ruleKey === "birthday" ? 1 : 3,
-        conditionNote: ""
-      };
+      const raw = state.couponRules[ruleKey] || {};
+      const lockedCond = getLockedRuleCondition(ruleKey, raw.conditionNote);
       document.getElementById("cr_modalTitle").textContent =
-        ruleKey === "birthday" ? "🎂 設定當月壽星自動發放規則" : "🎁 設定新客見面禮自動發放規則";
+        ruleKey === "birthday" ? "🎂 設定金額/期限（當月壽星）" : "🎁 設定金額/期限（新客見面禮）";
       document.getElementById("cr_ruleKey").value = ruleKey;
-      document.getElementById("cr_enabled").checked = !!r.enabled;
-      document.getElementById("cr_title").value = r.title || "";
-      document.getElementById("cr_discountAmount").value = safeNumber(r.discountAmount, 100);
-      document.getElementById("cr_validityMonths").value = safeNumber(r.validityMonths, 1);
-      document.getElementById("cr_conditionNote").value = r.conditionNote || "";
+      document.getElementById("cr_enabled").checked = raw.enabled !== undefined ? !!raw.enabled : true;
+      document.getElementById("cr_title").value = raw.title || (ruleKey === "birthday" ? "生日禮折 $100" : "新客見面禮折 $100");
+      document.getElementById("cr_discountAmount").value = raw.discountAmount !== undefined ? safeNumber(raw.discountAmount, 100) : 100;
+      document.getElementById("cr_validityMonths").value = raw.validityMonths !== undefined ? safeNumber(raw.validityMonths, 1) : (ruleKey === "birthday" ? 1 : 3);
+      document.getElementById("cr_conditionNoteLocked").textContent = lockedCond;
       document.getElementById("couponRuleModal").classList.remove("hidden");
     }
 
@@ -3129,23 +3183,25 @@
 
     async function handleSaveCouponRule(e) {
       e.preventDefault();
+      const ruleKey = document.getElementById("cr_ruleKey").value;
+      const lockedConditionNote = getLockedRuleCondition(ruleKey, (state.couponRules[ruleKey] || {}).conditionNote);
       try {
-        setLoading(true, "儲存自動發放規則中...");
+        setLoading(true, "儲存金額與期限設定中...");
         const snap = await apiPost({
           action: "saveCouponRuleAdmin",
           password: state.adminPassword,
           payload: {
-            ruleKey: document.getElementById("cr_ruleKey").value,
+            ruleKey,
             enabled: document.getElementById("cr_enabled").checked,
             title: document.getElementById("cr_title").value.trim(),
             discountAmount: safeNumber(document.getElementById("cr_discountAmount").value, 100),
             validityMonths: safeNumber(document.getElementById("cr_validityMonths").value, 1),
-            conditionNote: document.getElementById("cr_conditionNote").value.trim()
+            conditionNote: lockedConditionNote
           }
         });
         applyAdminSnapshot(snap);
         closeCouponRuleModal();
-        showToast("已更新自動發放規則");
+        showToast("已更新金額與期限設定");
       } catch (err) {
         showToast(err.message || "儲存失敗", true);
       } finally {
@@ -3183,7 +3239,8 @@
 
       const matched = state.customers.filter(c => {
         if (!q) return true;
-        const hay = `${c.name} ${c.lineDisplayName} ${c.nickname} ${c.contact}`.toLowerCase();
+        const lineClean = sanitizeLineDisplayName(c.lineDisplayName);
+        const hay = `${c.name} ${lineClean} ${c.nickname} ${c.contact}`.toLowerCase();
         return hay.includes(q);
       });
 
@@ -3192,9 +3249,10 @@
         return;
       }
 
-      sel.innerHTML = matched.map(c =>
-        `<option value="${esc(c.id)}" ${String(c.id) === String(currentVal) ? "selected" : ""}>${esc(c.name)}${c.lineDisplayName ? `（${esc(c.lineDisplayName)}）` : ""}${c.contact ? ` · ${esc(c.contact)}` : ""}</option>`
-      ).join("");
+      sel.innerHTML = matched.map(c => {
+        const lineClean = sanitizeLineDisplayName(c.lineDisplayName);
+        return `<option value="${esc(c.id)}" ${String(c.id) === String(currentVal) ? "selected" : ""}>${esc(c.name)}${lineClean ? `（${esc(lineClean)}）` : ""}${c.contact ? ` · ${esc(c.contact)}` : ""}</option>`;
+      }).join("");
     }
 
     function applyCouponTypePreset() {
@@ -3286,7 +3344,7 @@
       }
     }
 
-    /* ==================== 分頁 4：帳務與儲值（月統計 / 年分析 + 來客數） ==================== */
+    /* ==================== 分頁 4：帳務與儲值 ==================== */
     function populateFinanceYearPicker() {
       const sel = document.getElementById("financeYearPicker");
       if (!sel) return;
@@ -3544,7 +3602,7 @@
       }
     }
 
-    /* ==================== 分頁 5：管理（服務價目 + 月行事曆禁約時段） ==================== */
+    /* ==================== 分頁 5：管理 ==================== */
     function selectCatalogCategory(catName) {
       state.selectedCatalogCategory = catName;
       renderCatalogTab();
@@ -3756,7 +3814,7 @@
       }
     }
 
-    /* ==================== 禁約時段：月行事曆互動與快速設定 ==================== */
+    /* ==================== 禁約時段 ==================== */
     function changeBlockedCalendarMonth(delta) {
       const d = new Date(state.blockedCalYear, state.blockedCalMonth + delta, 1);
       state.blockedCalYear = d.getFullYear();
@@ -3958,7 +4016,7 @@
             name: document.getElementById("rb_name").value.trim(),
             phone: document.getElementById("rb_phone").value.trim(),
             lineUserId: state.portalLineUserId,
-            lineDisplayName: state.portalLineDisplayName
+            lineDisplayName: sanitizeLineDisplayName(state.portalLineDisplayName)
           }
         });
         state.portalCid = res.cid || state.portalCid;
@@ -3988,7 +4046,7 @@
             if (liff.isLoggedIn()) {
               const prof = await liff.getProfile();
               state.portalLineUserId = prof.userId || "";
-              state.portalLineDisplayName = prof.displayName || "";
+              state.portalLineDisplayName = sanitizeLineDisplayName(prof.displayName || "");
             }
           } catch (_) {}
         }
@@ -4006,7 +4064,7 @@
         action: "getCustomerPortalData",
         cid: state.portalCid,
         lineUserId: state.portalLineUserId,
-        lineDisplayName: state.portalLineDisplayName,
+        lineDisplayName: sanitizeLineDisplayName(state.portalLineDisplayName),
         forceRebind: state.portalForceRebind
       });
       state.portalData = data;
@@ -4025,8 +4083,9 @@
 
       if (cust) {
         profileCard.classList.remove("hidden");
+        const lineClean = sanitizeLineDisplayName(cust.lineDisplayName);
         document.getElementById("custPortalName").textContent = `${cust.name}${cust.nickname ? `（${cust.nickname}）` : ""}`;
-        document.getElementById("custPortalMeta").textContent = `${cust.lineDisplayName ? `LINE：${cust.lineDisplayName} · ` : ""}${cust.contact || "已綁定會員"}`;
+        document.getElementById("custPortalMeta").textContent = `${lineClean ? `LINE：${lineClean} · ` : ""}${cust.contact || "已綁定會員"}`;
         document.getElementById("custPortalBalance").textContent = `$${safeNumber(cust.balance, 0).toLocaleString()}`;
 
         const allBookings = data.bookings || [];
@@ -4172,37 +4231,18 @@
           <div class="p-3 rounded-2xl bg-[#fcf9f5] border border-[#efe5da] space-y-1">
             <div class="text-[11px] text-[#8b7365]">健康與除毛評估</div>
             <div><strong>過往毛髮處理：</strong>${esc(cons.pastHairRemoval || "-")}</div>
-            <div><strong>首次施作熱蠟：</strong>${esc(cons.firstTimeWaxing || "-")}</div>
+            <div><strong>首次熱蠟除毛：</strong>${esc(cons.firstTimeWaxing || "-")}</div>
             <div><strong>敏感體質：</strong>${esc(cons.sensitiveTypes || "-")}</div>
+            <div><strong>懷孕／生病免疫力／生理期／出油痘痘：</strong>${esc(cons.isPregnant)}／${esc(cons.isSickOrLowImmunity)}／${esc(cons.isMenstruating)}／${esc(cons.isOilyOrAcneArea)}</div>
           </div>
         </div>
-
-        <div class="p-3 rounded-2xl bg-[#fcf9f5] border border-[#efe5da] grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-          <div>
-            <div class="text-[10px] text-[#8b7365]">懷孕期間</div>
-            <div class="font-bold text-[#33241d] mt-0.5">${esc(cons.isPregnant || "-")}</div>
-          </div>
-          <div>
-            <div class="text-[10px] text-[#8b7365]">生病/免疫力低</div>
-            <div class="font-bold text-[#33241d] mt-0.5">${esc(cons.isSickOrLowImmunity || "-")}</div>
-          </div>
-          <div>
-            <div class="text-[10px] text-[#8b7365]">生理期間</div>
-            <div class="font-bold text-[#33241d] mt-0.5">${esc(cons.isMenstruating || "-")}</div>
-          </div>
-          <div>
-            <div class="text-[10px] text-[#8b7365]">常出油/長痘痘</div>
-            <div class="font-bold text-[#33241d] mt-0.5">${esc(cons.isOilyOrAcneArea || "-")}</div>
-          </div>
-        </div>
-
         ${cons.signatureDataUrl ? `
           <div class="p-3 rounded-2xl bg-[#fcf9f5] border border-[#efe5da] flex items-center justify-between gap-3">
             <div>
-              <div class="font-bold text-[#33241d]">本人親筆簽名已歸檔</div>
-              <div class="text-[11px] text-[#8b7365]">如需更改資料或重新簽名，請點擊右上角「修改問卷與除毛諮詢同意書」</div>
+              <div class="font-bold text-[#33241d]">本人親筆簽名已留存</div>
+              <div class="text-[11px] text-[#8b7365]">如需變更條款或簽名，請點選右上角「修改問卷與除毛諮詢同意書」</div>
             </div>
-            <img src="${esc(cons.signatureDataUrl)}" alt="已歸檔簽名" class="max-h-16 rounded-xl border border-[#decbb9] bg-white p-1 shrink-0" />
+            <img src="${esc(cons.signatureDataUrl)}" alt="簽名檔" class="max-h-16 rounded-xl border border-[#decbb9] bg-white p-1" />
           </div>
         ` : ""}
       `;
@@ -4210,134 +4250,217 @@
 
     function enterConsultationEditMode() {
       state.isEditingConsultation = true;
-      if (state.portalData) {
-        renderCustomerPortal(state.portalData);
-        switchCustomerTab("consult");
-      }
+      document.getElementById("customerConsultLockedCard").classList.add("hidden");
+      document.getElementById("customerConsultFormBox").classList.remove("hidden");
+      document.getElementById("cancelConsultEditBtn").classList.remove("hidden");
+      document.getElementById("consultFormHeaderTitle").textContent = "修改問卷與除毛諮詢同意書";
     }
 
     function cancelConsultationEditMode() {
       state.isEditingConsultation = false;
-      if (state.portalData) {
-        renderCustomerPortal(state.portalData);
-        switchCustomerTab("consult");
+      if (state.portalData && state.portalData.consultation) {
+        document.getElementById("customerConsultFormBox").classList.add("hidden");
+        document.getElementById("customerConsultLockedCard").classList.remove("hidden");
+        renderLockedConsultationSummary(state.portalData.consultation);
       }
-    }
-
-    function parseMultiAnswer(str) {
-      if (!str) return [];
-      return String(str).split(/[,、]/).map(s => s.trim()).filter(Boolean);
-    }
-
-    function renderConsultationQuestionnaire() {
-      renderMultiChoiceList("q_pastHairRemovalList", "pastHairRemoval", QUESTION_CONFIG.pastHairRemoval);
-      renderSingleChoiceList("q_firstTimeWaxingList", "firstTimeWaxing", QUESTION_CONFIG.yesNo);
-      renderMultiChoiceList("q_sensitiveTypesList", "sensitiveTypes", QUESTION_CONFIG.sensitiveTypes);
-      renderSingleChoiceList("q_isPregnantList", "isPregnant", QUESTION_CONFIG.yesNo);
-      renderSingleChoiceList("q_isSickOrLowImmunityList", "isSickOrLowImmunity", QUESTION_CONFIG.yesNo);
-      renderSingleChoiceList("q_isMenstruatingList", "isMenstruating", QUESTION_CONFIG.yesNo);
-      renderSingleChoiceList("q_isOilyOrAcneAreaList", "isOilyOrAcneArea", QUESTION_CONFIG.yesNo);
-    }
-
-    function renderMultiChoiceList(containerId, key, options) {
-      const box = document.getElementById(containerId);
-      const selected = state.qAnswers[key] || [];
-      box.innerHTML = options.map(opt => {
-        const isChecked = selected.indexOf(opt) !== -1;
-        return `
-          <div onclick="toggleMultiChoice('${key}', '${escJs(opt)}')" class="q-option-row ${isChecked ? "q-option-selected" : ""}">
-            <span class="w-4 h-4 rounded-[4px] border flex items-center justify-center shrink-0 transition ${
-              isChecked ? "bg-[#8c5e43] border-[#8c5e43] text-white" : "border-[#b59f8f] bg-white"
-            }">
-              ${isChecked ? `<svg class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.2 7.2a1 1 0 01-1.42 0l-3.6-3.6a1 1 0 111.42-1.42l2.89 2.89 6.49-6.49a1 1 0 011.42 0z" clip-rule="evenodd"/></svg>` : ""}
-            </span>
-            <span class="text-sm font-medium ${isChecked ? "text-[#33241d] font-bold" : "text-[#4a382f]"}">${esc(opt)}</span>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function renderSingleChoiceList(containerId, key, options) {
-      const box = document.getElementById(containerId);
-      const current = state.qAnswers[key] || "";
-      box.innerHTML = options.map(opt => {
-        const isSelected = current === opt;
-        return `
-          <div onclick="selectSingleChoice('${key}', '${escJs(opt)}')" class="q-option-row ${isSelected ? "q-option-selected" : ""}">
-            <span class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition ${
-              isSelected ? "border-[#8c5e43]" : "border-[#b59f8f] bg-white"
-            }">
-              ${isSelected ? `<span class="w-2 h-2 rounded-full bg-[#8c5e43]"></span>` : ""}
-            </span>
-            <span class="text-sm font-medium ${isSelected ? "text-[#33241d] font-bold" : "text-[#4a382f]"}">${esc(opt)}</span>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function toggleMultiChoice(key, val) {
-      let arr = [...(state.qAnswers[key] || [])];
-      if (val === "無") {
-        arr = arr.indexOf("無") !== -1 ? [] : ["無"];
-      } else {
-        arr = arr.filter(x => x !== "無");
-        const idx = arr.indexOf(val);
-        if (idx !== -1) arr.splice(idx, 1);
-        else arr.push(val);
-      }
-      state.qAnswers[key] = arr;
-      renderConsultationQuestionnaire();
-    }
-
-    function selectSingleChoice(key, val) {
-      state.qAnswers[key] = val;
-      renderConsultationQuestionnaire();
     }
 
     function switchCustomerTab(tab) {
       const isConsult = tab === "consult";
-      document.getElementById("customerConsultSection").classList.toggle("hidden", !isConsult);
-      document.getElementById("customerBookSection").classList.toggle("hidden", isConsult);
       document.getElementById("cTabConsultBtn").className = `py-2.5 rounded-xl text-sm font-bold ${isConsult ? "tab-active" : "tab-inactive"}`;
       document.getElementById("cTabBookBtn").className = `py-2.5 rounded-xl text-sm font-bold ${!isConsult ? "tab-active" : "tab-inactive"}`;
+      document.getElementById("customerConsultSection").classList.toggle("hidden", !isConsult);
+      document.getElementById("customerBookSection").classList.toggle("hidden", isConsult);
+      if (!isConsult) {
+        validateCustomerSlotAvailability();
+      }
     }
 
-    /* ==================== 客戶端預約：大分類篩選 + 細項加入/移除 ==================== */
+    function parseMultiAnswer(raw) {
+      if (!raw) return [];
+      if (Array.isArray(raw)) return raw.map(String);
+      return String(raw).split(/[、,，]+/).map(s => s.trim()).filter(Boolean);
+    }
+
+    function renderConsultationQuestionnaire() {
+      renderCheckboxGroup("q_pastHairRemovalList", QUESTION_CONFIG.pastHairRemoval, state.qAnswers.pastHairRemoval, "pastHairRemoval");
+      renderRadioGroup("q_firstTimeWaxingList", QUESTION_CONFIG.yesNo, state.qAnswers.firstTimeWaxing, "firstTimeWaxing");
+      renderCheckboxGroup("q_sensitiveTypesList", QUESTION_CONFIG.sensitiveTypes, state.qAnswers.sensitiveTypes, "sensitiveTypes");
+      renderRadioGroup("q_isPregnantList", QUESTION_CONFIG.yesNo, state.qAnswers.isPregnant, "isPregnant");
+      renderRadioGroup("q_isSickOrLowImmunityList", QUESTION_CONFIG.yesNo, state.qAnswers.isSickOrLowImmunity, "isSickOrLowImmunity");
+      renderRadioGroup("q_isMenstruatingList", QUESTION_CONFIG.yesNo, state.qAnswers.isMenstruating, "isMenstruating");
+      renderRadioGroup("q_isOilyOrAcneAreaList", QUESTION_CONFIG.yesNo, state.qAnswers.isOilyOrAcneArea, "isOilyOrAcneArea");
+    }
+
+    function renderCheckboxGroup(containerId, options, selectedArr, stateKey) {
+      const box = document.getElementById(containerId);
+      if (!box) return;
+      box.innerHTML = options.map(opt => {
+        const checked = selectedArr.indexOf(opt) !== -1;
+        return `
+          <div onclick="toggleMultiAnswer('${stateKey}', '${escJs(opt)}')" class="q-option-row ${checked ? "q-option-selected" : ""}">
+            <span class="w-4 h-4 rounded flex items-center justify-center text-[11px] font-bold border ${
+              checked ? "bg-[#8c5e43] border-[#8c5e43] text-white" : "bg-white border-[#c8b3a2] text-transparent"
+            }">✓</span>
+            <span class="text-xs font-bold text-[#33241d]">${esc(opt)}</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderRadioGroup(containerId, options, selectedVal, stateKey) {
+      const box = document.getElementById(containerId);
+      if (!box) return;
+      box.innerHTML = options.map(opt => {
+        const checked = selectedVal === opt;
+        return `
+          <div onclick="selectSingleAnswer('${stateKey}', '${escJs(opt)}')" class="q-option-row ${checked ? "q-option-selected" : ""}">
+            <span class="w-4 h-4 rounded-full flex items-center justify-center border ${
+              checked ? "border-[#8c5e43] bg-[#8c5e43]" : "border-[#c8b3a2] bg-white"
+            }">
+              <span class="w-1.5 h-1.5 rounded-full bg-white ${checked ? "" : "opacity-0"}"></span>
+            </span>
+            <span class="text-xs font-bold text-[#33241d]">${esc(opt)}</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function toggleMultiAnswer(stateKey, optionText) {
+      const arr = state.qAnswers[stateKey] || [];
+      const idx = arr.indexOf(optionText);
+      if (idx !== -1) {
+        arr.splice(idx, 1);
+      } else {
+        if (optionText === "無") {
+          state.qAnswers[stateKey] = ["無"];
+        } else {
+          state.qAnswers[stateKey] = arr.filter(x => x !== "無").concat(optionText);
+        }
+      }
+      renderConsultationQuestionnaire();
+    }
+
+    function selectSingleAnswer(stateKey, optionText) {
+      state.qAnswers[stateKey] = optionText;
+      renderConsultationQuestionnaire();
+    }
+
+    let sigCtx, isDrawingSig = false, hasSigned = false;
+    function initSignaturePad() {
+      const canvas = document.getElementById("signatureCanvas");
+      sigCtx = canvas.getContext("2d");
+      sigCtx.strokeStyle = "#2b1e17";
+      sigCtx.lineWidth = 2.6;
+      sigCtx.lineCap = "round";
+
+      const getPos = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+      };
+
+      canvas.addEventListener("pointerdown", (e) => {
+        isDrawingSig = true;
+        hasSigned = true;
+        const p = getPos(e);
+        sigCtx.beginPath();
+        sigCtx.moveTo(p.x, p.y);
+      });
+      canvas.addEventListener("pointermove", (e) => {
+        if (!isDrawingSig) return;
+        const p = getPos(e);
+        sigCtx.lineTo(p.x, p.y);
+        sigCtx.stroke();
+      });
+      window.addEventListener("pointerup", () => { isDrawingSig = false; });
+    }
+
+    function clearSignature() {
+      const canvas = document.getElementById("signatureCanvas");
+      sigCtx.clearRect(0, 0, canvas.width, canvas.height);
+      hasSigned = false;
+    }
+
+    async function handleConsultationSubmit(e) {
+      e.preventDefault();
+
+      if (!state.qAnswers.pastHairRemoval.length) return showToast("請選擇「過往毛髮處理方式」", true);
+      if (!state.qAnswers.firstTimeWaxing) return showToast("請選擇「本次是否為首次施作熱蠟除毛」", true);
+      if (!state.qAnswers.sensitiveTypes.length) return showToast("請選擇「是否為敏感體質」", true);
+      if (!state.qAnswers.isPregnant) return showToast("請選擇「目前是否為懷孕期間」", true);
+      if (!state.qAnswers.isSickOrLowImmunity) return showToast("請選擇「目前是否為生病或免疫力下降期間」", true);
+      if (!state.qAnswers.isMenstruating) return showToast("請選擇「目前是否為生理期間」", true);
+      if (!state.qAnswers.isOilyOrAcneArea) return showToast("請選擇「除毛部位是否常出油或長痘痘／毛囊炎」", true);
+
+      const canvas = document.getElementById("signatureCanvas");
+      const existingImgSrc = (state.portalData && state.portalData.consultation && state.portalData.consultation.signatureDataUrl) || "";
+      if (!hasSigned && !existingImgSrc) {
+        return showToast("請於簽名框內完成親筆簽名", true);
+      }
+      const signatureDataUrl = hasSigned ? canvas.toDataURL("image/png") : existingImgSrc;
+
+      try {
+        setLoading(true, "送出問卷與同意書中...");
+        const payload = {
+          cid: state.portalCid || "",
+          lineUserId: state.portalLineUserId || "",
+          lineDisplayName: sanitizeLineDisplayName(state.portalLineDisplayName || ""),
+          name: document.getElementById("cf_name").value.trim(),
+          nickname: document.getElementById("cf_nickname").value.trim(),
+          birthday: document.getElementById("cf_birthday").value,
+          phone: document.getElementById("cf_phone").value.trim(),
+          address: document.getElementById("cf_address").value.trim(),
+          pastHairRemoval: state.qAnswers.pastHairRemoval.join("、"),
+          firstTimeWaxing: state.qAnswers.firstTimeWaxing,
+          sensitiveTypes: state.qAnswers.sensitiveTypes.join("、"),
+          isPregnant: state.qAnswers.isPregnant,
+          isSickOrLowImmunity: state.qAnswers.isSickOrLowImmunity,
+          isMenstruating: state.qAnswers.isMenstruating,
+          isOilyOrAcneArea: state.qAnswers.isOilyOrAcneArea,
+          signatureDataUrl
+        };
+
+        const res = await apiPost({ action: "submitConsultationAndRegister", payload });
+        state.portalCid = res.cid || state.portalCid;
+        state.isEditingConsultation = false;
+        hasSigned = false;
+        clearSignature();
+        await reloadCustomerPortalData();
+        switchCustomerTab("book");
+        showToast(res.welcomeCouponIssued ? "已送出諮詢表，並為您發放新客見面禮優惠券！" : "諮詢表與同意書已儲存！");
+      } catch (err) {
+        showToast(err.message || "送出失敗", true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     function selectCustomerCatalogCategory(catName) {
       state.activeCustomerCatalogCategory = catName;
-      renderCustomerBookingCatalog(state.portalData ? state.portalData.catalog || [] : []);
-    }
-
-    function addCustomerServiceItem(itemId) {
-      const idStr = String(itemId);
-      if (state.selectedCustomerServiceIds.indexOf(idStr) === -1) {
-        state.selectedCustomerServiceIds.push(idStr);
-      }
-      renderCustomerBookingCatalog(state.portalData ? state.portalData.catalog || [] : []);
-    }
-
-    function removeCustomerServiceItem(itemId) {
-      const idStr = String(itemId);
-      state.selectedCustomerServiceIds = state.selectedCustomerServiceIds.filter(x => x !== idStr);
-      renderCustomerBookingCatalog(state.portalData ? state.portalData.catalog || [] : []);
+      renderCustomerBookingCatalog(state.portalData ? state.portalData.catalog : []);
     }
 
     function renderCustomerBookingCatalog(catalogList) {
       const pillsBox = document.getElementById("cb_categoryPills");
-      const activeBox = document.getElementById("cb_activeCategoryItems");
+      const itemsBox = document.getElementById("cb_activeCategoryItems");
       const selectedBox = document.getElementById("cb_selectedItemsList");
+      const list = catalogList || [];
 
-      if (!catalogList || catalogList.length === 0) {
+      if (list.length === 0) {
         pillsBox.innerHTML = "";
-        activeBox.innerHTML = `<div class="p-4 text-xs text-[#8b7365] text-center">目前暫無開放線上預約的項目</div>`;
-        selectedBox.innerHTML = "";
-        recalcCustomerBookingEstimate();
+        itemsBox.innerHTML = `<div class="p-4 text-xs text-[#8b7365] text-center">目前無可預約項目</div>`;
+        selectedBox.innerHTML = `<div class="text-xs text-[#8b7365]">尚未加入任何項目</div>`;
+        updateCustomerBookingSummary(list);
         return;
       }
 
       const grouped = {};
-      catalogList.forEach(item => {
-        const cat = String(item.category || "其他").trim();
+      list.forEach(item => {
+        const cat = String(item.category || "其他項目").trim();
         if (!grouped[cat]) grouped[cat] = [];
         grouped[cat].push(item);
       });
@@ -4350,59 +4473,55 @@
       pillsBox.innerHTML = catNames.map(cat => {
         const isActive = state.activeCustomerCatalogCategory === cat;
         return `
-          <button type="button" onclick="selectCustomerCatalogCategory('${escJs(cat)}')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold border transition flex items-center gap-1.5 ${
+          <button type="button" onclick="selectCustomerCatalogCategory('${escJs(cat)}')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold border transition ${
             isActive ? "cat-pill-active" : "cat-pill-inactive hover:bg-[#f6efe8]"
           }">
-            <span>${esc(cat)}</span>
-            <span class="px-1.5 py-0.5 rounded-full text-[10px] ${
-              isActive ? "bg-white/25 text-white" : "bg-[#efe5da] text-[#6d5648]"
-            }">${grouped[cat].length}</span>
+            ${esc(cat)}
           </button>
         `;
       }).join("");
 
       const activeItems = grouped[state.activeCustomerCatalogCategory] || [];
-      activeBox.innerHTML = activeItems.map(item => {
+      itemsBox.innerHTML = activeItems.map(item => {
         const isAdded = state.selectedCustomerServiceIds.indexOf(String(item.id)) !== -1;
         const dur = safeNumber(item.duration, 0);
         return `
-          <div class="p-3 flex items-center justify-between gap-2 text-xs hover:bg-[#faf5ef] transition">
+          <div class="p-3 flex items-center justify-between gap-3">
             <div class="min-w-0 flex-1">
-              <div class="font-bold text-[#33241d]">${esc(item.name)}</div>
-              <div class="text-[11px] text-[#7c6557] mt-0.5">
-                <strong class="text-[#8c5e43]">$${safeNumber(item.price, 0).toLocaleString()}</strong>${dur > 0 ? ` · 約 ${dur} 分鐘` : ""}
+              <div class="font-bold text-sm text-[#33241d]">${esc(item.name)}</div>
+              <div class="text-xs text-[#7c6557] mt-0.5">
+                <span class="font-extrabold text-[#8c5e43]">$${safeNumber(item.price, 0).toLocaleString()}</span>${dur > 0 ? ` · 約 ${dur} 分鐘` : ""}
               </div>
             </div>
             ${isAdded ? `
-              <button type="button" onclick="removeCustomerServiceItem('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold shrink-0">
+              <button type="button" onclick="removeCustomerServiceId('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 shrink-0">
                 ✓ 已加入（移除）
               </button>
             ` : `
-              <button type="button" onclick="addCustomerServiceItem('${escJs(item.id)}')" class="px-3.5 py-1.5 rounded-xl btn-primary font-bold shadow-sm shrink-0">
-                ＋ 加入
+              <button type="button" onclick="addCustomerServiceId('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl text-xs font-extrabold btn-primary shadow-sm shrink-0">
+                ＋ 加入預約
               </button>
             `}
           </div>
         `;
       }).join("");
 
-      const selectedItems = catalogList.filter(item => state.selectedCustomerServiceIds.indexOf(String(item.id)) !== -1);
+      const selectedItems = list.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
       document.getElementById("cb_selectedCountBadge").textContent = `已選 ${selectedItems.length} 項`;
 
       if (selectedItems.length === 0) {
-        selectedBox.innerHTML = `<div class="text-xs text-[#8b7365] py-2.5 px-3 rounded-xl bg-[#faf7f4] border border-dashed border-[#e2d3c4]">尚未加入任何項目，請從上方點選「＋ 加入」</div>`;
+        selectedBox.innerHTML = `<div class="text-xs text-[#8b7365] py-2">尚未加入項目，請先點選上方細項的「＋ 加入預約」</div>`;
       } else {
         selectedBox.innerHTML = selectedItems.map(item => {
           const dur = safeNumber(item.duration, 0);
           return `
-            <div class="p-2.5 rounded-xl bg-[#fdf8f3] border border-[#e7d6c5] flex items-center justify-between gap-2 text-xs">
+            <div class="px-3 py-2 rounded-xl bg-[#fcf9f5] border border-[#e6d5c4] flex items-center justify-between gap-2 text-xs">
               <div class="min-w-0">
-                <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#efe4d8] text-[#6d5648] font-bold mr-1">${esc(item.category)}</span>
-                <span class="font-bold text-[#33241d]">${esc(item.name)}</span>
+                <span class="font-extrabold text-[#33241d]">${esc(item.name)}</span>
                 <span class="text-[#8c5e43] font-bold ml-1.5">$${safeNumber(item.price, 0).toLocaleString()}</span>
-                ${dur > 0 ? `<span class="text-[#8b7365] text-[11px]">(${dur}分)</span>` : ""}
+                ${dur > 0 ? `<span class="text-[#8b7365] ml-1">(${dur}分)</span>` : ""}
               </div>
-              <button type="button" onclick="removeCustomerServiceItem('${escJs(item.id)}')" class="px-2 py-1 rounded-lg bg-white border border-rose-200 text-rose-700 font-bold hover:bg-rose-50 shrink-0">
+              <button type="button" onclick="removeCustomerServiceId('${escJs(item.id)}')" class="px-2 py-1 rounded-lg bg-rose-50 text-rose-700 font-bold hover:bg-rose-100 shrink-0">
                 ✕ 移除
               </button>
             </div>
@@ -4410,222 +4529,123 @@
         }).join("");
       }
 
-      recalcCustomerBookingEstimate();
+      updateCustomerBookingSummary(list);
     }
 
-    function recalcCustomerBookingEstimate() {
-      const catalogList = state.portalData ? (state.portalData.catalog || []) : [];
-      const selected = catalogList.filter(item => state.selectedCustomerServiceIds.indexOf(String(item.id)) !== -1);
-      const totalDuration = selected.reduce((s, x) => s + safeNumber(x.duration, 0), 0);
+    function addCustomerServiceId(itemId) {
+      const idStr = String(itemId);
+      if (state.selectedCustomerServiceIds.indexOf(idStr) === -1) {
+        state.selectedCustomerServiceIds.push(idStr);
+      }
+      renderCustomerBookingCatalog(state.portalData ? state.portalData.catalog : []);
+    }
+
+    function removeCustomerServiceId(itemId) {
+      const idStr = String(itemId);
+      state.selectedCustomerServiceIds = state.selectedCustomerServiceIds.filter(x => x !== idStr);
+      renderCustomerBookingCatalog(state.portalData ? state.portalData.catalog : []);
+    }
+
+    function updateCustomerBookingSummary(catalogList) {
+      const selected = (catalogList || []).filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
+      const totalDur = selected.reduce((s, x) => s + safeNumber(x.duration, 0), 0);
       const totalPrice = selected.reduce((s, x) => s + safeNumber(x.price, 0), 0);
-      document.getElementById("cb_totalDurationText").textContent = `${totalDuration} 分鐘`;
+      document.getElementById("cb_totalDurationText").textContent = `${totalDur} 分鐘`;
       document.getElementById("cb_totalPriceText").textContent = `$${totalPrice.toLocaleString()}`;
-      validateCustomerSlotAvailability();
+      validateCustomerSlotAvailability(totalDur || 60);
     }
 
-    function validateCustomerSlotAvailability() {
+    function validateCustomerSlotAvailability(overrideDur = null) {
       const banner = document.getElementById("cb_slotConflictBanner");
-      const btn = document.getElementById("cb_submitBtn");
-      if (!state.portalData) return true;
+      const submitBtn = document.getElementById("cb_submitBtn");
+      if (!banner || !submitBtn) return true;
 
       const dateStr = document.getElementById("cb_date").value;
-      const startStr = document.getElementById("cb_startTime").value || "11:00";
-      const catalogList = state.portalData.catalog || [];
-      const selected = catalogList.filter(item => state.selectedCustomerServiceIds.indexOf(String(item.id)) !== -1);
-      const dur = selected.reduce((s, x) => s + safeNumber(x.duration, 0), 0) || 60;
+      const startStr = document.getElementById("cb_startTime").value;
+      const blocks = (state.portalData && state.portalData.blockedSlots) || [];
 
-      const startMin = timeToMinutes(startStr);
-      const endMin = startMin + dur + 10;
-
-      const blockedList = state.portalData.blockedSlots || [];
-      const hitBlock = blockedList.find(blk => {
-        if (blk.date !== dateStr) return false;
-        if (blk.fullDay) return true;
-        return startMin < timeToMinutes(blk.endTime) && endMin > timeToMinutes(blk.startTime);
-      });
-
-      if (hitBlock) {
-        banner.classList.remove("hidden");
-        banner.textContent = hitBlock.fullDay
-          ? `⚠️ ${dateStr} 全天不開放預約（${hitBlock.reason || "公休"}），請選擇其他日期。`
-          : `⚠️ ${dateStr} ${hitBlock.startTime}-${hitBlock.endTime} 為不開放時段（${hitBlock.reason || "禁約"}），請調整時間。`;
-        btn.disabled = true;
-        btn.classList.add("opacity-50", "cursor-not-allowed");
-        return false;
+      if (!dateStr || !startStr) {
+        banner.classList.add("hidden");
+        submitBtn.disabled = false;
+        return true;
       }
 
-      const busyList = state.portalData.busyBookings || [];
-      const hitBusy = busyList.find(bk => {
-        if (bk.date !== dateStr) return false;
-        return startMin < timeToMinutes(bk.endTime) && endMin > timeToMinutes(bk.startTime);
+      const catalogList = (state.portalData && state.portalData.catalog) || [];
+      const selected = catalogList.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
+      const dur = overrideDur !== null ? overrideDur : (selected.reduce((s, x) => s + safeNumber(x.duration, 0), 0) || 60);
+
+      const startMin = timeToMinutes(startStr);
+      const endMin = startMin + dur;
+
+      const matched = blocks.filter(blk => {
+        if (blk.date !== dateStr) return false;
+        if (blk.fullDay) return true;
+        const bStart = timeToMinutes(blk.startTime);
+        const bEnd = timeToMinutes(blk.endTime);
+        return startMin < bEnd && endMin > bStart;
       });
 
-      if (hitBusy) {
+      if (matched.length > 0) {
+        const msg = matched.map(m => m.fullDay
+          ? `${m.date} 整天不開放預約（${m.reason || "公休"}）`
+          : `${m.date} ${m.startTime}-${m.endTime} 時段不開放預約（${m.reason || "時段已保留"}）`
+        ).join("；");
+        banner.textContent = `⚠️ 此日期／時段無法預約：${msg}，請更換其他日期或時間。`;
         banner.classList.remove("hidden");
-        banner.textContent = `⚠️ ${dateStr} ${hitBusy.startTime}-${hitBusy.endTime} 已有預約排程，請選擇其他時段。`;
-        btn.disabled = true;
-        btn.classList.add("opacity-50", "cursor-not-allowed");
+        submitBtn.disabled = true;
+        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
         return false;
       }
 
       banner.classList.add("hidden");
       banner.textContent = "";
-      btn.disabled = false;
-      btn.classList.remove("opacity-50", "cursor-not-allowed");
+      submitBtn.disabled = false;
+      submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
       return true;
     }
 
     async function handleCustomerBookingSubmit(e) {
       e.preventDefault();
       if (!validateCustomerSlotAvailability()) {
-        return showToast("該時段已滿或不開放，請更換日期或時間", true);
+        return showToast("所選日期或時段不開放預約，請更換時段", true);
       }
+      const catalogList = (state.portalData && state.portalData.catalog) || [];
+      const selected = catalogList.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
+      if (selected.length === 0) return showToast("請至少加入一項服務或產品", true);
 
-      const catalogList = state.portalData ? (state.portalData.catalog || []) : [];
-      const selected = catalogList.filter(item => state.selectedCustomerServiceIds.indexOf(String(item.id)) !== -1);
-      if (selected.length === 0) return showToast("請至少加入一個服務或產品項目", true);
-
-      const cust = state.portalData ? state.portalData.customer : null;
-      const cons = state.portalData ? state.portalData.consultation : null;
-      const customerName = (cust && cust.name) || (cons && cons.name) || document.getElementById("cf_name").value.trim() || "線上預約顧客";
+      const cust = state.portalData && state.portalData.customer;
+      const cons = state.portalData && state.portalData.consultation;
+      const customerName = (cust && cust.name) || (cons && cons.name) || sanitizeLineDisplayName(state.portalLineDisplayName) || "LINE 客戶";
 
       try {
         setLoading(true, "送出預約申請中...");
-        const res = await apiPost({
-          action: "submitCustomerBooking",
-          payload: {
-            cid: (cust && cust.id) || state.portalCid,
-            lineUserId: state.portalLineUserId,
-            lineDisplayName: state.portalLineDisplayName,
-            customerName,
-            date: document.getElementById("cb_date").value,
-            startTime: document.getElementById("cb_startTime").value,
-            serviceIds: selected.map(s => s.id),
-            note: document.getElementById("cb_note").value.trim()
-          }
-        });
-        state.portalCid = res.cid || state.portalCid;
+        const payload = {
+          cid: state.portalCid || (cust && cust.id) || "",
+          lineUserId: state.portalLineUserId || "",
+          lineDisplayName: sanitizeLineDisplayName(state.portalLineDisplayName || ""),
+          customerName,
+          date: document.getElementById("cb_date").value,
+          startTime: document.getElementById("cb_startTime").value,
+          category: selected[0] ? String(selected[0].category || "") : "",
+          serviceNames: selected.map(x => x.name).join(" + "),
+          totalDuration: selected.reduce((s, x) => s + safeNumber(x.duration, 0), 0) || 60,
+          totalPrice: selected.reduce((s, x) => s + safeNumber(x.price, 0), 0),
+          note: document.getElementById("cb_note").value.trim()
+        };
+        await apiPost({ action: "submitCustomerBooking", payload });
         state.selectedCustomerServiceIds = [];
         document.getElementById("cb_note").value = "";
         await reloadCustomerPortalData();
-        showToast("預約申請已送出！請靜候店家審核確認");
+        showToast("已送出預約申請（待審核）！店家確認後將排入您的行程");
       } catch (err) {
-        showToast(err.message || "預約申請失敗", true);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    /* ==================== 簽名板與問卷送出 ==================== */
-    let sigCanvas, sigCtx, isDrawingSig = false, hasSignedNew = false;
-
-    function initSignaturePad() {
-      sigCanvas = document.getElementById("signatureCanvas");
-      if (!sigCanvas) return;
-      sigCtx = sigCanvas.getContext("2d");
-      sigCtx.lineWidth = 2.6;
-      sigCtx.lineCap = "round";
-      sigCtx.strokeStyle = "#2f2622";
-
-      const getPos = (e) => {
-        const rect = sigCanvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return {
-          x: (clientX - rect.left) * (sigCanvas.width / rect.width),
-          y: (clientY - rect.top) * (sigCanvas.height / rect.height)
-        };
-      };
-
-      const start = (e) => {
-        isDrawingSig = true;
-        hasSignedNew = true;
-        const p = getPos(e);
-        sigCtx.beginPath();
-        sigCtx.moveTo(p.x, p.y);
-      };
-      const move = (e) => {
-        if (!isDrawingSig) return;
-        e.preventDefault();
-        const p = getPos(e);
-        sigCtx.lineTo(p.x, p.y);
-        sigCtx.stroke();
-      };
-      const end = () => { isDrawingSig = false; };
-
-      sigCanvas.addEventListener("mousedown", start);
-      sigCanvas.addEventListener("mousemove", move);
-      window.addEventListener("mouseup", end);
-      sigCanvas.addEventListener("touchstart", start, { passive: false });
-      sigCanvas.addEventListener("touchmove", move, { passive: false });
-      sigCanvas.addEventListener("touchend", end);
-    }
-
-    function clearSignature() {
-      if (!sigCtx) return;
-      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-      hasSignedNew = false;
-    }
-
-    async function handleConsultationSubmit(e) {
-      e.preventDefault();
-
-      if (state.qAnswers.pastHairRemoval.length === 0) return showToast("請勾選「過往毛髮處理方式」", true);
-      if (!state.qAnswers.firstTimeWaxing) return showToast("請選擇「本次是否為首次施作熱蠟除毛」", true);
-      if (state.qAnswers.sensitiveTypes.length === 0) return showToast("請勾選「是否為敏感體質」", true);
-      if (!state.qAnswers.isPregnant) return showToast("請選擇「目前是否為懷孕期間」", true);
-      if (!state.qAnswers.isSickOrLowImmunity) return showToast("請選擇「目前是否為生病或免疫力下降期間」", true);
-      if (!state.qAnswers.isMenstruating) return showToast("請選擇「目前是否為生理期間」", true);
-      if (!state.qAnswers.isOilyOrAcneArea) return showToast("請選擇「除毛部位是否常出油或長痘痘／毛囊炎」", true);
-
-      const existingCons = state.portalData ? state.portalData.consultation : null;
-      let signatureDataUrl = "";
-      if (hasSignedNew) {
-        signatureDataUrl = sigCanvas.toDataURL("image/png");
-      } else if (existingCons && existingCons.signatureDataUrl) {
-        signatureDataUrl = existingCons.signatureDataUrl;
-      } else {
-        return showToast("請於簽名欄完成本人親筆簽名", true);
-      }
-
-      const payload = {
-        cid: state.portalCid,
-        lineUserId: state.portalLineUserId,
-        lineDisplayName: state.portalLineDisplayName,
-        forceRebind: state.portalForceRebind,
-        name: document.getElementById("cf_name").value.trim(),
-        nickname: document.getElementById("cf_nickname").value.trim(),
-        birthday: document.getElementById("cf_birthday").value,
-        phone: document.getElementById("cf_phone").value.trim(),
-        address: document.getElementById("cf_address").value.trim(),
-        pastHairRemoval: state.qAnswers.pastHairRemoval,
-        firstTimeWaxing: state.qAnswers.firstTimeWaxing,
-        sensitiveTypes: state.qAnswers.sensitiveTypes,
-        isPregnant: state.qAnswers.isPregnant,
-        isSickOrLowImmunity: state.qAnswers.isSickOrLowImmunity,
-        isMenstruating: state.qAnswers.isMenstruating,
-        isOilyOrAcneArea: state.qAnswers.isOilyOrAcneArea,
-        signatureDataUrl
-      };
-
-      try {
-        setLoading(true, "儲存問卷與同意書中...");
-        const res = await apiPost({ action: "submitConsultation", payload });
-        state.portalCid = res.cid || state.portalCid;
-        state.portalForceRebind = false;
-        state.isEditingConsultation = false;
-        hasSignedNew = false;
-        await reloadCustomerPortalData();
-        showToast(res.isNewCustomer ? "問卷已完成！已為您自動發送新客見面禮優惠券" : "問卷與同意書已更新儲存");
-      } catch (err) {
-        showToast(err.message || "儲存失敗", true);
+        showToast(err.message || "預約送出失敗", true);
       } finally {
         setLoading(false);
       }
     }
 
     function esc(str) {
-      return String(str == null ? "" : str)
+      return String(str || "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -4633,10 +4653,10 @@
     }
 
     function escJs(str) {
-      return String(str == null ? "" : str)
+      return String(str || "")
         .replace(/\\/g, "\\\\")
         .replace(/'/g, "\\'")
-        .replace(/"/g, '\\"');
+        .replace(/"/g, "&quot;");
     }
   </script>
 </body>
