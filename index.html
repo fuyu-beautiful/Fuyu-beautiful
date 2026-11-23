@@ -51,15 +51,24 @@
       color: #5c4638;
       border-color: #e3d5c7;
     }
+    .q-card {
+      background: #fffdfb;
+      border: 1px solid #ece0d3;
+      border-radius: 16px;
+      padding: 14px 16px;
+    }
     .q-badge-type {
       font-size: 11px;
       font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background-color: #f4ece3;
       color: #6b5344;
     }
     .q-badge-req {
       font-size: 10px;
       font-weight: 700;
-      padding: 1px 7px;
+      padding: 2px 8px;
       border-radius: 999px;
       background-color: #fce8e6;
       color: #b42318;
@@ -67,14 +76,20 @@
     .q-option-row {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 6px;
-      border-bottom: 1px solid #f1e8df;
+      gap: 11px;
+      padding: 10px 10px;
+      border-radius: 12px;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
       cursor: pointer;
-      transition: background-color 0.15s ease;
+      transition: all 0.15s ease;
     }
     .q-option-row:hover {
-      background-color: #fcf7f2;
+      background-color: #faf3ec;
+    }
+    .q-option-selected {
+      background-color: #fdf6ef;
+      border-color: #d9bea6;
     }
     .modal-backdrop {
       background: rgba(34, 24, 19, 0.52);
@@ -151,7 +166,7 @@
 
   <!-- ==================== 客戶端視圖 ==================== -->
   <main id="customerView" class="max-w-2xl mx-auto px-4 pt-5 hidden">
-    <!-- 自助重新串連 LINE 提示條（當換新手機或新 LINE 帳號開啟未綁定畫面時顯示） -->
+    <!-- 自助重新串連 LINE 提示條 -->
     <div id="customerRebindBanner" class="glass-card rounded-2xl p-3.5 mb-4 hidden border-l-4 border-l-[#8c5e43]">
       <div class="flex items-center justify-between gap-2">
         <div class="text-xs text-[#4a382f]">
@@ -200,52 +215,80 @@
       </button>
     </div>
 
-    <!-- 諮詢表與同意書區塊（問卷複選/單選清單風格 + 馥語暖棕配色 + 必填防呆） -->
-    <section id="customerConsultSection" class="glass-card rounded-2xl p-5 mb-5 hidden">
-      <div id="customerConsultHiddenNotice" class="hidden p-4 rounded-xl bg-[#faf6f2] border border-[#e7d8c8] text-xs text-[#6a4f3f] text-center space-y-1">
-        <div class="font-bold text-sm text-[#33241d]">📋 您的諮詢表與同意書已歸檔保存</div>
+    <!-- 諮詢表與同意書區塊 -->
+    <section id="customerConsultSection" class="mb-5 hidden">
+      <!-- 店家設定隱藏時 -->
+      <div id="customerConsultHiddenNotice" class="hidden glass-card rounded-2xl p-6 text-xs text-[#6a4f3f] text-center space-y-1.5">
+        <div class="font-bold text-base text-[#33241d]">📋 您的諮詢表與同意書已歸檔保存</div>
         <p>目前由店家設定為不公開顯示內容，如需異動請洽詢美學師。</p>
       </div>
 
-      <div id="customerConsultFormBox">
-        <div class="flex flex-wrap items-center justify-between gap-2 pb-3 mb-4 border-b border-[#efe5da]">
-          <div>
-            <h3 class="text-base font-extrabold text-[#33241d]">問卷與除毛諮詢同意書</h3>
-            <p class="text-[11px] text-[#8b7365] mt-0.5">標示 <span class="q-badge-req">必填</span> 之項目請務必完整填寫並簽名</p>
+      <!-- 狀態 1：已完成填寫時的唯讀確認卡（需點擊「修改問卷與除毛諮詢同意書」才可進入編輯） -->
+      <div id="customerConsultLockedCard" class="hidden glass-card rounded-3xl p-5 sm:p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#efe5da]">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center justify-center text-lg font-bold">
+              ✓
+            </div>
+            <div>
+              <h3 class="text-base font-extrabold text-[#33241d]">已完成問卷與除毛諮詢同意書</h3>
+              <p id="lockedConsultUpdatedText" class="text-[11px] text-[#8b7365]">歸檔時間：-</p>
+            </div>
           </div>
-          <span id="customerConsultStatusBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-[#fdf1e7] text-[#8c522b] font-bold hidden"></span>
+          <button type="button" onclick="enterConsultationEditMode()" class="px-4 py-2 rounded-xl text-xs font-extrabold btn-primary shadow">
+            ✏️ 修改問卷與除毛諮詢同意書
+          </button>
         </div>
 
-        <form id="consultationForm" onsubmit="handleConsultationSubmit(event)" class="space-y-5">
-          <!-- 基本資料區 -->
-          <div class="space-y-3">
+        <div id="lockedConsultSummaryBox" class="space-y-3 text-xs"></div>
+      </div>
+
+      <!-- 狀態 2：初次空白填寫 或 點擊修改後的問卷表單 -->
+      <div id="customerConsultFormBox" class="glass-card rounded-3xl p-5 sm:p-6 hidden">
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-[#efe5da]">
+          <div>
+            <span class="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#f5ebe1] text-[#8c5e43] mb-1">
+              FUYU AESTHETICS · 專屬美學檔案
+            </span>
+            <h3 id="consultFormHeaderTitle" class="text-lg font-extrabold text-[#33241d]">問卷與除毛諮詢同意書</h3>
+            <p class="text-[11px] text-[#8b7365] mt-0.5">標示 <span class="q-badge-req">必填</span> 之項目請完整填寫並親筆簽名</p>
+          </div>
+          <button type="button" id="cancelConsultEditBtn" onclick="cancelConsultationEditMode()" class="hidden px-3 py-1.5 rounded-xl text-xs font-bold bg-[#f3ece5] text-[#6b5344] hover:bg-[#e7dcd0]">
+            取消修改
+          </button>
+        </div>
+
+        <form id="consultationForm" onsubmit="handleConsultationSubmit(event)" class="space-y-4">
+          <!-- 卡片 0：基本資料 -->
+          <div class="q-card space-y-3">
+            <div class="text-xs font-extrabold text-[#8c5e43] tracking-wide">01 · 基本聯絡資料</div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <div class="flex items-center gap-1.5 mb-1">
                   <span class="text-xs font-bold text-[#33241d]">姓名</span>
                   <span class="q-badge-req">必填</span>
                 </div>
-                <input type="text" id="cf_name" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="請輸入真實姓名" />
+                <input type="text" id="cf_name" required class="w-full px-3 py-2.5 rounded-xl border border-[#decbb9] text-sm bg-white focus:outline-none focus:border-[#8c5e43]" placeholder="請輸入真實姓名" />
               </div>
               <div>
                 <div class="flex items-center gap-1.5 mb-1">
                   <span class="text-xs font-bold text-[#33241d]">暱稱／稱呼</span>
                   <span class="q-badge-req">必填</span>
                 </div>
-                <input type="text" id="cf_nickname" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="例如：小美、Ruby" />
+                <input type="text" id="cf_nickname" required class="w-full px-3 py-2.5 rounded-xl border border-[#decbb9] text-sm bg-white focus:outline-none focus:border-[#8c5e43]" placeholder="希望我們怎麼稱呼您" />
               </div>
               <div>
                 <div class="flex items-center gap-1.5 mb-1">
                   <span class="text-xs font-bold text-[#33241d]">生日</span>
                   <span class="q-badge-req">必填</span>
                 </div>
-                <input type="date" id="cf_birthday" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" />
+                <input type="date" id="cf_birthday" required class="w-full px-3 py-2.5 rounded-xl border border-[#decbb9] text-sm bg-white focus:outline-none focus:border-[#8c5e43]" />
               </div>
               <div>
                 <div class="flex items-center gap-1.5 mb-1">
                   <span class="text-xs font-bold text-[#4a382f]">聯絡電話（選填）</span>
                 </div>
-                <input type="tel" id="cf_phone" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="09xx-xxx-xxx" />
+                <input type="tel" id="cf_phone" class="w-full px-3 py-2.5 rounded-xl border border-[#decbb9] text-sm bg-white focus:outline-none focus:border-[#8c5e43]" placeholder="09xx-xxx-xxx" />
               </div>
             </div>
 
@@ -253,115 +296,133 @@
               <div class="flex items-center gap-1.5 mb-1">
                 <span class="text-xs font-bold text-[#4a382f]">居住地址（選填）</span>
               </div>
-              <input type="text" id="cf_address" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="縣市 / 區域 / 街道" />
+              <input type="text" id="cf_address" class="w-full px-3 py-2.5 rounded-xl border border-[#decbb9] text-sm bg-white focus:outline-none focus:border-[#8c5e43]" placeholder="縣市 / 區域 / 街道" />
             </div>
           </div>
 
-          <!-- 題目 1：過往毛髮處理（複選題必填） -->
-          <div class="pt-2 border-t border-[#efe5da]">
-            <div class="flex items-center gap-2 mb-0.5">
-              <span class="q-badge-type">複選題</span>
-              <span class="q-badge-req">必填</span>
+          <!-- 題目 1：過往毛髮處理 -->
+          <div class="q-card">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-1.5">
+                <span class="q-badge-type">複選題</span>
+                <span class="q-badge-req">必填</span>
+              </div>
+              <span class="text-[11px] text-[#9b8577]">可複選</span>
             </div>
-            <div class="text-sm font-bold text-[#33241d] mb-2">過往毛髮處理</div>
-            <div id="q_pastHairRemovalList" class="divide-y divide-[#f1e8df] border-t border-b border-[#f1e8df]"></div>
+            <div class="text-sm font-extrabold text-[#33241d] mb-2.5">過往毛髮處理方式</div>
+            <div id="q_pastHairRemovalList"></div>
           </div>
 
-          <!-- 題目 2：本次是否為首次施作熱蠟除毛（單選題必填） -->
-          <div>
-            <div class="text-xs font-bold text-[#8c5e43] mb-2">生理狀態確認</div>
-            <div class="flex items-center gap-2 mb-0.5">
+          <!-- 題目 2：本次是否為首次施作熱蠟除毛 -->
+          <div class="q-card">
+            <div class="flex items-center gap-1.5 mb-1.5">
               <span class="q-badge-type">單選題</span>
               <span class="q-badge-req">必填</span>
             </div>
-            <div class="text-sm font-bold text-[#33241d] mb-2">本次是否為首次施作熱蠟除毛</div>
-            <div id="q_firstTimeWaxingList" class="divide-y divide-[#f1e8df] border-t border-b border-[#f1e8df]"></div>
+            <div class="text-sm font-extrabold text-[#33241d] mb-2.5">本次是否為首次施作熱蠟除毛</div>
+            <div id="q_firstTimeWaxingList"></div>
           </div>
 
-          <!-- 題目 3：是否為敏感體質（複選題必填） -->
-          <div>
-            <div class="flex items-center gap-2 mb-0.5">
-              <span class="q-badge-type">複選題</span>
-              <span class="q-badge-req">必填</span>
+          <!-- 題目 3：是否為敏感體質 -->
+          <div class="q-card">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-1.5">
+                <span class="q-badge-type">複選題</span>
+                <span class="q-badge-req">必填</span>
+              </div>
+              <span class="text-[11px] text-[#9b8577]">可複選</span>
             </div>
-            <div class="text-sm font-bold text-[#33241d] mb-2">是否為敏感體質</div>
-            <div id="q_sensitiveTypesList" class="divide-y divide-[#f1e8df] border-t border-b border-[#f1e8df]"></div>
+            <div class="text-sm font-extrabold text-[#33241d] mb-2.5">是否為敏感體質</div>
+            <div id="q_sensitiveTypesList"></div>
           </div>
 
-          <!-- 題目 4：目前是否為懷孕期間（單選題必填） -->
-          <div>
-            <div class="flex items-center gap-2 mb-0.5">
+          <!-- 題目 4：目前是否為懷孕期間 -->
+          <div class="q-card">
+            <div class="flex items-center gap-1.5 mb-1.5">
               <span class="q-badge-type">單選題</span>
               <span class="q-badge-req">必填</span>
             </div>
-            <div class="text-sm font-bold text-[#33241d] mb-2">目前是否為懷孕期間</div>
-            <div id="q_isPregnantList" class="divide-y divide-[#f1e8df] border-t border-b border-[#f1e8df]"></div>
+            <div class="text-sm font-extrabold text-[#33241d] mb-2.5">目前是否為懷孕期間</div>
+            <div id="q_isPregnantList"></div>
           </div>
 
-          <!-- 題目 5：目前是否為生病或免疫力下降期間（單選題必填） -->
-          <div>
-            <div class="flex items-center gap-2 mb-0.5">
+          <!-- 題目 5：目前是否為生病或免疫力下降期間 -->
+          <div class="q-card">
+            <div class="flex items-center gap-1.5 mb-1.5">
               <span class="q-badge-type">單選題</span>
               <span class="q-badge-req">必填</span>
             </div>
-            <div class="text-sm font-bold text-[#33241d] mb-2">目前是否為生病或免疫力下降期間</div>
-            <div id="q_isSickOrLowImmunityList" class="divide-y divide-[#f1e8df] border-t border-b border-[#f1e8df]"></div>
+            <div class="text-sm font-extrabold text-[#33241d] mb-2.5">目前是否為生病或免疫力下降期間</div>
+            <div id="q_isSickOrLowImmunityList"></div>
           </div>
 
-          <!-- 題目 6：目前是否為生理期間（單選題必填） -->
-          <div>
-            <div class="flex items-center gap-2 mb-0.5">
+          <!-- 題目 6：目前是否為生理期間 -->
+          <div class="q-card">
+            <div class="flex items-center gap-1.5 mb-1.5">
               <span class="q-badge-type">單選題</span>
               <span class="q-badge-req">必填</span>
             </div>
-            <div class="text-sm font-bold text-[#33241d] mb-2">目前是否為生理期間</div>
-            <div id="q_isMenstruatingList" class="divide-y divide-[#f1e8df] border-t border-b border-[#f1e8df]"></div>
+            <div class="text-sm font-extrabold text-[#33241d] mb-2.5">目前是否為生理期間</div>
+            <div id="q_isMenstruatingList"></div>
           </div>
 
-          <!-- 題目 7：除毛部位是否常出油或長痘痘（單選題必填） -->
-          <div>
-            <div class="flex items-center gap-2 mb-0.5">
+          <!-- 題目 7：除毛部位是否常出油或長痘痘 -->
+          <div class="q-card">
+            <div class="flex items-center gap-1.5 mb-1.5">
               <span class="q-badge-type">單選題</span>
               <span class="q-badge-req">必填</span>
             </div>
-            <div class="text-sm font-bold text-[#33241d] mb-2">除毛部位是否常出油或長痘痘／毛囊炎</div>
-            <div id="q_isOilyOrAcneAreaList" class="divide-y divide-[#f1e8df] border-t border-b border-[#f1e8df]"></div>
+            <div class="text-sm font-extrabold text-[#33241d] mb-2.5">除毛部位是否常出油或長痘痘／毛囊炎</div>
+            <div id="q_isOilyOrAcneAreaList"></div>
           </div>
 
           <!-- 服務與術後護理條款 -->
-          <div class="p-3.5 rounded-xl bg-[#faf4ee] border border-[#ebd9c8] text-xs text-[#5d4638] space-y-1.5 leading-relaxed">
-            <div class="font-bold text-[#3b2920]">服務與術後護理條款確認</div>
-            <p>1. 除毛前後 3～5 天避免使用酸類、去角質或刺激性產品；施作後 24～48 小時內避免泡溫泉、三溫暖、游泳、劇烈運動與曝曬。</p>
-            <p>2. 若有私密處或肌膚敏感、懷孕、生理期等特殊狀況，請務必事先告知美學師以便調整施作方式。</p>
-            <p>3. 預約如需改期或取消，請儘早提前通知，以便為您保留或調整時段。</p>
-          </div>
-
-          <div id="existingSignaturePreview" class="hidden">
-            <div class="text-xs font-bold text-[#4a382f] mb-1">目前已留存簽名（如需重簽請於下方框內簽名）</div>
-            <img id="existingSignatureImg" src="" alt="已簽名" class="max-h-24 rounded-xl border border-[#decbb9] bg-white p-1" />
-          </div>
-
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <div class="flex items-center gap-1.5">
-                <span class="text-xs font-bold text-[#33241d]">本人簽名（請於下方框內簽名）</span>
-                <span class="q-badge-req">必填</span>
-              </div>
-              <button type="button" onclick="clearSignature()" class="text-xs text-[#8c5e43] underline font-medium">清除重簽</button>
+          <div class="p-4 rounded-2xl bg-gradient-to-br from-[#faf3ec] to-[#f6ece2] border border-[#e6d1be] text-xs text-[#543e31] space-y-2 leading-relaxed">
+            <div class="font-extrabold text-sm text-[#3b2920] flex items-center gap-1.5">
+              <span>📜 服務與術後護理同意條款</span>
             </div>
-            <canvas id="signatureCanvas" width="520" height="160" class="w-full h-40 rounded-xl sig-canvas"></canvas>
+            <div class="flex items-start gap-2">
+              <span class="font-bold text-[#8c5e43]">01.</span>
+              <p>除毛前後 3～5 天避免使用酸類、去角質或刺激性產品；施作後 24～48 小時內避免泡溫泉、三溫暖、游泳、劇烈運動與曝曬。</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="font-bold text-[#8c5e43]">02.</span>
+              <p>若有肌膚敏感、懷孕、生理期或近期服用酸類藥物等特殊狀況，請務必如實勾選並告知美學師以便調整施作方式。</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <span class="font-bold text-[#8c5e43]">03.</span>
+              <p>預約如需改期或取消，請儘早提前通知，以便為您保留或調整時段。</p>
+            </div>
           </div>
 
-          <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm btn-primary shadow">
-            確認送出諮詢表與簽名
+          <!-- 簽名區 -->
+          <div class="q-card space-y-2.5">
+            <div id="existingSignaturePreview" class="hidden">
+              <div class="text-xs font-bold text-[#4a382f] mb-1">目前已留存簽名（若無變更可沿用，或於下方框內重簽）</div>
+              <img id="existingSignatureImg" src="" alt="已簽名" class="max-h-24 rounded-xl border border-[#decbb9] bg-white p-1.5" />
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-extrabold text-[#33241d]">本人親筆簽名</span>
+                  <span class="q-badge-req">必填</span>
+                </div>
+                <button type="button" onclick="clearSignature()" class="text-xs text-[#8c5e43] underline font-bold">清除重簽</button>
+              </div>
+              <canvas id="signatureCanvas" width="520" height="160" class="w-full h-40 rounded-xl sig-canvas"></canvas>
+            </div>
+          </div>
+
+          <button type="submit" id="consultSubmitBtn" class="w-full py-3.5 rounded-2xl font-extrabold text-sm btn-primary shadow-md">
+            確認送出問卷與同意書
           </button>
         </form>
       </div>
     </section>
 
-    <!-- 客戶線上預約申請（緊湊日期時間列 + 大分類主軸點選進入細項 + 已選購物車清單） -->
+    <!-- 客戶線上預約申請 -->
     <section id="customerBookSection" class="space-y-3 mb-5 hidden">
-      <!-- 緊湊橫向日期與時間列（不放進大框框內，節省版面高度） -->
       <div class="flex items-center gap-2">
         <div class="flex-1 bg-white border border-[#e3d5c7] rounded-xl px-2.5 py-1.5 flex items-center justify-between gap-1.5">
           <span class="text-[11px] font-bold text-[#7c6557] shrink-0">日期</span>
@@ -373,10 +434,8 @@
         </div>
       </div>
 
-      <!-- 時段衝突／禁止預約提示框 -->
       <div id="cb_slotConflictBanner" class="hidden p-3 rounded-xl bg-red-50 border border-red-300 text-xs font-bold text-red-800"></div>
 
-      <!-- 主卡片：大分類主軸 -> 細項挑選 -> 已選清單 -->
       <div class="glass-card rounded-2xl p-4 sm:p-5 space-y-4">
         <div class="flex items-center justify-between">
           <div>
@@ -386,13 +445,9 @@
           <span id="cb_selectedCountBadge" class="px-2.5 py-1 rounded-full bg-[#f4e8de] text-[#8c5e43] text-xs font-extrabold">已選 0 項</span>
         </div>
 
-        <!-- 步驟 1：大分類膠囊列 -->
         <div id="cb_categoryPills" class="flex flex-wrap gap-2"></div>
-
-        <!-- 步驟 2：目前大分類下的細項清單 -->
         <div id="cb_activeCategoryItems" class="rounded-xl bg-[#fcfaf8] border border-[#efe5da] divide-y divide-[#f1e7dc] overflow-hidden"></div>
 
-        <!-- 步驟 3：已選項目清單（支援一鍵移除誤選） -->
         <div class="pt-2 border-t border-[#efe5da]">
           <div class="text-xs font-bold text-[#4a382f] mb-2">🛒 已加入的預約項目</div>
           <div id="cb_selectedItemsList" class="space-y-1.5"></div>
@@ -454,7 +509,6 @@
         </button>
       </div>
 
-      <!-- 預約月曆（僅顯示已審核排入的預約，「單」為「筆」） + 當日明細 -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div class="lg:col-span-7 glass-card rounded-2xl p-3 sm:p-4">
           <div class="flex items-center justify-between mb-3">
@@ -513,7 +567,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
           <div>
             <h2 class="text-base font-bold text-[#33241d]">🎟️ 優惠券管理</h2>
-            <p class="text-xs text-[#8b7365]">點擊右側按鈕開啟發放彈窗；所有紀錄永久保存於試算表「優惠券紀錄」。</p>
+            <p class="text-xs text-[#8b7365]">當月壽星系統會自動於當月 1 號發放 $100 生日券；也可在此手動發放其他優惠券。</p>
           </div>
           <button type="button" onclick="openIssueCouponModal()" class="px-4 py-2 rounded-xl text-xs font-bold btn-primary shadow whitespace-nowrap">
             + 發放優惠券
@@ -537,7 +591,7 @@
       </div>
     </section>
 
-    <!-- ---------- 分頁 4：帳務與儲值（已移除成本） ---------- -->
+    <!-- ---------- 分頁 4：帳務與儲值 ---------- -->
     <section id="tab-finance" class="space-y-4 hidden">
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div class="glass-card rounded-2xl p-4">
@@ -588,7 +642,7 @@
       </div>
     </section>
 
-    <!-- ---------- 分頁 5：管理（美化大分類卡片 + 完全移除成本） ---------- -->
+    <!-- ---------- 分頁 5：管理 ---------- -->
     <section id="tab-management" class="space-y-4 hidden">
       <div class="glass-card rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2.5">
         <div class="flex items-center gap-2">
@@ -613,7 +667,6 @@
         </div>
       </div>
 
-      <!-- 子分頁 A：大分類導覽卡 + 質感分區列表 -->
       <div id="subtab-catalog" class="space-y-4">
         <div class="glass-card rounded-2xl p-4 bg-gradient-to-r from-[#fffdfb] to-[#faf4ee]">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
@@ -629,7 +682,6 @@
         <div id="catalogGroupedContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
 
-      <!-- 子分頁 B：禁約時段清單 -->
       <div id="subtab-blocked" class="space-y-2.5 hidden">
         <div id="blockedSlotsListContainer" class="space-y-2"></div>
       </div>
@@ -641,72 +693,83 @@
     <div id="reminderModalContent" class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl max-h-[85vh] overflow-y-auto"></div>
   </div>
 
-  <!-- ==================== 彈窗 2：簡化版新增／編輯／審批預約 ==================== -->
+  <!-- ==================== 彈窗 2：簡潔版新增／編輯／審批預約（同客戶端大分類挑選體驗） ==================== -->
   <div id="bookingModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 overflow-y-auto hidden">
-    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl my-8">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-5 shadow-xl my-8 max-h-[92vh] overflow-y-auto">
       <div class="flex items-center justify-between mb-3">
-        <h3 id="bookingModalTitle" class="text-base font-bold text-[#33241d]">新增／編輯預約</h3>
+        <h3 id="bookingModalTitle" class="text-base font-extrabold text-[#33241d]">新增預約</h3>
         <button onclick="closeBookingModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
       </div>
 
       <div id="bk_blockedConflictAlert" class="hidden mb-3 p-2.5 rounded-xl bg-red-50 border border-red-300 text-xs font-bold text-red-800"></div>
 
-      <form onsubmit="handleSaveBooking(event)" class="space-y-3 text-xs">
+      <form onsubmit="handleSaveBooking(event)" class="space-y-3.5 text-xs">
         <input type="hidden" id="bk_id" />
+
+        <!-- 客戶選擇列 -->
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">會員</label>
+            <label class="block font-bold text-[#4a382f] mb-1">選擇會員</label>
             <select id="bk_customerId" onchange="onBookingCustomerChange()" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
               <option value="">-- 散客／非會員 --</option>
             </select>
           </div>
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">客戶姓名 *</label>
-            <input type="text" id="bk_customerName" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+            <input type="text" id="bk_customerName" required placeholder="輸入姓名" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
           </div>
         </div>
 
+        <!-- 緊湊日期與時間列 -->
         <div class="grid grid-cols-3 gap-2">
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">日期 *</label>
-            <input type="date" id="bk_date" required onchange="recalcBookingEndTime()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
+            <label class="block font-bold text-[#4a382f] mb-1">預約日期 *</label>
+            <input type="date" id="bk_date" required onchange="recalcAdminBookingFromSelectedItems()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
           </div>
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">開始 *</label>
-            <input type="time" id="bk_startTime" required onchange="recalcBookingEndTime()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
+            <label class="block font-bold text-[#4a382f] mb-1">開始時間 *</label>
+            <input type="time" id="bk_startTime" required onchange="recalcAdminBookingFromSelectedItems()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
           </div>
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">結束</label>
+            <label class="block font-bold text-[#4a382f] mb-1">結束時間</label>
             <input type="time" id="bk_endTime" onchange="checkBookingBlockedConflict()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-[#faf7f4]" />
           </div>
         </div>
 
+        <!-- 仿客戶端大分類膠囊 -> 點選細項加入 -> 已選清單 -->
+        <div class="p-3.5 rounded-2xl bg-[#fcf9f5] border border-[#ebd9c8] space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-[#33241d]">快速挑選服務／產品項目</span>
+            <span id="bk_selectedCountBadge" class="px-2 py-0.5 rounded-full bg-[#f4e8de] text-[#8c5e43] text-[11px] font-bold">已選 0 項</span>
+          </div>
+
+          <div id="bk_categoryPills" class="flex flex-wrap gap-1.5"></div>
+          <div id="bk_activeCategoryItems" class="rounded-xl bg-white border border-[#efe5da] divide-y divide-[#f3eae1] max-h-40 overflow-y-auto"></div>
+
+          <div>
+            <div class="text-[11px] font-bold text-[#6a4f3f] mb-1">已加入項目（點 ✕ 可移除）：</div>
+            <div id="bk_selectedItemsList" class="space-y-1"></div>
+          </div>
+        </div>
+
+        <!-- 項目名稱與金額（自動帶入，也可微調） -->
         <div class="grid grid-cols-3 gap-2">
           <div class="col-span-2">
-            <label class="block font-bold text-[#4a382f] mb-1">快速帶入項目</label>
-            <select id="bk_catalogPreset" onchange="applyCatalogPresetToBooking()" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
-              <option value="">-- 選擇項目自動帶入 --</option>
-            </select>
+            <label class="block font-bold text-[#4a382f] mb-1">預約項目摘要 *</label>
+            <input type="text" id="bk_service" required placeholder="從上方挑選自動帶入，或直接輸入" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
           </div>
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">時長 (分)</label>
-            <input type="number" id="bk_duration" value="60" min="0" step="5" onchange="recalcBookingEndTime()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
+            <label class="block font-bold text-[#4a382f] mb-1">總金額 ($)</label>
+            <input type="number" id="bk_finalPrice" value="0" min="0" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold text-[#8c5e43]" />
           </div>
         </div>
 
-        <div>
-          <label class="block font-bold text-[#4a382f] mb-1">服務／項目內容 *</label>
-          <input type="text" id="bk_service" required placeholder="例如：私密處熱蠟除毛" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
-        </div>
+        <input type="hidden" id="bk_duration" value="60" />
 
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block font-bold text-[#4a382f] mb-1">金額 ($)</label>
-            <input type="number" id="bk_finalPrice" value="0" min="0" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
-          </div>
+        <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">付款方式</label>
-            <select id="bk_payMethod" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
+            <select id="bk_payMethod" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white">
               <option value="現金">現金</option>
               <option value="轉帳">轉帳</option>
               <option value="扣儲值金">扣儲值金</option>
@@ -714,13 +777,10 @@
               <option value="待現場確認">待現場確認</option>
             </select>
           </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">狀態</label>
-            <select id="bk_status" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
-              <option value="尚未到來">尚未到來（排入月曆）</option>
+            <select id="bk_status" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white">
+              <option value="尚未到來">尚未到來</option>
               <option value="待審核">待審核</option>
               <option value="已報到">已報到</option>
               <option value="已完成">已完成</option>
@@ -728,25 +788,24 @@
             </select>
           </div>
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">優惠券折抵</label>
-            <select id="bk_usedCouponId" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
+            <label class="block font-bold text-[#4a382f] mb-1">優惠券</label>
+            <select id="bk_usedCouponId" onchange="onBookingCouponChange()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white">
               <option value="">不使用</option>
             </select>
           </div>
         </div>
 
         <div>
-          <label class="block font-bold text-[#4a382f] mb-1">備註</label>
-          <input type="text" id="bk_note" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" placeholder="選填" />
+          <input type="text" id="bk_note" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" placeholder="備註說明（選填）" />
         </div>
 
-        <div class="flex items-center justify-between pt-2">
+        <div class="flex items-center justify-between pt-2 border-t border-[#f1e7dc]">
           <button type="button" id="bk_deleteBtn" onclick="handleDeleteCurrentBooking()" class="px-3 py-2 rounded-xl bg-[#fdf2f2] text-[#b42318] font-bold hidden">
-            刪除
+            刪除預約
           </button>
           <div class="flex gap-2 ml-auto">
             <button type="button" onclick="closeBookingModal()" class="px-3.5 py-2 rounded-xl bg-[#f3ece5] text-[#6b5344] font-bold">取消</button>
-            <button type="submit" class="px-4 py-2 rounded-xl font-bold btn-primary">儲存預約</button>
+            <button type="submit" class="px-4 py-2 rounded-xl font-bold btn-primary shadow">儲存預約</button>
           </div>
         </div>
       </form>
@@ -769,7 +828,7 @@
           </div>
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">LINE 名稱</label>
-            <input type="text" id="ce_lineDisplayName" placeholder="串連後自動帶入或可手動填寫" class="w-full px-3 py-2 rounded-xl border border-[#decbb9]" />
+            <input type="text" id="ce_lineDisplayName" placeholder="串連後自動帶入或手動填寫" class="w-full px-3 py-2 rounded-xl border border-[#decbb9]" />
           </div>
         </div>
         <div class="grid grid-cols-2 gap-2">
@@ -802,7 +861,7 @@
     </div>
   </div>
 
-  <!-- ==================== 彈窗 4：會員詳情（含重新串連 LINE 一鍵重綁 + 諮詢表顯示控制） ==================== -->
+  <!-- ==================== 彈窗 4：會員詳情 ==================== -->
   <div id="customerDetailModal" class="fixed inset-0 z-40 modal-backdrop flex items-center justify-center p-4 overflow-y-auto hidden">
     <div id="customerDetailContent" class="bg-white rounded-2xl max-w-2xl w-full p-5 shadow-xl my-8 max-h-[90vh] overflow-y-auto"></div>
   </div>
@@ -883,7 +942,7 @@
     </div>
   </div>
 
-  <!-- ==================== 彈窗 7：新增／編輯服務與產品（已移除成本） ==================== -->
+  <!-- ==================== 彈窗 7：新增／編輯服務與產品 ==================== -->
   <div id="catalogModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 overflow-y-auto hidden">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl my-8">
       <div class="flex items-center justify-between mb-3">
@@ -1014,8 +1073,11 @@
       portalLineUserId: "",
       portalLineDisplayName: "",
       portalData: null,
+      isEditingConsultation: false,
       activeCustomerCatalogCategory: "",
       selectedCustomerServiceIds: [],
+      activeAdminBookingCategory: "",
+      selectedAdminBookingServiceIds: [],
       qAnswers: {
         pastHairRemoval: [],
         firstTimeWaxing: "",
@@ -1198,7 +1260,7 @@
       document.getElementById("btnOpenBlockedModal").classList.toggle("hidden", isCatalog);
     }
 
-    /* ==================== 首頁排程（待審核精準顯示 + 審核排入月曆） ==================== */
+    /* ==================== 首頁排程與本月壽星（當月 1 號自動發 $100 並顯示「已發卷」） ==================== */
     function isApprovedCalendarStatus(status) {
       const st = String(status || "").trim();
       return st === "尚未到來" || st === "已報到" || st === "已完成";
@@ -1235,31 +1297,46 @@
       const box = document.getElementById("reminderModalContent");
 
       if (type === "birthday") {
-        const curMonth = new Date().getMonth() + 1;
+        const now = new Date();
+        const curMonth = now.getMonth() + 1;
+        const ymPrefix = `${now.getFullYear()}-${String(curMonth).padStart(2, "0")}`;
         const list = getBirthdayCustomersThisMonth();
+
         box.innerHTML = `
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-base font-bold text-[#33241d]">🎂 ${curMonth}月壽星名單（${list.length} 位）</h3>
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h3 class="text-base font-bold text-[#33241d]">🎂 ${curMonth}月壽星名單（${list.length} 位）</h3>
+              <p class="text-[11px] text-[#8b7365]">當月壽星系統會自動於當月 1 號發放「生日禮折 $100」</p>
+            </div>
             <button type="button" onclick="closeReminderModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
           </div>
           ${list.length === 0
             ? `<div class="text-xs text-[#8b7365] py-6 text-center">本月暫無壽星資料</div>`
-            : `<div class="space-y-2 text-xs">${list.map(c => {
+            : `<div class="space-y-2 text-xs mt-3">${list.map(c => {
                 const bDay = String(c.birthday).slice(5);
-                const bdayCoupon = state.coupons.find(cp => String(cp.customerId) === String(c.id) && cp.type === "生日優惠");
+                const bdayCoupon = state.coupons.find(cp =>
+                  String(cp.customerId) === String(c.id) &&
+                  cp.type === "生日優惠" &&
+                  String(cp.issuedDate || "").startsWith(ymPrefix) &&
+                  cp.status !== "已作廢"
+                );
                 return `
                   <div class="p-3 rounded-xl bg-[#fcf8f4] border border-[#f0e5da] flex items-center justify-between gap-2">
                     <div>
                       <div class="font-bold text-sm text-[#3a2a22]">${esc(c.name)} <span class="text-xs text-[#9c5733]">(${esc(bDay)})</span></div>
                       <div class="text-[#7c6557]">${c.lineDisplayName ? `LINE：${esc(c.lineDisplayName)} · ` : ""}${esc(c.contact || "無電話")}</div>
+                      ${bdayCoupon ? `<div class="text-[11px] text-emerald-700 mt-0.5">發放日：${esc(bdayCoupon.issuedDate)}（${esc(bdayCoupon.status)}）</div>` : ""}
                     </div>
-                    <div class="flex items-center gap-1.5">
-                      <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${bdayCoupon ? "bg-emerald-100 text-emerald-800" : "bg-amber-50 text-amber-800"}">
-                        ${bdayCoupon ? `生日券：${bdayCoupon.status}` : "未發券"}
-                      </span>
-                      <button type="button" onclick="closeReminderModal(); switchAdminTab('coupons'); openIssueCouponModal('${escJs(c.id)}', '生日優惠');" class="px-2.5 py-1 rounded-lg bg-[#8c5e43] text-white font-bold">
-                        發券
-                      </button>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      ${bdayCoupon ? `
+                        <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          ✓ 已發卷
+                        </span>
+                      ` : `
+                        <button type="button" onclick="closeReminderModal(); switchAdminTab('coupons'); openIssueCouponModal('${escJs(c.id)}', '生日優惠');" class="px-2.5 py-1 rounded-lg bg-[#8c5e43] text-white font-bold">
+                          補發 $100 券
+                        </button>
+                      `}
                     </div>
                   </div>
                 `;
@@ -1517,15 +1594,20 @@
       }
     }
 
-    /* ==================== 簡化版新增／編輯預約彈窗 ==================== */
-    function openBookingModal(prefillDate = null) {
+    /* ==================== 簡潔版新增／編輯預約彈窗（同客戶端大分類挑選體驗） ==================== */
+    function openBookingModal(prefillDate = null, prefillCustomerId = "") {
       document.getElementById("bk_id").value = "";
       document.getElementById("bookingModalTitle").textContent = "新增預約";
       document.getElementById("bk_deleteBtn").classList.add("hidden");
-      document.getElementById("bk_customerId").value = "";
-      document.getElementById("bk_customerName").value = "";
+
+      const cust = prefillCustomerId
+        ? state.customers.find(c => String(c.id) === String(prefillCustomerId))
+        : null;
+
+      document.getElementById("bk_customerId").value = cust ? cust.id : "";
+      document.getElementById("bk_customerName").value = cust ? cust.name : "";
       document.getElementById("bk_date").value = prefillDate || state.selectedDate || formatTodayStr();
-      document.getElementById("bk_startTime").value = "10:00";
+      document.getElementById("bk_startTime").value = "11:00";
       document.getElementById("bk_duration").value = 60;
       document.getElementById("bk_service").value = "";
       document.getElementById("bk_finalPrice").value = 0;
@@ -1533,8 +1615,12 @@
       document.getElementById("bk_status").value = "尚未到來";
       document.getElementById("bk_note").value = "";
 
-      populateBookingModalSelects("", "");
-      recalcBookingEndTime();
+      state.selectedAdminBookingServiceIds = [];
+      state.activeAdminBookingCategory = "";
+
+      populateBookingModalSelects(cust ? cust.id : "", "");
+      renderAdminBookingCategoryPicker();
+      recalcAdminBookingFromSelectedItems(false);
       document.getElementById("bookingModal").classList.remove("hidden");
     }
 
@@ -1547,7 +1633,7 @@
       document.getElementById("bk_customerId").value = b.customerId || "";
       document.getElementById("bk_customerName").value = b.customerName || "";
       document.getElementById("bk_date").value = b.date || state.selectedDate;
-      document.getElementById("bk_startTime").value = b.startTime || "10:00";
+      document.getElementById("bk_startTime").value = b.startTime || "11:00";
       document.getElementById("bk_duration").value = safeNumber(b.duration, 60);
       document.getElementById("bk_endTime").value = b.endTime || "";
       document.getElementById("bk_service").value = b.service || "";
@@ -1556,7 +1642,18 @@
       document.getElementById("bk_status").value = b.status || "尚未到來";
       document.getElementById("bk_note").value = b.note || "";
 
+      // 比對已選項目
+      const parts = String(b.service || "").split(/\s*\+\s*/).map(s => s.trim()).filter(Boolean);
+      const matchedIds = [];
+      parts.forEach(p => {
+        const found = state.catalog.find(item => item.name === p);
+        if (found) matchedIds.push(String(found.id));
+      });
+      state.selectedAdminBookingServiceIds = matchedIds;
+      state.activeAdminBookingCategory = "";
+
       populateBookingModalSelects(b.customerId, b.usedCouponId);
+      renderAdminBookingCategoryPicker();
       checkBookingBlockedConflict();
       document.getElementById("bookingModal").classList.remove("hidden");
     }
@@ -1569,11 +1666,6 @@
       const custSel = document.getElementById("bk_customerId");
       custSel.innerHTML = `<option value="">-- 散客／非會員 --</option>` + state.customers.map(c =>
         `<option value="${esc(c.id)}" ${String(c.id) === String(selectedCustId) ? "selected" : ""}>${esc(c.name)}${c.lineDisplayName ? `（${esc(c.lineDisplayName)}）` : ""}</option>`
-      ).join("");
-
-      const catSel = document.getElementById("bk_catalogPreset");
-      catSel.innerHTML = `<option value="">-- 選擇項目自動帶入 --</option>` + state.catalog.filter(x => x.active).map(x =>
-        `<option value="${esc(x.id)}">[${esc(x.category)}] ${esc(x.name)} ($${safeNumber(x.price, 0)})</option>`
       ).join("");
 
       refreshBookingCouponSelect(selectedCustId, selectedCouponId);
@@ -1596,21 +1688,131 @@
       refreshBookingCouponSelect(cid, "");
     }
 
-    function applyCatalogPresetToBooking() {
-      const itemId = document.getElementById("bk_catalogPreset").value;
-      const item = state.catalog.find(x => String(x.id) === String(itemId));
-      if (!item) return;
-      document.getElementById("bk_service").value = item.name;
-      document.getElementById("bk_duration").value = safeNumber(item.duration, 60);
-      document.getElementById("bk_finalPrice").value = safeNumber(item.price, 0);
-      recalcBookingEndTime();
+    function selectAdminBookingCategory(catName) {
+      state.activeAdminBookingCategory = catName;
+      renderAdminBookingCategoryPicker();
     }
 
-    function recalcBookingEndTime() {
-      const start = document.getElementById("bk_startTime").value || "10:00";
+    function renderAdminBookingCategoryPicker() {
+      const pillsBox = document.getElementById("bk_categoryPills");
+      const itemsBox = document.getElementById("bk_activeCategoryItems");
+      const selectedBox = document.getElementById("bk_selectedItemsList");
+      const activeCatalog = state.catalog.filter(x => x.active);
+
+      if (activeCatalog.length === 0) {
+        pillsBox.innerHTML = "";
+        itemsBox.innerHTML = `<div class="p-3 text-xs text-[#8b7365]">尚無可用項目，請至「管理」新增</div>`;
+        return;
+      }
+
+      const grouped = {};
+      activeCatalog.forEach(item => {
+        const cat = String(item.category || "其他").trim();
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(item);
+      });
+
+      const catNames = Object.keys(grouped);
+      if (!state.activeAdminBookingCategory || !grouped[state.activeAdminBookingCategory]) {
+        state.activeAdminBookingCategory = catNames[0];
+      }
+
+      pillsBox.innerHTML = catNames.map(cat => {
+        const isAct = state.activeAdminBookingCategory === cat;
+        return `
+          <button type="button" onclick="selectAdminBookingCategory('${escJs(cat)}')" class="px-2.5 py-1.5 rounded-xl text-[11px] font-extrabold border transition ${
+            isAct ? "cat-pill-active" : "cat-pill-inactive hover:bg-[#f6efe8]"
+          }">
+            ${esc(cat)}
+          </button>
+        `;
+      }).join("");
+
+      const activeItems = grouped[state.activeAdminBookingCategory] || [];
+      itemsBox.innerHTML = activeItems.map(item => {
+        const isAdded = state.selectedAdminBookingServiceIds.indexOf(String(item.id)) !== -1;
+        const dur = safeNumber(item.duration, 0);
+        return `
+          <div class="px-3 py-2 flex items-center justify-between gap-2 text-xs">
+            <div class="min-w-0 flex-1">
+              <span class="font-bold text-[#33241d]">${esc(item.name)}</span>
+              <span class="text-[#8c5e43] font-bold ml-1.5">$${safeNumber(item.price, 0).toLocaleString()}</span>
+              ${dur > 0 ? `<span class="text-[11px] text-[#8b7365] ml-1">(${dur}分)</span>` : ""}
+            </div>
+            ${isAdded ? `
+              <button type="button" onclick="removeAdminBookingServiceId('${escJs(item.id)}')" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-bold shrink-0">
+                ✓ 已加入
+              </button>
+            ` : `
+              <button type="button" onclick="addAdminBookingServiceId('${escJs(item.id)}')" class="px-2.5 py-1 rounded-lg bg-[#f4e8de] text-[#8c5e43] text-[11px] font-extrabold hover:bg-[#ebd8c8] shrink-0">
+                ＋ 加入
+              </button>
+            `}
+          </div>
+        `;
+      }).join("");
+
+      const selectedItems = activeCatalog.filter(x => state.selectedAdminBookingServiceIds.indexOf(String(x.id)) !== -1);
+      document.getElementById("bk_selectedCountBadge").textContent = `已選 ${selectedItems.length} 項`;
+
+      if (selectedItems.length === 0) {
+        selectedBox.innerHTML = `<div class="text-[11px] text-[#8b7365] py-1">尚未加入項目（點上方「＋ 加入」自動計算金額與時間）</div>`;
+      } else {
+        selectedBox.innerHTML = selectedItems.map(item => `
+          <div class="px-2.5 py-1.5 rounded-lg bg-white border border-[#e6d6c6] flex items-center justify-between gap-2 text-xs">
+            <div class="truncate">
+              <span class="font-bold text-[#33241d]">${esc(item.name)}</span>
+              <span class="text-[#8c5e43] font-bold ml-1">$${safeNumber(item.price, 0).toLocaleString()}</span>
+            </div>
+            <button type="button" onclick="removeAdminBookingServiceId('${escJs(item.id)}')" class="text-rose-700 font-bold px-1.5 hover:bg-rose-50 rounded">
+              ✕
+            </button>
+          </div>
+        `).join("");
+      }
+    }
+
+    function addAdminBookingServiceId(itemId) {
+      const idStr = String(itemId);
+      if (state.selectedAdminBookingServiceIds.indexOf(idStr) === -1) {
+        state.selectedAdminBookingServiceIds.push(idStr);
+      }
+      renderAdminBookingCategoryPicker();
+      recalcAdminBookingFromSelectedItems(true);
+    }
+
+    function removeAdminBookingServiceId(itemId) {
+      const idStr = String(itemId);
+      state.selectedAdminBookingServiceIds = state.selectedAdminBookingServiceIds.filter(x => x !== idStr);
+      renderAdminBookingCategoryPicker();
+      recalcAdminBookingFromSelectedItems(true);
+    }
+
+    function onBookingCouponChange() {
+      if (state.selectedAdminBookingServiceIds.length > 0) {
+        recalcAdminBookingFromSelectedItems(true);
+      }
+    }
+
+    function recalcAdminBookingFromSelectedItems(overwriteFields = true) {
+      const selectedItems = state.catalog.filter(x => state.selectedAdminBookingServiceIds.indexOf(String(x.id)) !== -1);
+      const couponId = document.getElementById("bk_usedCouponId").value;
+      const couponObj = couponId ? state.coupons.find(cp => String(cp.couponId) === String(couponId)) : null;
+      const discount = couponObj ? safeNumber(couponObj.discountAmount, 0) : 0;
+
+      if (overwriteFields && selectedItems.length > 0) {
+        const namesText = selectedItems.map(i => i.name).join(" + ");
+        const totalP = Math.max(0, selectedItems.reduce((s, i) => s + safeNumber(i.price, 0), 0) - discount);
+        const totalD = selectedItems.reduce((s, i) => s + safeNumber(i.duration, 0), 0) || 60;
+        document.getElementById("bk_service").value = namesText;
+        document.getElementById("bk_finalPrice").value = totalP;
+        document.getElementById("bk_duration").value = totalD;
+      }
+
+      const start = document.getElementById("bk_startTime").value || "11:00";
       const dur = safeNumber(document.getElementById("bk_duration").value, 60);
       const [h, m] = start.split(":").map(Number);
-      const total = Math.min(22 * 60, (h || 10) * 60 + (m || 0) + dur + 10);
+      const total = Math.min(22 * 60, (h || 11) * 60 + (m || 0) + dur + 10);
       document.getElementById("bk_endTime").value = `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
       checkBookingBlockedConflict();
     }
@@ -1648,7 +1850,9 @@
     async function handleSaveBooking(e) {
       e.preventDefault();
       const serviceText = document.getElementById("bk_service").value.trim();
-      const matchedCat = state.catalog.find(item => serviceText.indexOf(item.name) !== -1);
+      const firstSelectedItem = state.selectedAdminBookingServiceIds.length > 0
+        ? state.catalog.find(x => String(x.id) === String(state.selectedAdminBookingServiceIds[0]))
+        : state.catalog.find(item => serviceText.indexOf(item.name) !== -1);
       const finalPrice = safeNumber(document.getElementById("bk_finalPrice").value, 0);
 
       const payload = {
@@ -1660,7 +1864,7 @@
         startTime: document.getElementById("bk_startTime").value,
         endTime: document.getElementById("bk_endTime").value,
         duration: safeNumber(document.getElementById("bk_duration").value, 60),
-        category: matchedCat ? String(matchedCat.category || "") : "",
+        category: firstSelectedItem ? String(firstSelectedItem.category || "") : "",
         service: serviceText,
         originalPrice: finalPrice,
         finalPrice: finalPrice,
@@ -1698,7 +1902,7 @@
       }
     }
 
-    /* ==================== 分頁 2：會員資料（一鍵重新串連 LINE + 諮詢表顯示控制） ==================== */
+    /* ==================== 分頁 2：會員資料（直接新增預約按鈕 + 諮詢表異動紀錄） ==================== */
     function renderCustomersTab() {
       const q = (document.getElementById("customerSearchInput").value || "").trim().toLowerCase();
       const filter = document.getElementById("customerFilterSelect").value;
@@ -1734,7 +1938,7 @@
                   <div class="text-xs text-[#7c6557] mt-0.5">${esc(c.contact || "無電話")}${c.birthday ? ` · 🎂 ${esc(c.birthday)}` : ""}</div>
                 </div>
                 <span class="text-[11px] px-2 py-0.5 rounded-full font-bold ${cons ? "bg-emerald-100 text-emerald-800" : "bg-amber-50 text-amber-800"}">
-                  ${cons ? (cons.hiddenFromCustomer ? "📋 已簽（已對客隱藏）" : "📋 已簽諮詢表") : "未填諮詢表"}
+                  ${cons ? (cons.hiddenFromCustomer ? "📋 已簽（已隱藏）" : "📋 已簽諮詢表") : "未填諮詢表"}
                 </span>
               </div>
 
@@ -1756,10 +1960,13 @@
             </div>
 
             <div class="flex flex-wrap gap-1.5 pt-1">
-              <button onclick="openCustomerDetailModal('${escJs(c.id)}')" class="flex-1 py-1.5 px-2.5 rounded-xl text-xs font-bold btn-primary">
-                詳情／諮詢表／LINE
+              <button onclick="openBookingModal(null, '${escJs(c.id)}')" class="py-1.5 px-3 rounded-xl text-xs font-extrabold btn-primary shadow-sm">
+                📅 預約
               </button>
-              <button onclick="openTopUpModal('${escJs(c.id)}', 'add')" class="py-1.5 px-2.5 rounded-xl text-xs font-bold bg-[#f3ece5] text-[#5c4638] hover:bg-[#e8ddd2]">
+              <button onclick="openCustomerDetailModal('${escJs(c.id)}')" class="flex-1 py-1.5 px-2.5 rounded-xl text-xs font-bold bg-[#f3ece5] text-[#5c4638] hover:bg-[#e8ddd2]">
+                詳情／諮詢紀錄
+              </button>
+              <button onclick="openTopUpModal('${escJs(c.id)}', 'add')" class="py-1.5 px-2.5 rounded-xl text-xs font-bold bg-[#f7f1eb] text-[#6b5344]">
                 儲值
               </button>
               <button onclick="openCustomerEditModal('${escJs(c.id)}')" class="py-1.5 px-2.5 rounded-xl text-xs font-bold bg-white border border-[#decbb9] text-[#5c4638]">
@@ -1832,7 +2039,7 @@
         <div class="p-3.5 rounded-xl bg-[#fcf9f5] border border-[#e7d8c8] space-y-2.5 text-xs">
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <span class="font-extrabold text-sm text-[#33241d]">📋 諮詢表與同意書（已修改 ${safeNumber(cons.editCount, 1)} 次）</span>
+              <span class="font-extrabold text-sm text-[#33241d]">📋 諮詢表與同意書（累計填寫/修改 ${safeNumber(cons.editCount, 1)} 次）</span>
               <div class="text-[11px] text-[#8b7365]">最後更新：${esc(cons.updatedAt || "-")}</div>
             </div>
             <button type="button" onclick="toggleConsultationVisibility('${escJs(c.id)}', ${!cons.hiddenFromCustomer})" class="px-3 py-1.5 rounded-xl font-bold ${
@@ -1859,14 +2066,16 @@
             </div>
           ` : ""}
           <div class="pt-2 border-t border-[#efe4d8]">
-            <div class="font-bold text-[#4a382f] mb-1">諮詢表歷程與修改紀錄（${logs.length} 筆）</div>
+            <div class="font-bold text-[#4a382f] mb-1">📝 每次修改明細與異動紀錄（${logs.length} 筆）</div>
             ${logs.length === 0
               ? `<div class="text-[#8b7365]">尚無修改紀錄</div>`
-              : `<div class="space-y-1 max-h-32 overflow-y-auto">${logs.map(lg => `
-                <div class="p-2 rounded-lg bg-white border border-[#f2e8dd]">
-                  <span class="font-bold text-[#8c5e43]">[${esc(lg.actionType)}]</span>
-                  <span class="text-[#8b7365] ml-1">${esc(lg.editedAt)}</span>
-                  <div class="text-[#3a2a22] mt-0.5">${esc(lg.summary)}</div>
+              : `<div class="space-y-1.5 max-h-40 overflow-y-auto">${logs.map(lg => `
+                <div class="p-2.5 rounded-lg bg-white border border-[#f0e3d5]">
+                  <div class="flex items-center justify-between">
+                    <span class="font-extrabold text-[#8c5e43]">[${esc(lg.actionType)}]</span>
+                    <span class="text-[11px] text-[#8b7365]">${esc(lg.editedAt)}</span>
+                  </div>
+                  <div class="text-[#3a2a22] mt-1 leading-relaxed">${esc(lg.summary)}</div>
                 </div>
               `).join("")}</div>`
             }
@@ -1898,7 +2107,6 @@
               <div class="text-sm font-bold mt-0.5 ${c.lineUserId ? "text-emerald-700" : "text-[#8b7365]"}">${c.lineUserId ? "已綁定" : "尚未綁定"}</div>
             </div>
           </div>
-          <div class="text-[#6d5648] break-all">LINE User ID：${esc(c.lineUserId || "無")}</div>
 
           <div class="pt-1 space-y-1.5">
             <div class="font-bold text-[#4a382f]">一般專屬連結（填寫諮詢表／線上預約）</div>
@@ -1912,7 +2120,6 @@
 
           <div class="pt-2 border-t border-[#ead9c8] space-y-1.5">
             <div class="font-bold text-[#8c522b]">🔄 客戶換帳號／重新串連 LINE 專用連結</div>
-            <p class="text-[11px] text-[#7c6557]">若客人換新手機或新 LINE 帳號，點下方按鈕會先清除舊綁定並複製重綁連結，客人點開即自動綁定新 LINE：</p>
             <div class="flex flex-wrap gap-2">
               <button type="button" onclick="resetAndCopyLineRebindLink('${escJs(c.id)}', '${escJs(rebindLink)}')" class="px-3 py-1.5 rounded-lg bg-[#3a2a22] text-white font-bold">
                 清除舊綁定並複製重綁連結
@@ -1929,7 +2136,8 @@
         <div class="mb-4">${consultHtml}</div>
 
         <div class="flex flex-wrap gap-2">
-          <button onclick="openTopUpModal('${escJs(c.id)}', 'add')" class="px-3 py-1.5 rounded-xl text-xs font-bold btn-primary">+ 儲值入帳</button>
+          <button onclick="closeCustomerDetailModal(); openBookingModal(null, '${escJs(c.id)}');" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold btn-primary">📅 幫此會員新增預約</button>
+          <button onclick="openTopUpModal('${escJs(c.id)}', 'add')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#f3ece5] text-[#5c4638]">+ 儲值入帳</button>
           <button onclick="openTopUpModal('${escJs(c.id)}', 'refund')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#fdf2f2] text-[#b42318]">退儲值金</button>
           <button onclick="openTopUpModal('${escJs(c.id)}', 'transfer')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#f3ece5] text-[#5c4638]">轉移儲值金</button>
         </div>
@@ -2302,6 +2510,7 @@
       } else if (type === "生日優惠" && !titleInput.value.trim()) {
         titleInput.value = "生日禮折 $100";
         document.getElementById("ic_discountAmount").value = 100;
+        document.getElementById("ic_validityMonths").value = 1;
       }
     }
 
@@ -2353,7 +2562,7 @@
       }
     }
 
-    /* ==================== 分頁 4：帳務與儲值（已移除成本） ==================== */
+    /* ==================== 分頁 4：帳務與儲值 ==================== */
     function renderFinanceTab() {
       const ym = formatTodayStr().slice(0, 7);
       const settledBookings = state.bookings.filter(
@@ -2445,7 +2654,7 @@
       }
     }
 
-    /* ==================== 分頁 5：管理（美化大分類卡片 + 完全移除成本） ==================== */
+    /* ==================== 分頁 5：管理 ==================== */
     function selectCatalogCategoryFilter(cat) {
       state.selectedCatalogCategory = cat;
       renderCatalogTab();
@@ -2750,7 +2959,27 @@
       window.open(url, "_blank");
     }
 
-    /* ==================== 客戶端（複選/單選問卷 + 大分類主軸點選 + 自助重綁 LINE） ==================== */
+    /* ==================== 客戶端（初次全空問卷 + 鎖定摘要 + 點修改才可編輯 + 差異紀錄） ==================== */
+    function resetConsultationFormToBlank() {
+      document.getElementById("cf_name").value = "";
+      document.getElementById("cf_nickname").value = "";
+      document.getElementById("cf_birthday").value = "";
+      document.getElementById("cf_phone").value = "";
+      document.getElementById("cf_address").value = "";
+
+      state.qAnswers = {
+        pastHairRemoval: [],
+        firstTimeWaxing: "",
+        sensitiveTypes: [],
+        isPregnant: "",
+        isSickOrLowImmunity: "",
+        isMenstruating: "",
+        isOilyOrAcneArea: ""
+      };
+      clearSignature();
+      renderConsultationQuestionnaire();
+    }
+
     function renderConsultationQuestionnaire() {
       renderMultiCheckboxQuestion("q_pastHairRemovalList", "pastHairRemoval", QUESTION_CONFIG.pastHairRemoval);
       renderSingleRadioQuestion("q_firstTimeWaxingList", "firstTimeWaxing", QUESTION_CONFIG.yesNo);
@@ -2768,7 +2997,7 @@
       box.innerHTML = options.map(opt => {
         const checked = selectedArr.indexOf(opt) !== -1;
         return `
-          <div onclick="toggleQuestionCheckbox('${fieldKey}', '${escJs(opt)}')" class="q-option-row">
+          <div onclick="toggleQuestionCheckbox('${fieldKey}', '${escJs(opt)}')" class="q-option-row ${checked ? "q-option-selected" : ""}">
             <span class="w-4 h-4 rounded border flex items-center justify-center text-[11px] font-bold shrink-0 ${
               checked ? "bg-[#8c5e43] border-[#8c5e43] text-white" : "bg-white border-[#c9b7a7] text-transparent"
             }">✓</span>
@@ -2785,7 +3014,7 @@
       box.innerHTML = options.map(opt => {
         const checked = currentVal === opt;
         return `
-          <div onclick="selectQuestionRadio('${fieldKey}', '${escJs(opt)}')" class="q-option-row">
+          <div onclick="selectQuestionRadio('${fieldKey}', '${escJs(opt)}')" class="q-option-row ${checked ? "q-option-selected" : ""}">
             <span class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
               checked ? "border-[#8c5e43]" : "border-[#c9b7a7]"
             }">
@@ -2823,37 +3052,124 @@
       if (!rawStr) return [];
       const parts = String(rawStr).split(/[、,，\/]+/).map(s => s.trim()).filter(Boolean);
       const matched = parts.filter(p => validOptions.indexOf(p) !== -1);
-      if (matched.length > 0) return matched;
-      if (parts.length > 0) return parts;
-      return [];
+      return matched.length > 0 ? matched : parts;
     }
 
-    function toggleSelfRebindBox() {
-      document.getElementById("selfRebindForm").classList.toggle("hidden");
+    function enterConsultationEditMode() {
+      const cons = state.portalData && state.portalData.consultation;
+      if (!cons) return;
+      state.isEditingConsultation = true;
+
+      document.getElementById("cf_name").value = cons.name || "";
+      document.getElementById("cf_nickname").value = cons.nickname || "";
+      document.getElementById("cf_phone").value = cons.phone || "";
+      document.getElementById("cf_birthday").value = cons.birthday || "";
+      document.getElementById("cf_address").value = cons.address || "";
+
+      state.qAnswers.pastHairRemoval = parseSavedMultiAnswer(cons.pastHairRemoval, QUESTION_CONFIG.pastHairRemoval);
+      state.qAnswers.firstTimeWaxing = cons.firstTimeWaxing || "";
+      state.qAnswers.sensitiveTypes = parseSavedMultiAnswer(cons.sensitiveTypes, QUESTION_CONFIG.sensitiveTypes);
+      state.qAnswers.isPregnant = cons.isPregnant || "";
+      state.qAnswers.isSickOrLowImmunity = cons.isSickOrLowImmunity || "";
+      state.qAnswers.isMenstruating = cons.isMenstruating || "";
+      state.qAnswers.isOilyOrAcneArea = cons.isOilyOrAcneArea || "";
+      renderConsultationQuestionnaire();
+
+      const sigPreview = document.getElementById("existingSignaturePreview");
+      if (cons.signatureDataUrl) {
+        sigPreview.classList.remove("hidden");
+        document.getElementById("existingSignatureImg").src = cons.signatureDataUrl;
+      } else {
+        sigPreview.classList.add("hidden");
+      }
+      clearSignature();
+
+      document.getElementById("consultFormHeaderTitle").textContent = "修改問卷與除毛諮詢同意書";
+      document.getElementById("consultSubmitBtn").textContent = "儲存修改並送出同意書";
+      document.getElementById("cancelConsultEditBtn").classList.remove("hidden");
+
+      document.getElementById("customerConsultLockedCard").classList.add("hidden");
+      document.getElementById("customerConsultFormBox").classList.remove("hidden");
     }
 
-    async function handleSelfRebindSubmit(e) {
-      e.preventDefault();
-      try {
-        setLoading(true, "正在為您重新串連原有會員資料...");
-        const res = await apiPost({
-          action: "rebindCustomerLineSelf",
-          payload: {
-            name: document.getElementById("rb_name").value.trim(),
-            phone: document.getElementById("rb_phone").value.trim(),
-            lineUserId: state.portalLineUserId,
-            lineDisplayName: state.portalLineDisplayName
-          }
-        });
-        if (res && res.cid) {
-          state.portalCid = res.cid;
-          await initCustomerPortal();
-          showToast("已成功串連您的原有會員資料！");
-        }
-      } catch (err) {
-        showToast(err.message || "串連失敗", true);
-      } finally {
-        setLoading(false);
+    function cancelConsultationEditMode() {
+      state.isEditingConsultation = false;
+      renderCustomerConsultationView();
+    }
+
+    function renderCustomerConsultationView() {
+      const data = state.portalData || {};
+      const hiddenNotice = document.getElementById("customerConsultHiddenNotice");
+      const lockedCard = document.getElementById("customerConsultLockedCard");
+      const formBox = document.getElementById("customerConsultFormBox");
+
+      if (data.consultationHidden) {
+        hiddenNotice.classList.remove("hidden");
+        lockedCard.classList.add("hidden");
+        formBox.classList.add("hidden");
+        return;
+      }
+      hiddenNotice.classList.add("hidden");
+
+      const cons = data.consultation;
+      // 已填寫過且目前不在修改模式 -> 顯示唯讀摘要卡片，需點「修改問卷與除毛諮詢同意書」才可進去
+      if (cons && !state.isEditingConsultation) {
+        formBox.classList.add("hidden");
+        lockedCard.classList.remove("hidden");
+
+        document.getElementById("lockedConsultUpdatedText").textContent =
+          `最後更新：${cons.updatedAt || "已歸檔"}${safeNumber(cons.editCount, 1) > 1 ? `（已修改 ${safeNumber(cons.editCount, 1) - 1} 次）` : ""}`;
+
+        document.getElementById("lockedConsultSummaryBox").innerHTML = `
+          <div class="grid grid-cols-2 gap-2.5 p-3.5 rounded-2xl bg-[#faf6f2] border border-[#ede0d3]">
+            <div><span class="text-[#8b7365] block text-[11px]">姓名／暱稱</span><strong class="text-[#33241d]">${esc(cons.name)}（${esc(cons.nickname)}）</strong></div>
+            <div><span class="text-[#8b7365] block text-[11px]">生日</span><strong class="text-[#33241d]">${esc(cons.birthday)}</strong></div>
+            <div><span class="text-[#8b7365] block text-[11px]">聯絡電話</span><strong class="text-[#33241d]">${esc(cons.phone || "未填寫")}</strong></div>
+            <div><span class="text-[#8b7365] block text-[11px]">居住地址</span><strong class="text-[#33241d]">${esc(cons.address || "未填寫")}</strong></div>
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-[#fffdfb] border border-[#ede0d3] space-y-2">
+            <div class="flex justify-between gap-2 border-b border-[#f4ece3] pb-1.5">
+              <span class="text-[#7c6557]">過往毛髮處理方式</span>
+              <span class="font-bold text-[#33241d] text-right">${esc(cons.pastHairRemoval)}</span>
+            </div>
+            <div class="flex justify-between gap-2 border-b border-[#f4ece3] pb-1.5">
+              <span class="text-[#7c6557]">首次施作熱蠟除毛</span>
+              <span class="font-bold text-[#33241d]">${esc(cons.firstTimeWaxing)}</span>
+            </div>
+            <div class="flex justify-between gap-2 border-b border-[#f4ece3] pb-1.5">
+              <span class="text-[#7c6557]">是否為敏感體質</span>
+              <span class="font-bold text-[#33241d] text-right">${esc(cons.sensitiveTypes)}</span>
+            </div>
+            <div class="flex justify-between gap-2 border-b border-[#f4ece3] pb-1.5">
+              <span class="text-[#7c6557]">懷孕／生病或免疫力下降</span>
+              <span class="font-bold text-[#33241d]">懷孕：${esc(cons.isPregnant)} · 免疫力：${esc(cons.isSickOrLowImmunity)}</span>
+            </div>
+            <div class="flex justify-between gap-2">
+              <span class="text-[#7c6557]">生理期／部位出油長痘</span>
+              <span class="font-bold text-[#33241d]">生理期：${esc(cons.isMenstruating)} · 出油痘痘：${esc(cons.isOilyOrAcneArea)}</span>
+            </div>
+          </div>
+
+          ${cons.signatureDataUrl ? `
+            <div class="p-3.5 rounded-2xl bg-[#fffdfb] border border-[#ede0d3]">
+              <div class="text-[11px] font-bold text-[#7c6557] mb-1.5">已留存親筆簽名</div>
+              <img src="${esc(cons.signatureDataUrl)}" alt="簽名" class="max-h-24 rounded-xl border border-[#e3d4c5] bg-white p-1.5" />
+            </div>
+          ` : ""}
+        `;
+        return;
+      }
+
+      // 第一次填寫：預設內容全部都是空的！
+      lockedCard.classList.add("hidden");
+      formBox.classList.remove("hidden");
+      if (!cons) {
+        document.getElementById("consultFormHeaderTitle").textContent = "初次填寫｜問卷與除毛諮詢同意書";
+        document.getElementById("consultSubmitBtn").textContent = "確認送出問卷與同意書";
+        document.getElementById("cancelConsultEditBtn").classList.add("hidden");
+        document.getElementById("existingSignaturePreview").classList.add("hidden");
+        resetConsultationFormToBlank();
       }
     }
 
@@ -2862,148 +3178,148 @@
       document.getElementById("adminView").classList.add("hidden");
       document.getElementById("adminHeaderActions").classList.add("hidden");
       document.getElementById("customerView").classList.remove("hidden");
-      document.getElementById("modeSubtitle").textContent = "VIP 會員專屬服務區";
+      document.getElementById("modeSubtitle").textContent = "客戶專屬服務中心";
 
       try {
-        setLoading(true, "載入會員資料中...");
-        const data = await apiPost({
-          action: "getCustomerPortalData",
-          cid: state.portalCid,
-          lineUserId: state.portalLineUserId,
-          lineDisplayName: state.portalLineDisplayName,
-          forceRebind: state.portalForceRebind
-        });
-        state.portalForceRebind = false;
-        state.portalData = data;
-        renderCustomerPortal(data);
+        setLoading(true, "載入您的專屬會員資料中...");
+        try {
+          if (window.liff && typeof liff.getProfile === "function" && liff.isLoggedIn && liff.isLoggedIn()) {
+            const prof = await liff.getProfile();
+            state.portalLineUserId = prof.userId || "";
+            state.portalLineDisplayName = prof.displayName || "";
+          }
+        } catch (_) {}
+
+        await reloadCustomerPortalData();
       } catch (err) {
         showToast(err.message || "載入失敗", true);
-        document.getElementById("customerConsultSection").classList.remove("hidden");
-        document.getElementById("customerConsultFormBox").classList.remove("hidden");
       } finally {
         setLoading(false);
       }
     }
 
-    function getCustomerBookingDisplayBadge(status) {
-      if (status === "已完成") {
-        return { text: "已完成", cls: "bg-emerald-100 text-emerald-800" };
-      }
-      if (status === "尚未到來" || status === "已報到") {
-        return { text: "預約成功", cls: "bg-sky-100 text-sky-800" };
-      }
-      if (status === "待審核") {
-        return { text: "待審核中", cls: "bg-amber-100 text-amber-900" };
-      }
-      return { text: "已取消", cls: "bg-stone-200 text-stone-600" };
+    async function reloadCustomerPortalData() {
+      const data = await apiPost({
+        action: "getCustomerPortalData",
+        cid: state.portalCid,
+        lineUserId: state.portalLineUserId,
+        lineDisplayName: state.portalLineDisplayName,
+        forceRebind: state.portalForceRebind
+      });
+      state.portalData = data;
+      state.isEditingConsultation = false;
+      renderCustomerPortal();
     }
 
-    function renderCustomerPortal(data) {
-      const c = data.customer;
-      const card = document.getElementById("customerProfileCard");
-      const subTabs = document.getElementById("customerSubTabs");
-      const rebindBanner = document.getElementById("customerRebindBanner");
+    function toggleSelfRebindBox() {
+      document.getElementById("selfRebindForm").classList.toggle("hidden");
+    }
 
-      if (c) {
-        state.portalCid = c.id;
-        rebindBanner.classList.add("hidden");
-        card.classList.remove("hidden");
-        subTabs.classList.remove("hidden");
-        document.getElementById("custPortalName").textContent = `${c.name}${c.nickname ? `（${c.nickname}）` : ""}`;
-        document.getElementById("custPortalMeta").textContent = `電話：${c.contact || "未填"} · 生日：${c.birthday || "未填"}${c.lineDisplayName ? ` · LINE：${c.lineDisplayName}` : ""}`;
-        document.getElementById("custPortalBalance").textContent = `$${safeNumber(c.balance, 0).toLocaleString()}`;
-        document.getElementById("custPortalVisits").textContent = `累計來店 ${safeNumber(c.visitCount, 0)} 次`;
-
-        const availCoupons = (data.coupons || []).filter(cp => cp.status === "可使用");
-        document.getElementById("custPortalCoupons").innerHTML = `
-          <div class="text-xs font-bold text-[#4a382f] mb-1.5">可用優惠券（${availCoupons.length}）</div>
-          ${availCoupons.length === 0
-            ? `<div class="text-xs text-[#8b7365]">目前無可用優惠券</div>`
-            : `<div class="flex flex-wrap gap-1.5">${availCoupons.map(cp =>
-              `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-[#fdf1e7] text-[#8c522b]">${esc(cp.title)}（折 $${safeNumber(cp.discountAmount, 0)}）</span>`
-            ).join("")}</div>`
+    async function handleSelfRebindSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById("rb_name").value.trim();
+      const phone = document.getElementById("rb_phone").value.trim();
+      try {
+        setLoading(true, "比對舊會員資料並串連 LINE 中...");
+        const res = await apiPost({
+          action: "rebindCustomerLineSelf",
+          payload: {
+            name,
+            phone,
+            lineUserId: state.portalLineUserId,
+            lineDisplayName: state.portalLineDisplayName
           }
-        `;
-
-        const bks = data.bookings || [];
-        document.getElementById("custPortalBookings").innerHTML = `
-          <div class="text-xs font-bold text-[#4a382f] mb-2">我的預約及過去預約（${bks.length}）</div>
-          ${bks.length === 0
-            ? `<div class="text-xs text-[#8b7365]">目前尚無預約紀錄</div>`
-            : `<div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">${bks.map(b => {
-                const badge = getCustomerBookingDisplayBadge(b.status);
-                return `
-                  <div class="p-2.5 rounded-xl bg-[#fcfaf8] border border-[#efe5da] flex items-center justify-between gap-2 text-xs">
-                    <div class="min-w-0">
-                      <div class="font-bold text-[#33241d] tabular-nums">${esc(b.date)} ${esc(b.startTime)}</div>
-                      <div class="text-[#5c4638] truncate">${esc(b.service || "美學課程")}</div>
-                    </div>
-                    <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold shrink-0 ${badge.cls}">${badge.text}</span>
-                  </div>
-                `;
-              }).join("")}</div>`
-          }
-        `;
-
-        document.getElementById("cf_name").value = c.name || "";
-        document.getElementById("cf_nickname").value = c.nickname || "";
-        document.getElementById("cf_phone").value = c.contact || "";
-        document.getElementById("cf_birthday").value = c.birthday || "";
-        document.getElementById("cf_address").value = c.address || "";
-      } else {
-        rebindBanner.classList.remove("hidden");
-        card.classList.add("hidden");
-        subTabs.classList.add("hidden");
-      }
-
-      const cons = data.consultation;
-      const isHidden = !!data.consultationHidden;
-      const hiddenNotice = document.getElementById("customerConsultHiddenNotice");
-      const formBox = document.getElementById("customerConsultFormBox");
-      const statusBadge = document.getElementById("customerConsultStatusBadge");
-      const sigPreview = document.getElementById("existingSignaturePreview");
-
-      if (cons && isHidden) {
-        hiddenNotice.classList.remove("hidden");
-        formBox.classList.add("hidden");
-      } else {
-        hiddenNotice.classList.add("hidden");
-        formBox.classList.remove("hidden");
-
-        if (cons) {
-          statusBadge.classList.remove("hidden");
-          statusBadge.textContent = `已填寫（更新：${cons.updatedAt || "-"}）`;
-
-          document.getElementById("cf_name").value = cons.name || (c ? c.name : "");
-          document.getElementById("cf_nickname").value = cons.nickname || (c ? c.nickname : "");
-          document.getElementById("cf_phone").value = cons.phone || (c ? c.contact : "");
-          document.getElementById("cf_birthday").value = cons.birthday || (c ? c.birthday : "");
-          document.getElementById("cf_address").value = cons.address || (c ? c.address : "");
-
-          state.qAnswers.pastHairRemoval = parseSavedMultiAnswer(cons.pastHairRemoval, QUESTION_CONFIG.pastHairRemoval);
-          state.qAnswers.firstTimeWaxing = cons.firstTimeWaxing || "";
-          state.qAnswers.sensitiveTypes = parseSavedMultiAnswer(cons.sensitiveTypes, QUESTION_CONFIG.sensitiveTypes);
-          state.qAnswers.isPregnant = cons.isPregnant || "";
-          state.qAnswers.isSickOrLowImmunity = cons.isSickOrLowImmunity || "";
-          state.qAnswers.isMenstruating = cons.isMenstruating || "";
-          state.qAnswers.isOilyOrAcneArea = cons.isOilyOrAcneArea || "";
-          renderConsultationQuestionnaire();
-
-          if (cons.signatureDataUrl) {
-            sigPreview.classList.remove("hidden");
-            document.getElementById("existingSignatureImg").src = cons.signatureDataUrl;
-          } else {
-            sigPreview.classList.add("hidden");
-          }
-        } else {
-          statusBadge.classList.add("hidden");
-          sigPreview.classList.add("hidden");
+        });
+        if (res && res.cid) {
+          state.portalCid = res.cid;
+          state.portalForceRebind = true;
+          await reloadCustomerPortalData();
+          document.getElementById("selfRebindForm").classList.add("hidden");
+          showToast("已成功串連您原有的會員資料！");
         }
+      } catch (err) {
+        showToast(err.message || "串連失敗", true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function renderCustomerPortal() {
+      const data = state.portalData || {};
+      const cust = data.customer;
+      const rebindBanner = document.getElementById("customerRebindBanner");
+      const profileCard = document.getElementById("customerProfileCard");
+      const subTabs = document.getElementById("customerSubTabs");
+
+      if (!cust) {
+        rebindBanner.classList.remove("hidden");
+        profileCard.classList.add("hidden");
+        subTabs.classList.add("hidden");
+        document.getElementById("customerBookSection").classList.add("hidden");
+        document.getElementById("customerConsultSection").classList.remove("hidden");
+        renderCustomerConsultationView();
+        return;
       }
 
-      renderCustomerBookingSection(data.catalog || []);
+      if (state.portalForceRebind) {
+        rebindBanner.classList.remove("hidden");
+      } else {
+        rebindBanner.classList.add("hidden");
+      }
+
+      profileCard.classList.remove("hidden");
+      subTabs.classList.remove("hidden");
+
+      document.getElementById("custPortalName").textContent = `${cust.name}${cust.nickname ? `（${cust.nickname}）` : ""}`;
+      document.getElementById("custPortalMeta").textContent = `${cust.contact || ""}${cust.birthday ? ` · 🎂 ${cust.birthday}` : ""}`;
+      document.getElementById("custPortalBalance").textContent = `$${safeNumber(cust.balance, 0).toLocaleString()}`;
+      document.getElementById("custPortalVisits").textContent = `累計來店 ${safeNumber(cust.visitCount, 0)} 次`;
+
+      const coupBox = document.getElementById("custPortalCoupons");
+      const availCoupons = (data.coupons || []).filter(cp => cp.status === "可使用");
+      coupBox.innerHTML = availCoupons.length === 0
+        ? `<div class="text-xs text-[#8b7365]">🎟️ 目前無可用優惠券</div>`
+        : `<div class="text-xs font-bold text-[#4a382f] mb-1.5">🎟️ 我的可用優惠券（${availCoupons.length} 張）</div>
+           <div class="flex flex-wrap gap-1.5">${availCoupons.map(cp => `
+             <span class="px-2.5 py-1 rounded-xl bg-[#fdf1e7] border border-[#f0d5be] text-xs font-bold text-[#9c5733]">
+               ${esc(cp.title)}（折 $${safeNumber(cp.discountAmount, 0)} · 至 ${esc(cp.expiresDate)}）
+             </span>
+           `).join("")}</div>`;
+
+      const bkBox = document.getElementById("custPortalBookings");
+      const allBks = data.bookings || [];
+      const upcomingBks = allBks.filter(b => b.status === "待審核" || b.status === "尚未到來" || b.status === "已報到");
+      const pastBks = allBks.filter(b => b.status === "已完成" || b.status === "取消");
+
+      let bkHtml = `<div class="text-xs font-bold text-[#4a382f] mb-1.5">📅 我的預約</div>`;
+      if (upcomingBks.length === 0) {
+        bkHtml += `<div class="text-xs text-[#8b7365] mb-2">目前沒有待進行的預約</div>`;
+      } else {
+        bkHtml += `<div class="space-y-1.5 mb-3">${upcomingBks.map(b => `
+          <div class="text-xs flex items-center justify-between px-3 py-2 rounded-xl bg-[#faf6f2] border border-[#efe5da]">
+            <span><strong>${esc(b.date)} ${esc(b.startTime)}</strong> · ${esc(b.service)}</span>
+            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${b.status === "待審核" ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}">${esc(b.status)}</span>
+          </div>
+        `).join("")}</div>`;
+      }
+
+      bkHtml += `<div class="text-xs font-bold text-[#4a382f] mb-1.5 pt-2 border-t border-[#f3ebe3]">📜 過去預約紀錄</div>`;
+      if (pastBks.length === 0) {
+        bkHtml += `<div class="text-xs text-[#8b7365]">尚無過去預約紀錄</div>`;
+      } else {
+        bkHtml += `<div class="space-y-1.5 max-h-40 overflow-y-auto">${pastBks.map(b => `
+          <div class="text-xs flex items-center justify-between px-3 py-1.5 rounded-xl bg-[#fcfaf8] text-[#6d5648]">
+            <span>${esc(b.date)} ${esc(b.startTime)} · ${esc(b.service)}</span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${b.status === "已完成" ? "bg-stone-200 text-stone-700" : "bg-red-50 text-red-700"}">${esc(b.status)}</span>
+          </div>
+        `).join("")}</div>`;
+      }
+      bkBox.innerHTML = bkHtml;
+
+      renderCustomerConsultationView();
+      renderCustomerCatalogPicker();
       validateCustomerSlotAvailability();
-      switchCustomerTab("consult");
+      switchCustomerTab(data.consultation ? "book" : "consult");
     }
 
     function switchCustomerTab(tab) {
@@ -3014,19 +3330,20 @@
       document.getElementById("cTabBookBtn").className = `py-2.5 rounded-xl text-sm font-bold ${!isConsult ? "tab-active" : "tab-inactive"}`;
     }
 
-    function selectCustomerBookCategory(catName) {
+    function selectCustomerCategoryPill(catName) {
       state.activeCustomerCatalogCategory = catName;
-      renderCustomerBookingSection((state.portalData && state.portalData.catalog) || []);
+      renderCustomerCatalogPicker();
     }
 
-    function renderCustomerBookingSection(catalog) {
+    function renderCustomerCatalogPicker() {
       const pillsBox = document.getElementById("cb_categoryPills");
-      const itemsBox = document.getElementById("cb_activeCategoryItems");
-      const selectedBox = document.getElementById("cb_selectedItemsList");
+      const activeItemsBox = document.getElementById("cb_activeCategoryItems");
+      const catalog = (state.portalData && state.portalData.catalog) || [];
 
-      if (!catalog || catalog.length === 0) {
+      if (catalog.length === 0) {
         pillsBox.innerHTML = "";
-        itemsBox.innerHTML = `<div class="p-4 text-xs text-[#8b7365]">目前無可選服務項目</div>`;
+        activeItemsBox.innerHTML = `<div class="p-3 text-xs text-[#8b7365]">目前尚無開放預約項目</div>`;
+        renderCustomerSelectedItemsList();
         return;
       }
 
@@ -3043,10 +3360,10 @@
       }
 
       pillsBox.innerHTML = catNames.map(cat => {
-        const isActive = state.activeCustomerCatalogCategory === cat;
+        const isAct = state.activeCustomerCatalogCategory === cat;
         return `
-          <button type="button" onclick="selectCustomerBookCategory('${escJs(cat)}')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold border transition ${
-            isActive ? "cat-pill-active" : "cat-pill-inactive hover:bg-[#f6efe8]"
+          <button type="button" onclick="selectCustomerCategoryPill('${escJs(cat)}')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold border transition ${
+            isAct ? "cat-pill-active" : "cat-pill-inactive hover:bg-[#f6efe8]"
           }">
             ${esc(cat)}
           </button>
@@ -3054,24 +3371,24 @@
       }).join("");
 
       const activeItems = grouped[state.activeCustomerCatalogCategory] || [];
-      itemsBox.innerHTML = activeItems.map(item => {
+      activeItemsBox.innerHTML = activeItems.map(item => {
         const isAdded = state.selectedCustomerServiceIds.indexOf(String(item.id)) !== -1;
         const dur = safeNumber(item.duration, 0);
         return `
-          <div class="px-3.5 py-2.5 flex items-center justify-between gap-2 text-xs bg-white">
+          <div class="p-3 flex items-center justify-between gap-2 text-xs">
             <div class="min-w-0 flex-1">
-              <div class="font-bold text-[#33241d] truncate">${esc(item.name)}</div>
-              <div class="text-[11px] text-[#8b7365] mt-0.5">
+              <div class="font-bold text-sm text-[#33241d]">${esc(item.name)}</div>
+              <div class="text-[#7c6557] mt-0.5">
                 <strong class="text-[#8c5e43]">$${safeNumber(item.price, 0).toLocaleString()}</strong>
-                ${dur > 0 ? ` · ${dur} 分鐘` : ""}
+                ${dur > 0 ? `<span class="ml-2">· 約 ${dur} 分鐘</span>` : ""}
               </div>
             </div>
             ${isAdded ? `
-              <button type="button" onclick="removeCustomerServiceId('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold shrink-0">
-                ✓ 已加入（點此移除）
+              <button type="button" onclick="removeCustomerSelectedService('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold shrink-0">
+                ✓ 已加入（點擊移除）
               </button>
             ` : `
-              <button type="button" onclick="addCustomerServiceId('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl bg-[#f4e8de] text-[#8c5e43] font-extrabold hover:bg-[#ebd8c8] shrink-0">
+              <button type="button" onclick="addCustomerSelectedService('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl bg-[#f4e8de] text-[#8c5e43] font-extrabold hover:bg-[#ebd8c8] shrink-0">
                 ＋ 加入
               </button>
             `}
@@ -3079,18 +3396,27 @@
         `;
       }).join("");
 
+      renderCustomerSelectedItemsList();
+    }
+
+    function renderCustomerSelectedItemsList() {
+      const box = document.getElementById("cb_selectedItemsList");
+      const catalog = (state.portalData && state.portalData.catalog) || [];
       const selectedItems = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
+
+      document.getElementById("cb_selectedCountBadge").textContent = `已選 ${selectedItems.length} 項`;
+
       if (selectedItems.length === 0) {
-        selectedBox.innerHTML = `<div class="text-xs text-[#8b7365] py-2 px-3 rounded-xl bg-[#faf7f4] border border-dashed border-[#e3d5c7]">尚未加入任何項目，請從上方大分類挑選</div>`;
+        box.innerHTML = `<div class="text-xs text-[#8b7365] py-2 px-3 rounded-xl bg-[#fcfaf8] border border-dashed border-[#e3d5c7]">尚未加入任何項目，請從上方大分類點選「＋ 加入」</div>`;
       } else {
-        selectedBox.innerHTML = selectedItems.map(item => `
-          <div class="px-3 py-2 rounded-xl bg-[#fdf8f4] border border-[#ebd9c8] flex items-center justify-between gap-2 text-xs">
-            <div class="min-w-0">
-              <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#f1e4d8] text-[#7c5841] font-bold mr-1">${esc(item.category)}</span>
-              <span class="font-bold text-[#33241d]">${esc(item.name)}</span>
-              <span class="text-[#8c5e43] font-bold ml-1">$${safeNumber(item.price, 0).toLocaleString()}</span>
+        box.innerHTML = selectedItems.map(item => `
+          <div class="px-3 py-2 rounded-xl bg-[#faf5ef] border border-[#e6d6c6] flex items-center justify-between gap-2 text-xs">
+            <div class="min-w-0 flex-1">
+              <span class="text-[11px] text-[#8b7365]">[${esc(item.category)}]</span>
+              <span class="font-bold text-[#33241d] ml-1">${esc(item.name)}</span>
+              <span class="font-bold text-[#8c5e43] ml-1.5">$${safeNumber(item.price, 0).toLocaleString()}</span>
             </div>
-            <button type="button" onclick="removeCustomerServiceId('${escJs(item.id)}')" class="px-2 py-1 rounded-lg bg-white border border-rose-200 text-rose-700 font-bold hover:bg-rose-50 shrink-0">
+            <button type="button" onclick="removeCustomerSelectedService('${escJs(item.id)}')" class="px-2 py-1 rounded-lg bg-white border border-rose-200 text-rose-700 font-bold hover:bg-rose-50 shrink-0">
               ✕ 移除
             </button>
           </div>
@@ -3100,89 +3426,75 @@
       recalcCustomerBookingEstimate();
     }
 
-    function addCustomerServiceId(itemId) {
+    function addCustomerSelectedService(itemId) {
       const idStr = String(itemId);
       if (state.selectedCustomerServiceIds.indexOf(idStr) === -1) {
         state.selectedCustomerServiceIds.push(idStr);
       }
-      renderCustomerBookingSection((state.portalData && state.portalData.catalog) || []);
-      validateCustomerSlotAvailability();
+      renderCustomerCatalogPicker();
     }
 
-    function removeCustomerServiceId(itemId) {
+    function removeCustomerSelectedService(itemId) {
       const idStr = String(itemId);
       state.selectedCustomerServiceIds = state.selectedCustomerServiceIds.filter(x => x !== idStr);
-      renderCustomerBookingSection((state.portalData && state.portalData.catalog) || []);
-      validateCustomerSlotAvailability();
+      renderCustomerCatalogPicker();
     }
 
     function recalcCustomerBookingEstimate() {
       const catalog = (state.portalData && state.portalData.catalog) || [];
-      const selectedItems = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
-      let totalPrice = 0;
-      let totalDuration = 0;
-      selectedItems.forEach(item => {
-        totalPrice += safeNumber(item.price, 0);
-        totalDuration += safeNumber(item.duration, 0);
-      });
-
-      document.getElementById("cb_selectedCountBadge").textContent = `已選 ${selectedItems.length} 項`;
-      document.getElementById("cb_totalDurationText").textContent = totalDuration > 0 ? `${totalDuration + 10} 分鐘` : "0 分鐘";
+      const selected = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
+      const totalDur = selected.reduce((sum, x) => sum + safeNumber(x.duration, 0), 0);
+      const totalPrice = selected.reduce((sum, x) => sum + safeNumber(x.price, 0), 0);
+      document.getElementById("cb_totalDurationText").textContent = `${totalDur} 分鐘`;
       document.getElementById("cb_totalPriceText").textContent = `$${totalPrice.toLocaleString()}`;
-      return { selectedItems, totalPrice, totalDuration };
+      validateCustomerSlotAvailability();
     }
 
     function validateCustomerSlotAvailability() {
       const banner = document.getElementById("cb_slotConflictBanner");
-      const submitBtn = document.getElementById("cb_submitBtn");
-      if (!banner || !submitBtn) return true;
-
+      const btn = document.getElementById("cb_submitBtn");
+      const data = state.portalData || {};
       const dateStr = document.getElementById("cb_date").value;
-      const startStr = document.getElementById("cb_startTime").value;
-      if (!dateStr || !startStr || !state.portalData) {
-        banner.classList.add("hidden");
-        submitBtn.disabled = false;
-        submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
-        return true;
-      }
+      const startTime = document.getElementById("cb_startTime").value || "11:00";
 
-      const { totalDuration } = recalcCustomerBookingEstimate();
-      const dur = totalDuration > 0 ? totalDuration : 60;
-      const startMin = timeToMinutes(startStr);
+      const catalog = data.catalog || [];
+      const selected = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
+      const dur = selected.reduce((sum, x) => sum + safeNumber(x.duration, 0), 0) || 60;
+
+      const startMin = timeToMinutes(startTime);
       const endMin = Math.min(22 * 60, startMin + dur + 10);
 
-      const blocked = (state.portalData.blockedSlots || []).find(blk => {
+      const blocked = (data.blockedSlots || []).filter(blk => {
         if (blk.date !== dateStr) return false;
         if (blk.fullDay) return true;
         return startMin < timeToMinutes(blk.endTime) && endMin > timeToMinutes(blk.startTime);
       });
 
-      if (blocked) {
+      if (blocked.length > 0) {
+        const msg = blocked.map(b => b.fullDay ? `${b.date} 整天不開放預約（${b.reason}）` : `${b.startTime}-${b.endTime} 不開放預約（${b.reason}）`).join("；");
+        banner.textContent = "🚫 " + msg + "，請改選其他日期或時間。";
         banner.classList.remove("hidden");
-        banner.textContent = blocked.fullDay
-          ? `⚠️ 抱歉，${dateStr} 整天不開放預約（${blocked.reason}），請改選其他日期。`
-          : `⚠️ 抱歉，${dateStr} ${blocked.startTime}-${blocked.endTime} 不開放預約（${blocked.reason}），請改選其他時間。`;
-        submitBtn.disabled = true;
-        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+        btn.disabled = true;
+        btn.classList.add("opacity-50", "cursor-not-allowed");
         return false;
       }
 
-      const occupied = (state.portalData.occupiedSlots || []).find(oc => {
-        if (oc.date !== dateStr) return false;
-        return startMin < timeToMinutes(oc.endTime) && endMin > timeToMinutes(oc.startTime);
+      const occupied = (data.occupiedSlots || []).filter(occ => {
+        if (occ.date !== dateStr) return false;
+        return startMin < timeToMinutes(occ.endTime) && endMin > timeToMinutes(occ.startTime);
       });
 
-      if (occupied) {
+      if (occupied.length > 0) {
+        banner.textContent = `⚠️ ${dateStr} ${startTime} 該時段已被預約，請選擇其他時間。`;
         banner.classList.remove("hidden");
-        banner.textContent = `⚠️ 抱歉，${dateStr} ${occupied.startTime}-${occupied.endTime} 已有預約，請改選其他時段。`;
-        submitBtn.disabled = true;
-        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+        btn.disabled = true;
+        btn.classList.add("opacity-50", "cursor-not-allowed");
         return false;
       }
 
       banner.classList.add("hidden");
-      submitBtn.disabled = false;
-      submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      btn.disabled = false;
+      btn.classList.remove("opacity-50", "cursor-not-allowed");
       return true;
     }
 
@@ -3190,38 +3502,37 @@
       e.preventDefault();
       if (!validateCustomerSlotAvailability()) return;
 
-      const { selectedItems, totalPrice, totalDuration } = recalcCustomerBookingEstimate();
-      if (selectedItems.length === 0) {
+      const catalog = (state.portalData && state.portalData.catalog) || [];
+      const selected = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
+      if (selected.length === 0) {
         showToast("請至少加入一項服務或產品", true);
         return;
       }
 
-      const servicesText = selectedItems.map(i => i.name).join(" + ");
-      const primaryCategory = selectedItems[0] ? String(selectedItems[0].category || "") : "";
-      const custName = (state.portalData && state.portalData.customer && state.portalData.customer.name)
-        || document.getElementById("cf_name").value.trim()
-        || "線上預約客戶";
+      const cust = state.portalData && state.portalData.customer;
+      const totalDur = selected.reduce((sum, x) => sum + safeNumber(x.duration, 0), 0) || 60;
+      const totalPrice = selected.reduce((sum, x) => sum + safeNumber(x.price, 0), 0);
 
       try {
         setLoading(true, "送出預約申請中...");
         await apiPost({
           action: "submitCustomerBookingRequest",
           payload: {
-            cid: state.portalCid,
-            customerName: custName,
+            cid: cust ? cust.id : state.portalCid,
+            customerName: cust ? cust.name : "",
             date: document.getElementById("cb_date").value,
             startTime: document.getElementById("cb_startTime").value,
-            primaryCategory,
-            servicesText,
-            totalPrice,
-            totalDuration,
+            totalDuration: totalDur,
+            totalPrice: totalPrice,
+            primaryCategory: String(selected[0].category || ""),
+            servicesText: selected.map(x => x.name).join(" + "),
             note: document.getElementById("cb_note").value.trim()
           }
         });
-        state.selectedCustomerServiceIds = [];
         document.getElementById("cb_note").value = "";
-        await initCustomerPortal();
-        showToast("預約申請已送出！待店家審核確認後將為您保留時段");
+        state.selectedCustomerServiceIds = [];
+        showToast("已送出預約申請，待美學師審核後將為您排入月曆！");
+        await reloadCustomerPortalData();
       } catch (err) {
         showToast(err.message || "預約送出失敗", true);
       } finally {
@@ -3229,151 +3540,127 @@
       }
     }
 
-    /* ==================== 手寫簽名板與問卷必填防呆 ==================== */
-    let sigCanvas = null;
-    let sigCtx = null;
-    let isDrawing = false;
-    let hasSigned = false;
+    /* ==================== 手寫簽名板與諮詢表送出 ==================== */
+    let sigCanvas, sigCtx, sigDrawing = false, sigHasStroke = false;
 
     function initSignaturePad() {
       sigCanvas = document.getElementById("signatureCanvas");
       if (!sigCanvas) return;
       sigCtx = sigCanvas.getContext("2d");
-      sigCtx.lineWidth = 2.6;
+      sigCtx.lineWidth = 2.4;
       sigCtx.lineCap = "round";
       sigCtx.strokeStyle = "#2f2622";
 
-      const getPos = (evt) => {
+      const getPos = (e) => {
         const rect = sigCanvas.getBoundingClientRect();
-        const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-        const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         return {
           x: (clientX - rect.left) * (sigCanvas.width / rect.width),
           y: (clientY - rect.top) * (sigCanvas.height / rect.height)
         };
       };
 
-      const startDraw = (evt) => {
-        isDrawing = true;
-        hasSigned = true;
-        const pos = getPos(evt);
+      const start = (e) => {
+        sigDrawing = true;
+        sigHasStroke = true;
+        const p = getPos(e);
         sigCtx.beginPath();
-        sigCtx.moveTo(pos.x, pos.y);
+        sigCtx.moveTo(p.x, p.y);
       };
-
-      const moveDraw = (evt) => {
-        if (!isDrawing) return;
-        evt.preventDefault();
-        const pos = getPos(evt);
-        sigCtx.lineTo(pos.x, pos.y);
+      const move = (e) => {
+        if (!sigDrawing) return;
+        e.preventDefault();
+        const p = getPos(e);
+        sigCtx.lineTo(p.x, p.y);
         sigCtx.stroke();
       };
+      const end = () => { sigDrawing = false; };
 
-      const endDraw = () => {
-        isDrawing = false;
-      };
-
-      sigCanvas.addEventListener("mousedown", startDraw);
-      sigCanvas.addEventListener("mousemove", moveDraw);
-      window.addEventListener("mouseup", endDraw);
-      sigCanvas.addEventListener("touchstart", startDraw, { passive: false });
-      sigCanvas.addEventListener("touchmove", moveDraw, { passive: false });
-      window.addEventListener("touchend", endDraw);
+      sigCanvas.addEventListener("mousedown", start);
+      sigCanvas.addEventListener("mousemove", move);
+      window.addEventListener("mouseup", end);
+      sigCanvas.addEventListener("touchstart", start, { passive: false });
+      sigCanvas.addEventListener("touchmove", move, { passive: false });
+      window.addEventListener("touchend", end);
     }
 
     function clearSignature() {
       if (!sigCanvas || !sigCtx) return;
       sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-      hasSigned = false;
+      sigHasStroke = false;
     }
 
     async function handleConsultationSubmit(e) {
       e.preventDefault();
+      const existingCons = state.portalData && state.portalData.consultation;
 
-      const nameVal = document.getElementById("cf_name").value.trim();
-      const nickVal = document.getElementById("cf_nickname").value.trim();
-      const bdayVal = document.getElementById("cf_birthday").value.trim();
-
-      if (!nameVal) {
-        showToast("請填寫「姓名」（必填）", true);
-        document.getElementById("cf_name").focus();
-        return;
-      }
-      if (!nickVal) {
-        showToast("請填寫「暱稱／稱呼」（必填）", true);
-        document.getElementById("cf_nickname").focus();
-        return;
-      }
-      if (!bdayVal) {
-        showToast("請選擇「生日」（必填）", true);
-        document.getElementById("cf_birthday").focus();
-        return;
-      }
-      if (!state.qAnswers.pastHairRemoval || state.qAnswers.pastHairRemoval.length === 0) {
-        showToast("請勾選「過往毛髮處理」（複選必填）", true);
+      if (state.qAnswers.pastHairRemoval.length === 0) {
+        showToast("請勾選「過往毛髮處理方式」", true);
         return;
       }
       if (!state.qAnswers.firstTimeWaxing) {
-        showToast("請選擇「本次是否為首次施作熱蠟除毛」（單選必填）", true);
+        showToast("請選擇「本次是否為首次施作熱蠟除毛」", true);
         return;
       }
-      if (!state.qAnswers.sensitiveTypes || state.qAnswers.sensitiveTypes.length === 0) {
-        showToast("請勾選「是否為敏感體質」（複選必填）", true);
+      if (state.qAnswers.sensitiveTypes.length === 0) {
+        showToast("請勾選「是否為敏感體質」", true);
         return;
       }
       if (!state.qAnswers.isPregnant) {
-        showToast("請選擇「目前是否為懷孕期間」（單選必填）", true);
+        showToast("請選擇「目前是否為懷孕期間」", true);
         return;
       }
       if (!state.qAnswers.isSickOrLowImmunity) {
-        showToast("請選擇「目前是否為生病或免疫力下降期間」（單選必填）", true);
+        showToast("請選擇「目前是否為生病或免疫力下降期間」", true);
         return;
       }
       if (!state.qAnswers.isMenstruating) {
-        showToast("請選擇「目前是否為生理期間」（單選必填）", true);
+        showToast("請選擇「目前是否為生理期間」", true);
         return;
       }
       if (!state.qAnswers.isOilyOrAcneArea) {
-        showToast("請選擇「除毛部位是否常出油或長痘痘」（單選必填）", true);
+        showToast("請選擇「除毛部位是否常出油或長痘痘」", true);
         return;
       }
 
-      const existingSig = state.portalData && state.portalData.consultation && state.portalData.consultation.signatureDataUrl;
-      if (!hasSigned && !existingSig) {
-        showToast("請於簽名欄完成本人簽名後再送出", true);
+      if (!sigHasStroke && (!existingCons || !existingCons.signatureDataUrl)) {
+        showToast("請先於簽名區親筆簽名", true);
         return;
       }
 
-      const sigDataUrl = hasSigned ? sigCanvas.toDataURL("image/png") : existingSig;
-
-      const payload = {
-        cid: state.portalCid,
-        lineUserId: state.portalLineUserId,
-        lineDisplayName: state.portalLineDisplayName,
-        name: nameVal,
-        nickname: nickVal,
-        phone: document.getElementById("cf_phone").value.trim(),
-        birthday: bdayVal,
-        address: document.getElementById("cf_address").value.trim(),
-        pastHairRemoval: state.qAnswers.pastHairRemoval.join("、"),
-        firstTimeWaxing: state.qAnswers.firstTimeWaxing,
-        sensitiveTypes: state.qAnswers.sensitiveTypes.join("、"),
-        isPregnant: state.qAnswers.isPregnant,
-        isSickOrLowImmunity: state.qAnswers.isSickOrLowImmunity,
-        isMenstruating: state.qAnswers.isMenstruating,
-        isOilyOrAcneArea: state.qAnswers.isOilyOrAcneArea,
-        signatureDataUrl: sigDataUrl
-      };
+      const finalSigUrl = sigHasStroke
+        ? sigCanvas.toDataURL("image/png")
+        : (existingCons ? existingCons.signatureDataUrl : "");
 
       try {
-        setLoading(true, "送出諮詢表與簽名中...");
-        const res = await apiPost({ action: "submitCustomerConsultation", payload });
-        if (res && res.cid) {
-          state.portalCid = res.cid;
-        }
-        hasSigned = false;
-        await initCustomerPortal();
-        showToast("諮詢表與同意書已成功送出並儲存！");
+        setLoading(true, "儲存問卷與諮詢同意書中...");
+        const res = await apiPost({
+          action: "submitCustomerConsultation",
+          payload: {
+            cid: (state.portalData && state.portalData.customer && state.portalData.customer.id) || state.portalCid,
+            lineUserId: state.portalLineUserId,
+            lineDisplayName: state.portalLineDisplayName,
+            name: document.getElementById("cf_name").value.trim(),
+            nickname: document.getElementById("cf_nickname").value.trim(),
+            phone: document.getElementById("cf_phone").value.trim(),
+            birthday: document.getElementById("cf_birthday").value,
+            address: document.getElementById("cf_address").value.trim(),
+            pastHairRemoval: state.qAnswers.pastHairRemoval.join("、"),
+            firstTimeWaxing: state.qAnswers.firstTimeWaxing,
+            sensitiveTypes: state.qAnswers.sensitiveTypes.join("、"),
+            isPregnant: state.qAnswers.isPregnant,
+            isSickOrLowImmunity: state.qAnswers.isSickOrLowImmunity,
+            isMenstruating: state.qAnswers.isMenstruating,
+            isOilyOrAcneArea: state.qAnswers.isOilyOrAcneArea,
+            signatureDataUrl: finalSigUrl,
+            signatureUpdated: sigHasStroke
+          }
+        });
+        if (res && res.cid) state.portalCid = res.cid;
+        state.isEditingConsultation = false;
+        showToast(existingCons ? "問卷修改已儲存並完整留存異動紀錄！" : "問卷與諮詢同意書已送出，感謝您的填寫！");
+        await reloadCustomerPortalData();
       } catch (err) {
         showToast(err.message || "送出失敗", true);
       } finally {
@@ -3382,7 +3669,7 @@
     }
 
     function esc(str) {
-      return String(str === null || str === undefined ? "" : str)
+      return String(str || "")
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -3390,9 +3677,7 @@
     }
 
     function escJs(str) {
-      return String(str === null || str === undefined ? "" : str)
-        .replace(/\\/g, "\\\\")
-        .replace(/'/g, "\\'");
+      return String(str || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
     }
   </script>
 </body>
