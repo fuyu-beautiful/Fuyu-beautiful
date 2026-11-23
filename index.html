@@ -530,7 +530,7 @@
       </div>
     </section>
 
-    <!-- ---------- 分頁 2：會員資料（美化升級） ---------- -->
+    <!-- ---------- 分頁 2：會員資料 ---------- -->
     <section id="tab-customers" class="space-y-4 hidden">
       <div class="glass-card rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-[#fffdfb] to-[#faf3ec] space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -560,9 +560,8 @@
       <div id="customersListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
     </section>
 
-    <!-- ---------- 分頁 3：優惠券管理（美化＋固定自動發放規則設定） ---------- -->
+    <!-- ---------- 分頁 3：優惠券管理 ---------- -->
     <section id="tab-coupons" class="space-y-4 hidden">
-      <!-- 頂部統計與操作卡 -->
       <div class="glass-card rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-[#fffdfb] to-[#faf2ea]">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
@@ -590,7 +589,6 @@
         </div>
       </div>
 
-      <!-- 固定自動發放規則設定區 -->
       <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-3">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2">
@@ -603,7 +601,6 @@
         <div id="couponRulesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
       </div>
 
-      <!-- 優惠券發放與核銷明細 -->
       <div class="glass-card rounded-3xl p-4 sm:p-5">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
           <h3 class="text-sm font-extrabold text-[#33241d]">📋 優惠券擁有名單與使用紀錄</h3>
@@ -622,9 +619,8 @@
       </div>
     </section>
 
-    <!-- ---------- 分頁 4：帳務與儲值（清晰三頁籤分流＋美化） ---------- -->
+    <!-- ---------- 分頁 4：帳務與儲值 ---------- -->
     <section id="tab-finance" class="space-y-4 hidden">
-      <!-- 頂部月份篩選與 4 張財務概覽 -->
       <div class="glass-card rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-[#fffdfb] to-[#faf3ec] space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -657,7 +653,6 @@
         </div>
       </div>
 
-      <!-- 清晰分流子頁籤：收入明細 / 支出明細 / 儲值金紀錄 -->
       <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#f0e5da]">
           <div class="flex flex-wrap items-center gap-2">
@@ -674,12 +669,10 @@
           <input type="text" id="financeSearchInput" oninput="renderFinanceTab()" placeholder="搜尋會員或項目說明..." class="px-3 py-1.5 rounded-xl border border-[#decbb9] text-xs bg-white w-full sm:w-52" />
         </div>
 
-        <!-- 子頁籤 A：收入明細 -->
         <div id="finSubPanel-income" class="space-y-2.5">
           <div id="incomeListContainer" class="space-y-2"></div>
         </div>
 
-        <!-- 子頁籤 B：支出明細 -->
         <div id="finSubPanel-expense" class="space-y-3 hidden">
           <form onsubmit="handleAddExpense(event)" class="p-3.5 rounded-2xl bg-[#fcf8f4] border border-[#ebd9c7] grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
             <input type="date" id="exp_date" required class="sm:col-span-3 px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
@@ -697,7 +690,6 @@
           <div id="expensesListContainer" class="space-y-2"></div>
         </div>
 
-        <!-- 子頁籤 C：儲值金紀錄 -->
         <div id="finSubPanel-topup" class="space-y-2.5">
           <div id="transactionsListContainer" class="space-y-2"></div>
         </div>
@@ -755,7 +747,7 @@
     <div id="reminderModalContent" class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl max-h-[85vh] overflow-y-auto"></div>
   </div>
 
-  <!-- ==================== 彈窗 1：完成結算（選擇付款方式、是否使用優惠券、確認金額） ==================== -->
+  <!-- ==================== 彈窗 1：完成結算 ==================== -->
   <div id="settleModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-xl">
       <div class="flex items-center justify-between mb-3">
@@ -790,12 +782,12 @@
             <option value="扣儲值金">💳 扣儲值金</option>
             <option value="三堂套票">🎫 三堂套票</option>
           </select>
-          <p id="st_memberBalanceHint" class="hidden text-[11px] text-[#8c5e43] font-bold mt-1"></p>
+          <p id="st_memberBalanceHint" class="hidden text-[11px] font-bold mt-1"></p>
         </div>
 
         <div>
           <label class="block font-bold text-[#4a382f] mb-1">實收結算金額 ($) *</label>
-          <input type="number" id="st_finalPrice" required min="0" class="w-full px-3 py-2.5 rounded-xl border border-[#decbb9] bg-white text-base font-extrabold text-[#8c5e43]" />
+          <input type="number" id="st_finalPrice" required min="0" oninput="onSettlePayMethodChange()" class="w-full px-3 py-2.5 rounded-xl border border-[#decbb9] bg-white text-base font-extrabold text-[#8c5e43]" />
         </div>
 
         <div>
@@ -811,7 +803,7 @@
     </div>
   </div>
 
-  <!-- ==================== 彈窗 2：簡潔版新增／編輯預約（含會員即時搜尋） ==================== -->
+  <!-- ==================== 彈窗 2：簡潔版新增／編輯預約 ==================== -->
   <div id="bookingModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 overflow-y-auto hidden">
     <div class="bg-white rounded-3xl max-w-lg w-full p-5 shadow-xl my-8 max-h-[92vh] overflow-y-auto">
       <div class="flex items-center justify-between mb-3">
@@ -824,7 +816,6 @@
       <form onsubmit="handleSaveBooking(event)" class="space-y-3.5 text-xs">
         <input type="hidden" id="bk_id" />
 
-        <!-- 會員即時搜尋＋下拉選擇列 -->
         <div class="p-3 rounded-2xl bg-[#faf6f2] border border-[#eadbc9] space-y-2">
           <div class="flex items-center justify-between">
             <label class="font-extrabold text-[#4a382f]">🔍 搜尋並選擇會員</label>
@@ -841,7 +832,6 @@
           </div>
         </div>
 
-        <!-- 日期與時間列 -->
         <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">預約日期 *</label>
@@ -857,7 +847,6 @@
           </div>
         </div>
 
-        <!-- 仿客戶端大分類膠囊 -> 點選細項加入 -> 已選清單 -->
         <div class="p-3.5 rounded-2xl bg-[#fcf9f5] border border-[#ebd9c8] space-y-2.5">
           <div class="flex items-center justify-between">
             <span class="font-extrabold text-[#33241d]">快速挑選服務／產品項目</span>
@@ -873,7 +862,6 @@
           </div>
         </div>
 
-        <!-- 項目名稱與金額 -->
         <div class="grid grid-cols-3 gap-2">
           <div class="col-span-2">
             <label class="block font-bold text-[#4a382f] mb-1">預約項目摘要 *</label>
@@ -1293,7 +1281,11 @@
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      if (data && data.error) throw new Error(data.error);
+      if (data && (data.ok === false || data.error)) {
+        const err = new Error(data.error || "操作失敗");
+        err.code = data.code || "API_ERROR";
+        throw err;
+      }
       return data;
     }
 
@@ -1327,8 +1319,10 @@
           setLoading(true, "載入後台資料中...");
           await loginWithPassword(savedPass);
           return;
-        } catch (_) {
-          sessionStorage.removeItem("fuyu_admin_pass");
+        } catch (err) {
+          if (err && err.code === "AUTH_FAILED") {
+            sessionStorage.removeItem("fuyu_admin_pass");
+          }
         } finally {
           setLoading(false);
         }
@@ -1761,7 +1755,7 @@
       }
     }
 
-    /* ==================== 完成結算彈窗（付款方式、是否使用優惠券、確認金額） ==================== */
+    /* ==================== 完成結算彈窗 ==================== */
     function openSettleModal(bookingId) {
       const b = state.bookings.find(x => String(x.id) === String(bookingId));
       if (!b) return;
@@ -1777,7 +1771,6 @@
       const defaultPay = ["現金", "轉帳", "扣儲值金", "三堂套票"].indexOf(b.payMethod) !== -1 ? b.payMethod : "現金";
       document.getElementById("st_payMethod").value = defaultPay;
 
-      // 帶入該會員可用優惠券
       const coupSel = document.getElementById("st_couponId");
       const availCoupons = b.customerId
         ? state.coupons.filter(cp => cp.status === "可使用" && String(cp.customerId) === String(b.customerId))
@@ -1801,6 +1794,7 @@
       const cp = couponId ? state.coupons.find(x => String(x.couponId) === String(couponId)) : null;
       const discount = cp ? safeNumber(cp.discountAmount, 0) : 0;
       document.getElementById("st_finalPrice").value = Math.max(0, basePrice - discount);
+      onSettlePayMethodChange();
     }
 
     function onSettlePayMethodChange() {
@@ -1809,12 +1803,21 @@
       const bkId = document.getElementById("st_bookingId").value;
       const b = state.bookings.find(x => String(x.id) === String(bkId));
       const cust = b && b.customerId ? state.customers.find(c => String(c.id) === String(b.customerId)) : null;
+      const finalPrice = safeNumber(document.getElementById("st_finalPrice").value, 0);
 
       if (method === "扣儲值金") {
         hint.classList.remove("hidden");
         if (cust) {
-          hint.textContent = `會員「${cust.name}」目前儲值金餘額：$${safeNumber(cust.balance, 0).toLocaleString()}（確認結算將自動扣除實收金額）`;
+          const bal = safeNumber(cust.balance, 0);
+          if (bal < finalPrice) {
+            hint.className = "text-[11px] font-bold mt-1 text-[#b42318]";
+            hint.textContent = `⚠️ 餘額不足！會員「${cust.name}」目前餘額 $${bal.toLocaleString()}，需扣 $${finalPrice.toLocaleString()}`;
+          } else {
+            hint.className = "text-[11px] font-bold mt-1 text-[#8c5e43]";
+            hint.textContent = `會員「${cust.name}」目前儲值金餘額：$${bal.toLocaleString()}（確認結算將自動扣除實收金額）`;
+          }
         } else {
+          hint.className = "text-[11px] font-bold mt-1 text-[#b42318]";
           hint.textContent = "⚠️ 此筆為非會員散客，無法扣儲值金";
         }
       } else {
@@ -1824,16 +1827,29 @@
 
     async function handleConfirmSettle(e) {
       e.preventDefault();
+      const bkId = document.getElementById("st_bookingId").value;
+      const method = document.getElementById("st_payMethod").value;
+      const finalPrice = safeNumber(document.getElementById("st_finalPrice").value, 0);
+      const b = state.bookings.find(x => String(x.id) === String(bkId));
+      const cust = b && b.customerId ? state.customers.find(c => String(c.id) === String(b.customerId)) : null;
+
+      if (method === "扣儲值金") {
+        if (!cust) return showToast("非會員散客無法使用扣儲值金", true);
+        if (safeNumber(cust.balance, 0) < finalPrice) {
+          return showToast(`儲值金餘額不足（目前 $${safeNumber(cust.balance, 0).toLocaleString()}）`, true);
+        }
+      }
+
       try {
         setLoading(true, "辦理結算與核銷中...");
         const snap = await apiPost({
           action: "settleBookingAdmin",
           password: state.adminPassword,
           payload: {
-            bookingId: document.getElementById("st_bookingId").value,
-            payMethod: document.getElementById("st_payMethod").value,
+            bookingId: bkId,
+            payMethod: method,
             usedCouponId: document.getElementById("st_couponId").value,
-            finalPrice: safeNumber(document.getElementById("st_finalPrice").value, 0),
+            finalPrice,
             note: document.getElementById("st_note").value.trim()
           }
         });
@@ -1847,7 +1863,7 @@
       }
     }
 
-    /* ==================== 簡潔版新增／編輯預約彈窗（含會員即時搜尋） ==================== */
+    /* ==================== 簡潔版新增／編輯預約彈窗 ==================== */
     function openBookingModal(prefillDate = null, prefillCustomerId = "") {
       document.getElementById("bk_id").value = "";
       document.getElementById("bookingModalTitle").textContent = "新增預約";
@@ -1871,7 +1887,7 @@
       state.selectedAdminBookingServiceIds = [];
       state.activeAdminBookingCategory = "";
 
-      populateBookingModalSelects(cust ? cust.id : "", "");
+      populateBookingModalSelects(cust ? cust.id : "", "", false);
       renderAdminBookingCategoryPicker();
       recalcAdminBookingFromSelectedItems(false);
       document.getElementById("bookingModal").classList.remove("hidden");
@@ -1904,7 +1920,7 @@
       state.selectedAdminBookingServiceIds = matchedIds;
       state.activeAdminBookingCategory = "";
 
-      populateBookingModalSelects(b.customerId, b.usedCouponId);
+      populateBookingModalSelects(b.customerId, b.usedCouponId, true);
       renderAdminBookingCategoryPicker();
       checkBookingBlockedConflict();
       document.getElementById("bookingModal").classList.remove("hidden");
@@ -1914,7 +1930,7 @@
       document.getElementById("bookingModal").classList.add("hidden");
     }
 
-    function filterBookingCustomerSelect(keepCustomerId = null) {
+    function filterBookingCustomerSelect(keepCustomerId = null, autoFillName = true) {
       const q = (document.getElementById("bk_memberSearch").value || "").trim().toLowerCase();
       const custSel = document.getElementById("bk_customerId");
       const currentVal = keepCustomerId !== null ? keepCustomerId : custSel.value;
@@ -1928,21 +1944,23 @@
         `<option value="${esc(c.id)}" ${String(c.id) === String(currentVal) ? "selected" : ""}>${esc(c.name)}${c.lineDisplayName ? `（${esc(c.lineDisplayName)}）` : ""}${c.contact ? ` · ${esc(c.contact)}` : ""}</option>`
       ).join("");
 
-      // 若搜尋只精準剩 1 位會員，自動選取並帶入姓名
-      if (q && list.length === 1) {
+      if (q && list.length === 1 && autoFillName) {
         custSel.value = list[0].id;
         onBookingCustomerChange();
       }
     }
 
-    function populateBookingModalSelects(selectedCustId, selectedCouponId) {
-      filterBookingCustomerSelect(selectedCustId);
+    function populateBookingModalSelects(selectedCustId, selectedCouponId, isEditing = false) {
+      filterBookingCustomerSelect(selectedCustId, !isEditing);
       refreshBookingCouponSelect(selectedCustId, selectedCouponId);
     }
 
     function refreshBookingCouponSelect(custId, selectedCouponId = "") {
       const coupSel = document.getElementById("bk_usedCouponId");
-      const avail = state.coupons.filter(cp => cp.status === "可使用" && (!custId || String(cp.customerId) === String(custId)));
+      const avail = state.coupons.filter(cp =>
+        (cp.status === "可使用" || (selectedCouponId && String(cp.couponId) === String(selectedCouponId))) &&
+        (!custId || String(cp.customerId) === String(custId))
+      );
       coupSel.innerHTML = `<option value="">不使用</option>` + avail.map(cp =>
         `<option value="${esc(cp.couponId)}" ${String(cp.couponId) === String(selectedCouponId) ? "selected" : ""}>${esc(cp.title)} (-$${safeNumber(cp.discountAmount, 0)})</option>`
       ).join("");
@@ -2094,6 +2112,10 @@
     function checkBookingBlockedConflict() {
       const alertBox = document.getElementById("bk_blockedConflictAlert");
       const dateStr = document.getElementById("bk_date").value;
+      if (!dateStr) {
+        alertBox.classList.add("hidden");
+        return;
+      }
       const startMin = timeToMinutes(document.getElementById("bk_startTime").value);
       const endMin = timeToMinutes(document.getElementById("bk_endTime").value);
 
@@ -2171,7 +2193,7 @@
       }
     }
 
-    /* ==================== 分頁 2：會員資料（美化升級） ==================== */
+    /* ==================== 分頁 2：會員資料 ==================== */
     function renderCustomersTab() {
       const q = (document.getElementById("customerSearchInput").value || "").trim().toLowerCase();
       const filter = document.getElementById("customerFilterSelect").value;
@@ -2427,9 +2449,9 @@
 
         <div class="flex flex-wrap gap-2">
           <button onclick="closeCustomerDetailModal(); openBookingModal(null, '${escJs(c.id)}');" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold btn-primary">📅 幫此會員新增預約</button>
-          <button onclick="openTopUpModal('${escJs(c.id)}', 'add')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#f3ece5] text-[#5c4638]">+ 儲值入帳</button>
-          <button onclick="openTopUpModal('${escJs(c.id)}', 'refund')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#fdf2f2] text-[#b42318]">退儲值金</button>
-          <button onclick="openTopUpModal('${escJs(c.id)}', 'transfer')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#f3ece5] text-[#5c4638]">轉移儲值金</button>
+          <button onclick="openTopUpModal('${escJs(c.id)}', 'add')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#f3ece5] text-[#5c4638]">+ 儲值入帳</button>
+          <button onclick="openTopUpModal('${escJs(c.id)}', 'refund')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#fdf2f2] text-[#b42318]">退儲值金</button>
+          <button onclick="openTopUpModal('${escJs(c.id)}', 'transfer')" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#f3ece5] text-[#5c4638]">轉移儲值金</button>
         </div>
       `;
 
@@ -2983,7 +3005,7 @@
       }
     }
 
-    /* ==================== 分頁 4：帳務與儲值（清晰三頁籤分流＋美化） ==================== */
+    /* ==================== 分頁 4：帳務與儲值 ==================== */
     function switchFinanceSubTab(sub) {
       state.financeSubTab = sub;
       ["income", "expense", "topup"].forEach(k => {
@@ -3010,7 +3032,6 @@
       document.getElementById("finMonthNet").textContent = `$${(monthRev - monthExpSum).toLocaleString()}`;
       document.getElementById("finTotalBalance").textContent = `$${totalBal.toLocaleString()}`;
 
-      // 1. 收入明細（當月已完成結算的預約）
       const filteredIncomes = completedBks
         .filter(b => !q || `${b.customerName} ${b.service} ${b.payMethod}`.toLowerCase().includes(q))
         .sort((a, b) => `${b.date} ${b.startTime}`.localeCompare(`${a.date} ${a.startTime}`));
@@ -3043,7 +3064,6 @@
         }).join("");
       }
 
-      // 2. 支出明細
       const filteredExps = monthExps.filter(ex => !q || `${ex.category} ${ex.note}`.toLowerCase().includes(q));
       const expBox = document.getElementById("expensesListContainer");
       if (filteredExps.length === 0) {
@@ -3066,7 +3086,6 @@
         `).join("");
       }
 
-      // 3. 儲值金紀錄
       const filteredTxs = state.transactions.filter(tx => !q || `${tx.customerName} ${tx.type} ${tx.note}`.toLowerCase().includes(q));
       const txBox = document.getElementById("transactionsListContainer");
       if (filteredTxs.length === 0) {
@@ -3136,7 +3155,7 @@
       }
     }
 
-    /* ==================== 分頁 5：管理（服務與產品 / 禁約時段） ==================== */
+    /* ==================== 分頁 5：管理 ==================== */
     function selectCatalogCategory(catName) {
       state.selectedCatalogCategory = catName;
       renderCatalogTab();
@@ -3539,7 +3558,6 @@
           }
         `;
 
-        // 區分「進行中／即將到來」與「已完成的過去預約紀錄」
         const allBookings = data.bookings || [];
         const upcomingBookings = allBookings.filter(b => b.status !== "已完成" && b.status !== "取消");
         const pastBookings = allBookings.filter(b => b.status === "已完成" || b.status === "取消");
@@ -4004,6 +4022,11 @@
 
       const dateStr = document.getElementById("cb_date").value;
       const startStr = document.getElementById("cb_startTime").value || "11:00";
+      if (!dateStr || !/^\d{2}:\d{2}$/.test(startStr)) {
+        banner.classList.add("hidden");
+        return true;
+      }
+
       const catalog = state.portalData.catalog || [];
       const selectedItems = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
       const dur = selectedItems.reduce((s, i) => s + safeNumber(i.duration, 0), 0) || 60;
