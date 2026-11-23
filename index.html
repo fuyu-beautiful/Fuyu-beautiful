@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-  <title>營運帳務與儲值中心</title>
+  <title>完整預約排程・營運帳務與儲值中心</title>
   <style>
     :root {
       --bg: #f4f5f7;
@@ -14,7 +14,6 @@
       --income: #dc2626;   /* 紅色：收入 / 正向 */
       --expense: #16a34a;  /* 綠色：支出 / 成本 */
       --primary: #1d4ed8;
-      --primary-soft: #eff6ff;
     }
 
     * { box-sizing: border-box; }
@@ -28,15 +27,15 @@
       line-height: 1.5;
     }
 
-    /* 防止 LINE 內建瀏覽器 / LIFF 頂部標題列、底部操作列或懸浮按鈕遮擋 */
+    /* 完整預留 LINE 內建瀏覽器 / LIFF 頂部、左右與底部安全邊距 */
     .page-wrap {
-      max-width: 1120px;
+      max-width: 1180px;
       margin: 0 auto;
       padding:
         calc(16px + env(safe-area-inset-top))
-        14px
-        calc(104px + env(safe-area-inset-bottom))
-        14px;
+        calc(16px + env(safe-area-inset-right))
+        calc(112px + env(safe-area-inset-bottom))
+        calc(16px + env(safe-area-inset-left));
     }
 
     .topbar {
@@ -52,17 +51,8 @@
       gap: 12px;
     }
 
-    .topbar-title {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 800;
-    }
-
-    .topbar-sub {
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 2px;
-    }
+    .topbar-title { margin: 0; font-size: 20px; font-weight: 800; }
+    .topbar-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
 
     .controls-row {
       display: flex;
@@ -118,11 +108,7 @@
       margin-bottom: 12px;
     }
 
-    .card-title {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 700;
-    }
+    .card-title { margin: 0; font-size: 16px; font-weight: 700; }
 
     .kpi-grid {
       display: grid;
@@ -144,9 +130,20 @@
     .amt-income { color: var(--income); font-weight: 700; }
     .amt-expense { color: var(--expense); font-weight: 700; }
 
+    .bar-track {
+      height: 8px;
+      background: #f3f4f6;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 4px;
+      min-width: 90px;
+    }
+    .bar-fill-inc { height: 100%; background: var(--income); }
+    .bar-fill-exp { height: 100%; background: var(--expense); }
+
     .form-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
       gap: 10px;
     }
 
@@ -192,11 +189,10 @@
     .btn-expense { background: var(--expense); border-color: var(--expense); color: #fff; }
     .btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 8px; }
 
-    /* 會員卡片：避免被 LINE 邊緣或操作按鈕擠壓/遮擋 */
     .member-card {
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 12px;
+      padding: 12px 14px;
       margin-bottom: 10px;
       display: flex;
       flex-wrap: wrap;
@@ -209,7 +205,7 @@
     .member-main {
       flex: 1 1 220px;
       min-width: 0;
-      padding-right: 6px;
+      padding-right: 12px;
     }
 
     .member-name {
@@ -241,7 +237,7 @@
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 620px;
+      min-width: 720px;
       font-size: 13px;
     }
 
@@ -268,9 +264,9 @@
     .toast {
       position: fixed;
       left: 50%;
-      bottom: calc(24px + env(safe-area-inset-bottom));
+      bottom: calc(28px + env(safe-area-inset-bottom));
       transform: translateX(-50%);
-      background: rgba(17, 24, 39, 0.92);
+      background: rgba(17, 24, 39, 0.94);
       color: #fff;
       padding: 10px 16px;
       border-radius: 999px;
@@ -287,24 +283,155 @@
   <div class="page-wrap">
     <header class="topbar">
       <div>
-        <h1 class="topbar-title">營運帳務與儲值中心</h1>
-        <div class="topbar-sub">月來客數・年分析・會員儲值・優惠券自動發放（收入紅 / 支出綠）</div>
+        <h1 class="topbar-title">完整預約排程・營運帳務與儲值中心</h1>
+        <div class="topbar-sub">預約排程・完成計客・月來客數・年分析・會員儲值・優惠券（收入紅 / 支出綠）</div>
       </div>
       <div class="controls-row">
-        <input type="month" id="ymInput" value="2026-11" onchange="refreshDashboard()" />
-        <button class="btn btn-sm" onclick="refreshDashboard()">重新整理</button>
+        <label style="font-size:12px;color:var(--muted);">月份：</label>
+        <input type="month" id="ymInput" value="2026-11" onchange="syncYearFromYmAndRefresh()" />
+        <label style="font-size:12px;color:var(--muted);">年分析：</label>
+        <select id="yearInput" onchange="refreshSystem()" style="padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:#fff;">
+          <option value="2025">2025</option>
+          <option value="2026" selected>2026</option>
+          <option value="2027">2027</option>
+        </select>
+        <button class="btn btn-sm" onclick="refreshSystem()">重新整理</button>
       </div>
     </header>
 
     <nav class="tabs">
-      <button class="tab-btn active" data-tab="analyticsTab" onclick="switchTab('analyticsTab', this)">月來客數 & 年分析</button>
+      <button class="tab-btn active" data-tab="bookingsTab" onclick="switchTab('bookingsTab', this)">預約排程</button>
+      <button class="tab-btn" data-tab="analyticsTab" onclick="switchTab('analyticsTab', this)">月來客數 & 年分析</button>
       <button class="tab-btn" data-tab="membersTab" onclick="switchTab('membersTab', this)">會員與儲值</button>
-      <button class="tab-btn" data-tab="ordersTab" onclick="switchTab('ordersTab', this)">服務訂單與帳務</button>
+      <button class="tab-btn" data-tab="financeTab" onclick="switchTab('financeTab', this)">營運帳務</button>
       <button class="tab-btn" data-tab="couponsTab" onclick="switchTab('couponsTab', this)">優惠券管理</button>
     </nav>
 
-    <!-- 1. 月來客數 & 年分析 -->
-    <section id="analyticsTab" class="tab-panel active">
+    <!-- 1. 完整預約排程 -->
+    <section id="bookingsTab" class="tab-panel active">
+      <div class="card">
+        <h2 class="card-title">新增預約排程</h2>
+        <form id="addBookingForm" onsubmit="handleCreateBooking(event)" class="form-grid">
+          <div class="field">
+            <label>選擇會員</label>
+            <select id="bMemberSelect" onchange="syncBookingMember()">
+              <option value="">-- 非會員 / 手動輸入 --</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>客人姓名 *</label>
+            <input type="text" id="bCustomerName" required placeholder="客人姓名" />
+          </div>
+          <div class="field">
+            <label>服務人員</label>
+            <input type="text" id="bStaff" value="ruby" />
+          </div>
+          <div class="field">
+            <label>服務項目</label>
+            <select id="bServiceSelect" onchange="syncServiceDefaults()"></select>
+          </div>
+          <div class="field">
+            <label>預約日期 *</label>
+            <input type="date" id="bDate" required />
+          </div>
+          <div class="field">
+            <label>開始時間</label>
+            <input type="time" id="bStartTime" value="10:00" />
+          </div>
+          <div class="field">
+            <label>時長（分鐘）</label>
+            <input type="number" id="bDuration" min="10" step="5" value="60" />
+          </div>
+          <div class="field">
+            <label>金額（元）</label>
+            <input type="number" id="bAmount" min="0" step="1" value="1600" />
+          </div>
+          <div class="field">
+            <label>付款方式</label>
+            <select id="bPayMethod">
+              <option value="現金">現金</option>
+              <option value="轉帳">轉帳</option>
+              <option value="儲值扣款">儲值扣款</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>預約狀態</label>
+            <select id="bStatus">
+              <option value="預約中">預約中</option>
+              <option value="已完成">已完成（立即增加來客數）</option>
+              <option value="已取消">已取消</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>備註</label>
+            <input type="text" id="bNote" placeholder="療程備註" />
+          </div>
+          <div class="field" style="display:flex; align-items:flex-end;">
+            <button type="submit" class="btn btn-primary" id="addBookingBtn" style="width:100%;">建立預約</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">預約清單（按「完成」會立即增加該客人與當月來客數）</h2>
+          <input type="date" id="bookingFilterDate" onchange="renderBookings()" style="padding:7px 10px;border:1px solid var(--border);border-radius:10px;background:#fff;" />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>時段</th>
+                <th>客人</th>
+                <th>服務人員</th>
+                <th>服務項目</th>
+                <th>金額 / 付款</th>
+                <th>狀態</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="bookingsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">客戶不可預約日期設定</h2>
+        <form id="addBlackoutForm" onsubmit="handleAddBlackout(event)" class="form-grid" style="margin-bottom:10px;">
+          <div class="field">
+            <label>客人姓名 *</label>
+            <input type="text" id="blName" required placeholder="客人姓名" />
+          </div>
+          <div class="field">
+            <label>不可預約日期 *</label>
+            <input type="date" id="blDate" required />
+          </div>
+          <div class="field">
+            <label>原因說明</label>
+            <input type="text" id="blReason" placeholder="例如：出國 / 生理期 / 保留時段" />
+          </div>
+          <div class="field" style="display:flex; align-items:flex-end;">
+            <button type="submit" class="btn btn-primary" id="addBlackoutBtn" style="width:100%;">加入不可預約日</button>
+          </div>
+        </form>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>客人</th>
+                <th>原因</th>
+              </tr>
+            </thead>
+            <tbody id="blackoutTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 月來客數 & 年分析 -->
+    <section id="analyticsTab" class="tab-panel">
       <div class="card">
         <div class="card-header">
           <h2 class="card-title" id="monthCardTitle">本月營運與來客數</h2>
@@ -313,7 +440,7 @@
           <div class="kpi-card">
             <div class="kpi-label">本月總來客數</div>
             <div class="kpi-num" id="mTotalVisits">0 次</div>
-            <div class="kpi-hint">依已完成訂單計算</div>
+            <div class="kpi-hint">依已完成預約計算</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">本月不重複客數</div>
@@ -323,17 +450,14 @@
           <div class="kpi-card">
             <div class="kpi-label">本月收入</div>
             <div class="kpi-num amt-income" id="mIncome">$0</div>
-            <div class="kpi-hint">含儲值入帳/服務營收</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">本月支出</div>
             <div class="kpi-num amt-expense" id="mExpense">$0</div>
-            <div class="kpi-hint">含耗材/扣款支出</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">本月淨額</div>
             <div class="kpi-num" id="mNet">$0</div>
-            <div class="kpi-hint">收入 − 支出</div>
           </div>
         </div>
       </div>
@@ -364,7 +488,7 @@
             <div class="kpi-num" id="yAov">$0</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">目前全館儲值水位</div>
+            <div class="kpi-label">全館儲值水位</div>
             <div class="kpi-num amt-income" id="allStoredBalance">$0</div>
           </div>
         </div>
@@ -379,7 +503,7 @@
                 <th>收入（紅）</th>
                 <th>支出（綠）</th>
                 <th>淨額</th>
-                <th>已完成訂單金額</th>
+                <th>收支比例條</th>
               </tr>
             </thead>
             <tbody id="monthlyTableBody"></tbody>
@@ -388,7 +512,7 @@
       </div>
     </section>
 
-    <!-- 2. 會員與儲值 -->
+    <!-- 3. 會員與儲值 -->
     <section id="membersTab" class="tab-panel">
       <div class="card">
         <h2 class="card-title">新增會員</h2>
@@ -428,77 +552,10 @@
       </div>
     </section>
 
-    <!-- 3. 服務訂單與帳務 -->
-    <section id="ordersTab" class="tab-panel">
+    <!-- 4. 營運帳務 -->
+    <section id="financeTab" class="tab-panel">
       <div class="card">
-        <h2 class="card-title">新增服務訂單</h2>
-        <form id="addOrderForm" onsubmit="handleAddOrder(event)" class="form-grid">
-          <div class="field">
-            <label>選擇會員</label>
-            <select id="oMemberSelect" onchange="syncOrderMemberName()">
-              <option value="">-- 非會員 / 手動輸入 --</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>客人姓名 *</label>
-            <input type="text" id="oMemberName" required placeholder="客人姓名" />
-          </div>
-          <div class="field">
-            <label>服務項目 *</label>
-            <input type="text" id="oServiceName" required placeholder="例：熱蠟 / 冰肌" />
-          </div>
-          <div class="field">
-            <label>服務日期 *</label>
-            <input type="date" id="oServiceDate" required />
-          </div>
-          <div class="field">
-            <label>金額（元）</label>
-            <input type="number" id="oAmount" min="0" step="1" value="1500" />
-          </div>
-          <div class="field">
-            <label>付款方式</label>
-            <select id="oPayMethod">
-              <option value="現金">現金</option>
-              <option value="轉帳">轉帳</option>
-              <option value="儲值扣款">儲值扣款</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>訂單狀態</label>
-            <select id="oStatus">
-              <option value="已完成">已完成（立即計入來客數）</option>
-              <option value="預約中">預約中</option>
-              <option value="已取消">已取消</option>
-            </select>
-          </div>
-          <div class="field" style="display:flex; align-items:flex-end;">
-            <button type="submit" class="btn btn-primary" id="addOrderBtn" style="width:100%;">建立訂單</button>
-          </div>
-        </form>
-      </div>
-
-      <div class="card">
-        <h2 class="card-title">訂單紀錄（點選「完成」立即增加來客數）</h2>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>日期</th>
-                <th>客人</th>
-                <th>服務項目</th>
-                <th>金額</th>
-                <th>付款方式</th>
-                <th>狀態</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody id="ordersTableBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2 class="card-title">帳務收支明細</h2>
+        <h2 class="card-title">新增帳務收支</h2>
         <form id="addTxForm" onsubmit="handleAddTx(event)" class="form-grid" style="margin-bottom: 12px;">
           <div class="field">
             <label>類型</label>
@@ -546,7 +603,7 @@
       </div>
     </section>
 
-    <!-- 4. 優惠券管理 -->
+    <!-- 5. 優惠券管理 -->
     <section id="couponsTab" class="tab-panel">
       <div class="card">
         <div class="card-header">
@@ -599,6 +656,7 @@
                 <th>券名</th>
                 <th>金額</th>
                 <th>狀態</th>
+                <th>操作</th>
                 <th>鎖定條件</th>
               </tr>
             </thead>
@@ -613,8 +671,10 @@
 
   <script>
     let STATE = {
+      services: [],
+      blackouts: [],
       members: [],
-      orders: [],
+      bookings: [],
       transactions: [],
       issuedCoupons: [],
       anniversaryRule: null
@@ -691,14 +751,25 @@
       const today = `${y}-${m}-${d}`;
       const ymInput = document.getElementById('ymInput');
       if (!ymInput.value) ymInput.value = `${y}-${m}`;
-      document.getElementById('oServiceDate').value = today;
+      document.getElementById('yearInput').value = String(y);
+      document.getElementById('bDate').value = today;
+      document.getElementById('blDate').value = today;
       document.getElementById('tDate').value = today;
     }
 
-    async function refreshDashboard() {
+    async function syncYearFromYmAndRefresh() {
       const ym = document.getElementById('ymInput').value;
+      if (/^\d{4}-\d{2}$/.test(ym)) {
+        document.getElementById('yearInput').value = ym.slice(0, 4);
+      }
+      await refreshSystem();
+    }
+
+    async function refreshSystem() {
+      const ym = document.getElementById('ymInput').value;
+      const yr = document.getElementById('yearInput').value;
       try {
-        const data = await callServer('getDashboardData', ym);
+        const data = await callServer('getSystemData', ym, yr);
         STATE = data;
         renderAll();
       } catch (err) {
@@ -707,12 +778,149 @@
     }
 
     function renderAll() {
+      renderServiceOptions();
+      renderMemberSelect();
+      renderBookings();
+      renderBlackouts();
       renderAnalytics();
       renderMembers();
-      renderMemberSelect();
-      renderOrders();
       renderTransactions();
       renderCouponRuleAndList();
+    }
+
+    function renderServiceOptions() {
+      const sel = document.getElementById('bServiceSelect');
+      const prevVal = sel.value;
+      sel.innerHTML = STATE.services.map(s =>
+        `<option value="${escapeHtml(s.name)}" data-dur="${s.durationMin}" data-price="${s.price}">${escapeHtml(s.name)}（${s.durationMin}分 / ${fmtMoney(s.price)}）</option>`
+      ).join('');
+      if (prevVal) sel.value = prevVal;
+      if (!prevVal && STATE.services.length) syncServiceDefaults();
+    }
+
+    function syncServiceDefaults() {
+      const sel = document.getElementById('bServiceSelect');
+      const opt = sel.options[sel.selectedIndex];
+      if (!opt) return;
+      const dur = opt.getAttribute('data-dur');
+      const price = opt.getAttribute('data-price');
+      if (dur) document.getElementById('bDuration').value = dur;
+      if (price) document.getElementById('bAmount').value = price;
+    }
+
+    function renderMemberSelect() {
+      const sel = document.getElementById('bMemberSelect');
+      const prev = sel.value;
+      sel.innerHTML = '<option value="">-- 非會員 / 手動輸入 --</option>' +
+        STATE.members.map(m => `<option value="${escapeHtml(m.memberId)}">${escapeHtml(m.name)}（餘額 ${fmtMoney(m.balance)}）</option>`).join('');
+      if (prev) sel.value = prev;
+    }
+
+    function syncBookingMember() {
+      const memberId = document.getElementById('bMemberSelect').value;
+      const found = STATE.members.find(m => m.memberId === memberId);
+      if (found) document.getElementById('bCustomerName').value = found.name;
+    }
+
+    async function handleCreateBooking(e) {
+      e.preventDefault();
+      await runWithGuard('createBooking', 'addBookingBtn', '建立中...', async () => {
+        await callServer('createBooking', {
+          memberId: document.getElementById('bMemberSelect').value,
+          customerName: document.getElementById('bCustomerName').value.trim(),
+          staff: document.getElementById('bStaff').value.trim() || 'ruby',
+          serviceName: document.getElementById('bServiceSelect').value,
+          bookingDate: document.getElementById('bDate').value,
+          startTime: document.getElementById('bStartTime').value,
+          durationMin: Number(document.getElementById('bDuration').value || 60),
+          amount: Number(document.getElementById('bAmount').value || 0),
+          payMethod: document.getElementById('bPayMethod').value,
+          status: document.getElementById('bStatus').value,
+          note: document.getElementById('bNote').value.trim()
+        });
+        document.getElementById('bNote').value = '';
+        showToast('預約已建立');
+        await refreshSystem();
+      });
+    }
+
+    function renderBookings() {
+      const filterDate = document.getElementById('bookingFilterDate').value;
+      const list = STATE.bookings.filter(b => !filterDate || b.bookingDate === filterDate);
+      const tbody = document.getElementById('bookingsTableBody');
+
+      if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="8">尚無預約紀錄</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map(b => {
+        const badgeClass = b.status === '已完成'
+          ? 'badge-done'
+          : (b.status === '已取消' ? 'badge-cancel' : 'badge-pending');
+        return `
+          <tr>
+            <td>${escapeHtml(b.bookingDate)}</td>
+            <td>${escapeHtml(b.startTime)}${b.endTime ? ` - ${escapeHtml(b.endTime)}` : ''}</td>
+            <td><strong>${escapeHtml(b.customerName)}</strong></td>
+            <td>${escapeHtml(b.staff || 'ruby')}</td>
+            <td>${escapeHtml(b.serviceName)}</td>
+            <td><span class="amt-income">${fmtMoney(b.amount)}</span>（${escapeHtml(b.payMethod)}）</td>
+            <td><span class="badge ${badgeClass}">${escapeHtml(b.status)}</span></td>
+            <td>
+              ${b.status !== '已完成'
+                ? `<button class="btn btn-sm btn-primary" onclick="handleCompleteBooking('${escapeHtml(b.bookingId)}')">完成</button>`
+                : `<button class="btn btn-sm" onclick="handleRevertBooking('${escapeHtml(b.bookingId)}')">改回預約中</button>`}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function handleCompleteBooking(bookingId) {
+      await runWithGuard(`bk_${bookingId}`, null, '', async () => {
+        const res = await callServer('updateBookingStatus', bookingId, '已完成');
+        showToast(`已完成！該客人累計來客數現為 ${res.memberVisits} 次`);
+        await refreshSystem();
+      });
+    }
+
+    async function handleRevertBooking(bookingId) {
+      await runWithGuard(`bk_${bookingId}`, null, '', async () => {
+        await callServer('updateBookingStatus', bookingId, '預約中');
+        showToast('已改回預約中，來客數與帳務已同步回沖');
+        await refreshSystem();
+      });
+    }
+
+    async function handleAddBlackout(e) {
+      e.preventDefault();
+      await runWithGuard('addBlackout', 'addBlackoutBtn', '加入中...', async () => {
+        await callServer('addBlackoutDate', {
+          customerName: document.getElementById('blName').value.trim(),
+          blockedDate: document.getElementById('blDate').value,
+          reason: document.getElementById('blReason').value.trim()
+        });
+        document.getElementById('blName').value = '';
+        document.getElementById('blReason').value = '';
+        showToast('已新增不可預約日期');
+        await refreshSystem();
+      });
+    }
+
+    function renderBlackouts() {
+      const tbody = document.getElementById('blackoutTableBody');
+      if (!STATE.blackouts.length) {
+        tbody.innerHTML = '<tr><td colspan="3">尚無不可預約日期設定</td></tr>';
+        return;
+      }
+      tbody.innerHTML = STATE.blackouts.map(b => `
+        <tr>
+          <td>${escapeHtml(b.blockedDate)}</td>
+          <td>${escapeHtml(b.customerName)}</td>
+          <td>${escapeHtml(b.reason)}</td>
+        </tr>
+      `).join('');
     }
 
     function renderAnalytics() {
@@ -735,18 +943,25 @@
       document.getElementById('yAov').textContent = fmtMoney(year.avgOrderValue);
       document.getElementById('allStoredBalance').textContent = fmtMoney(totalStoredBalance);
 
-      const tbody = document.getElementById('monthlyTableBody');
-      tbody.innerHTML = year.monthlyBreakdown.map(row => `
-        <tr>
-          <td><strong>${escapeHtml(row.ym)}</strong></td>
-          <td>${row.visits} 次</td>
-          <td>${row.uniqueCustomers} 人</td>
-          <td class="amt-income">${fmtMoney(row.income)}</td>
-          <td class="amt-expense">${fmtMoney(row.expense)}</td>
-          <td class="${row.net >= 0 ? 'amt-income' : 'amt-expense'}">${fmtMoney(row.net)}</td>
-          <td>${fmtMoney(row.orderAmount)}</td>
-        </tr>
-      `).join('');
+      const maxVal = Math.max(1, ...year.monthlyBreakdown.map(r => Math.max(r.income, r.expense)));
+      document.getElementById('monthlyTableBody').innerHTML = year.monthlyBreakdown.map(row => {
+        const incPct = Math.min(100, Math.round((row.income / maxVal) * 100));
+        const expPct = Math.min(100, Math.round((row.expense / maxVal) * 100));
+        return `
+          <tr>
+            <td><strong>${escapeHtml(row.ym)}</strong></td>
+            <td>${row.visits} 次</td>
+            <td>${row.uniqueCustomers} 人</td>
+            <td class="amt-income">${fmtMoney(row.income)}</td>
+            <td class="amt-expense">${fmtMoney(row.expense)}</td>
+            <td class="${row.net >= 0 ? 'amt-income' : 'amt-expense'}">${fmtMoney(row.net)}</td>
+            <td>
+              <div class="bar-track"><div class="bar-fill-inc" style="width:${incPct}%"></div></div>
+              <div class="bar-track"><div class="bar-fill-exp" style="width:${expPct}%"></div></div>
+            </td>
+          </tr>
+        `;
+      }).join('');
     }
 
     function renderMembers() {
@@ -786,18 +1001,6 @@
       `).join('');
     }
 
-    function renderMemberSelect() {
-      const sel = document.getElementById('oMemberSelect');
-      sel.innerHTML = '<option value="">-- 非會員 / 手動輸入 --</option>' +
-        STATE.members.map(m => `<option value="${escapeHtml(m.memberId)}">${escapeHtml(m.name)}（餘額 ${fmtMoney(m.balance)}）</option>`).join('');
-    }
-
-    function syncOrderMemberName() {
-      const memberId = document.getElementById('oMemberSelect').value;
-      const found = STATE.members.find(m => m.memberId === memberId);
-      if (found) document.getElementById('oMemberName').value = found.name;
-    }
-
     async function handleAddMember(e) {
       e.preventDefault();
       await runWithGuard('addMember', 'addMemberBtn', '新增中...', async () => {
@@ -810,7 +1013,7 @@
         });
         document.getElementById('addMemberForm').reset();
         showToast('已新增會員');
-        await refreshDashboard();
+        await refreshSystem();
       });
     }
 
@@ -826,69 +1029,7 @@
       await runWithGuard(`bal_${memberId}_${Date.now()}`, null, '', async () => {
         const res = await callServer('adjustMemberBalance', { memberId, mode, amount });
         showToast(`${label}完成，目前餘額 ${fmtMoney(res.balance)}`);
-        await refreshDashboard();
-      });
-    }
-
-    async function handleAddOrder(e) {
-      e.preventDefault();
-      await runWithGuard('addOrder', 'addOrderBtn', '建立中...', async () => {
-        await callServer('createOrder', {
-          memberId: document.getElementById('oMemberSelect').value,
-          memberName: document.getElementById('oMemberName').value.trim(),
-          serviceName: document.getElementById('oServiceName').value.trim(),
-          serviceDate: document.getElementById('oServiceDate').value,
-          amount: Number(document.getElementById('oAmount').value || 0),
-          payMethod: document.getElementById('oPayMethod').value,
-          status: document.getElementById('oStatus').value
-        });
-        document.getElementById('oServiceName').value = '';
-        showToast('訂單已建立');
-        await refreshDashboard();
-      });
-    }
-
-    function renderOrders() {
-      const tbody = document.getElementById('ordersTableBody');
-      if (!STATE.orders.length) {
-        tbody.innerHTML = '<tr><td colspan="7">尚無訂單紀錄</td></tr>';
-        return;
-      }
-      tbody.innerHTML = STATE.orders.map(o => {
-        const badgeClass = o.status === '已完成'
-          ? 'badge-done'
-          : (o.status === '已取消' ? 'badge-cancel' : 'badge-pending');
-        return `
-          <tr>
-            <td>${escapeHtml(o.serviceDate)}</td>
-            <td>${escapeHtml(o.memberName)}</td>
-            <td>${escapeHtml(o.serviceName)}</td>
-            <td class="amt-income">${fmtMoney(o.amount)}</td>
-            <td>${escapeHtml(o.payMethod)}</td>
-            <td><span class="badge ${badgeClass}">${escapeHtml(o.status)}</span></td>
-            <td>
-              ${o.status !== '已完成'
-                ? `<button class="btn btn-sm btn-primary" onclick="handleCompleteOrder('${escapeHtml(o.orderId)}')">完成</button>`
-                : `<button class="btn btn-sm" onclick="handleRevertOrder('${escapeHtml(o.orderId)}')">改回預約中</button>`}
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    async function handleCompleteOrder(orderId) {
-      await runWithGuard(`ord_${orderId}`, null, '', async () => {
-        const res = await callServer('updateOrderStatus', orderId, '已完成');
-        showToast(`已完成！該客人累計來客數現為 ${res.memberVisits} 次`);
-        await refreshDashboard();
-      });
-    }
-
-    async function handleRevertOrder(orderId) {
-      await runWithGuard(`ord_${orderId}`, null, '', async () => {
-        await callServer('updateOrderStatus', orderId, '預約中');
-        showToast('訂單已改回預約中，來客數已同步重算');
-        await refreshDashboard();
+        await refreshSystem();
       });
     }
 
@@ -905,7 +1046,7 @@
         document.getElementById('tAmount').value = '';
         document.getElementById('tMemo').value = '';
         showToast('已新增帳務紀錄');
-        await refreshDashboard();
+        await refreshSystem();
       });
     }
 
@@ -942,7 +1083,7 @@
 
       const tbody = document.getElementById('issuedCouponsBody');
       if (!STATE.issuedCoupons.length) {
-        tbody.innerHTML = '<tr><td colspan="7">尚無已發放優惠券</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8">尚無已發放優惠券</td></tr>';
         return;
       }
       tbody.innerHTML = STATE.issuedCoupons.map(c => `
@@ -952,7 +1093,12 @@
           <td>${escapeHtml(c.memberName)}</td>
           <td>${escapeHtml(c.couponTitle)}</td>
           <td class="amt-income">${fmtMoney(c.amount)}</td>
-          <td>${escapeHtml(c.status)}</td>
+          <td><span class="badge ${c.status === '已使用' ? 'badge-cancel' : 'badge-done'}">${escapeHtml(c.status)}</span></td>
+          <td>
+            <button class="btn btn-sm" onclick="handleToggleCoupon('${escapeHtml(c.uniqueKey)}')">
+              ${c.status === '已使用' ? '改為未使用' : '標記已使用'}
+            </button>
+          </td>
           <td>${escapeHtml(c.condition)}</td>
         </tr>
       `).join('');
@@ -968,7 +1114,7 @@
           anniversaryDate: document.getElementById('cDate').value.trim()
         });
         showToast('週年慶設定已儲存（條件已鎖定）');
-        await refreshDashboard();
+        await refreshSystem();
       });
     }
 
@@ -976,13 +1122,21 @@
       await runWithGuard('issueNow', 'issueNowBtn', '發放中...', async () => {
         const res = await callServer('issueAnniversaryCoupons', true);
         showToast(res.message || '發放完成');
-        await refreshDashboard();
+        await refreshSystem();
+      });
+    }
+
+    async function handleToggleCoupon(uniqueKey) {
+      await runWithGuard(`cpn_${uniqueKey}`, null, '', async () => {
+        const res = await callServer('toggleCouponStatus', uniqueKey);
+        showToast(`優惠券狀態已更新為：${res.status}`);
+        await refreshSystem();
       });
     }
 
     window.addEventListener('DOMContentLoaded', () => {
       initDefaultDates();
-      refreshDashboard();
+      refreshSystem();
     });
   </script>
 </body>
