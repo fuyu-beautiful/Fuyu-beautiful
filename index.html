@@ -118,11 +118,14 @@
       </div>
 
       <div id="adminHeaderActions" class="hidden flex items-center gap-2">
-        <button onclick="openCustomerPortalPreview()" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#f5eee7] text-[#6a4f3f] hover:bg-[#ebe0d5] whitespace-nowrap">
-          開啟客戶端預覽
+        <button type="button" onclick="refreshAdminData()" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 whitespace-nowrap flex items-center gap-1">
+          <span>🔄</span><span>刷新資料</span>
         </button>
-        <button onclick="logoutAdmin()" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#fdf2f2] text-[#b42318] hover:bg-[#fae3e3] whitespace-nowrap">
-          登出後台
+        <button type="button" onclick="openCustomerPortalPreview()" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#f5eee7] text-[#6a4f3f] hover:bg-[#ebe0d5] whitespace-nowrap">
+          客戶端預覽
+        </button>
+        <button type="button" onclick="logoutAdmin()" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#fdf2f2] text-[#b42318] hover:bg-[#fae3e3] whitespace-nowrap">
+          登出
         </button>
       </div>
     </div>
@@ -166,7 +169,6 @@
 
   <!-- ==================== 客戶端視圖 ==================== -->
   <main id="customerView" class="max-w-2xl mx-auto px-4 pt-5 hidden">
-    <!-- 自助重新串連 LINE 提示條 -->
     <div id="customerRebindBanner" class="glass-card rounded-2xl p-3.5 mb-4 hidden border-l-4 border-l-[#8c5e43]">
       <div class="flex items-center justify-between gap-2">
         <div class="text-xs text-[#4a382f]">
@@ -217,13 +219,12 @@
 
     <!-- 諮詢表與同意書區塊 -->
     <section id="customerConsultSection" class="mb-5 hidden">
-      <!-- 店家設定隱藏時 -->
       <div id="customerConsultHiddenNotice" class="hidden glass-card rounded-2xl p-6 text-xs text-[#6a4f3f] text-center space-y-1.5">
         <div class="font-bold text-base text-[#33241d]">📋 您的諮詢表與同意書已歸檔保存</div>
         <p>目前由店家設定為不公開顯示內容，如需異動請洽詢美學師。</p>
       </div>
 
-      <!-- 狀態 1：已完成填寫時的唯讀確認卡（需點擊「修改問卷與除毛諮詢同意書」才可進入編輯） -->
+      <!-- 唯讀確認卡 -->
       <div id="customerConsultLockedCard" class="hidden glass-card rounded-3xl p-5 sm:p-6 space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#efe5da]">
           <div class="flex items-center gap-2.5">
@@ -243,7 +244,7 @@
         <div id="lockedConsultSummaryBox" class="space-y-3 text-xs"></div>
       </div>
 
-      <!-- 狀態 2：初次空白填寫 或 點擊修改後的問卷表單 -->
+      <!-- 問卷表單 -->
       <div id="customerConsultFormBox" class="glass-card rounded-3xl p-5 sm:p-6 hidden">
         <div class="flex flex-wrap items-center justify-between gap-2 pb-4 mb-5 border-b border-[#efe5da]">
           <div>
@@ -259,7 +260,6 @@
         </div>
 
         <form id="consultationForm" onsubmit="handleConsultationSubmit(event)" class="space-y-4">
-          <!-- 卡片 0：基本資料 -->
           <div class="q-card space-y-3">
             <div class="text-xs font-extrabold text-[#8c5e43] tracking-wide">01 · 基本聯絡資料</div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -300,7 +300,6 @@
             </div>
           </div>
 
-          <!-- 題目 1：過往毛髮處理 -->
           <div class="q-card">
             <div class="flex items-center justify-between mb-1.5">
               <div class="flex items-center gap-1.5">
@@ -313,7 +312,6 @@
             <div id="q_pastHairRemovalList"></div>
           </div>
 
-          <!-- 題目 2：本次是否為首次施作熱蠟除毛 -->
           <div class="q-card">
             <div class="flex items-center gap-1.5 mb-1.5">
               <span class="q-badge-type">單選題</span>
@@ -323,7 +321,6 @@
             <div id="q_firstTimeWaxingList"></div>
           </div>
 
-          <!-- 題目 3：是否為敏感體質 -->
           <div class="q-card">
             <div class="flex items-center justify-between mb-1.5">
               <div class="flex items-center gap-1.5">
@@ -336,7 +333,6 @@
             <div id="q_sensitiveTypesList"></div>
           </div>
 
-          <!-- 題目 4：目前是否為懷孕期間 -->
           <div class="q-card">
             <div class="flex items-center gap-1.5 mb-1.5">
               <span class="q-badge-type">單選題</span>
@@ -346,7 +342,6 @@
             <div id="q_isPregnantList"></div>
           </div>
 
-          <!-- 題目 5：目前是否為生病或免疫力下降期間 -->
           <div class="q-card">
             <div class="flex items-center gap-1.5 mb-1.5">
               <span class="q-badge-type">單選題</span>
@@ -356,7 +351,6 @@
             <div id="q_isSickOrLowImmunityList"></div>
           </div>
 
-          <!-- 題目 6：目前是否為生理期間 -->
           <div class="q-card">
             <div class="flex items-center gap-1.5 mb-1.5">
               <span class="q-badge-type">單選題</span>
@@ -366,7 +360,6 @@
             <div id="q_isMenstruatingList"></div>
           </div>
 
-          <!-- 題目 7：除毛部位是否常出油或長痘痘 -->
           <div class="q-card">
             <div class="flex items-center gap-1.5 mb-1.5">
               <span class="q-badge-type">單選題</span>
@@ -376,11 +369,8 @@
             <div id="q_isOilyOrAcneAreaList"></div>
           </div>
 
-          <!-- 服務與術後護理條款 -->
           <div class="p-4 rounded-2xl bg-gradient-to-br from-[#faf3ec] to-[#f6ece2] border border-[#e6d1be] text-xs text-[#543e31] space-y-2 leading-relaxed">
-            <div class="font-extrabold text-sm text-[#3b2920] flex items-center gap-1.5">
-              <span>📜 服務與術後護理同意條款</span>
-            </div>
+            <div class="font-extrabold text-sm text-[#3b2920]">📜 服務與術後護理同意條款</div>
             <div class="flex items-start gap-2">
               <span class="font-bold text-[#8c5e43]">01.</span>
               <p>除毛前後 3～5 天避免使用酸類、去角質或刺激性產品；施作後 24～48 小時內避免泡溫泉、三溫暖、游泳、劇烈運動與曝曬。</p>
@@ -395,7 +385,6 @@
             </div>
           </div>
 
-          <!-- 簽名區 -->
           <div class="q-card space-y-2.5">
             <div id="existingSignaturePreview" class="hidden">
               <div class="text-xs font-bold text-[#4a382f] mb-1">目前已留存簽名（若無變更可沿用，或於下方框內重簽）</div>
@@ -541,44 +530,86 @@
       </div>
     </section>
 
-    <!-- ---------- 分頁 2：會員資料 ---------- -->
+    <!-- ---------- 分頁 2：會員資料（美化升級） ---------- -->
     <section id="tab-customers" class="space-y-4 hidden">
-      <div class="glass-card rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div class="flex-1 flex flex-col sm:flex-row gap-2">
-          <input type="text" id="customerSearchInput" oninput="renderCustomersTab()" class="flex-1 px-3.5 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="搜尋會員姓名、LINE 名稱、暱稱或電話..." />
-          <select id="customerFilterSelect" onchange="renderCustomersTab()" class="px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white">
+      <div class="glass-card rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-[#fffdfb] to-[#faf3ec] space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-base font-extrabold text-[#33241d]">👥 會員檔案中心</h2>
+            <p id="customersSummaryStats" class="text-xs text-[#8b7365] mt-0.5">共 0 位會員</p>
+          </div>
+          <button onclick="openCustomerEditModal()" class="px-4 py-2 rounded-xl text-xs font-bold btn-primary shadow whitespace-nowrap">
+            + 新增會員
+          </button>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2 pt-1">
+          <div class="relative flex-1">
+            <span class="absolute left-3 top-2.5 text-xs text-[#8b7365]">🔍</span>
+            <input type="text" id="customerSearchInput" oninput="renderCustomersTab()" class="w-full pl-8 pr-3.5 py-2 rounded-xl border border-[#decbb9] text-xs bg-white focus:outline-none focus:border-[#8c5e43]" placeholder="搜尋會員姓名、LINE 名稱、暱稱或電話..." />
+          </div>
+          <select id="customerFilterSelect" onchange="renderCustomersTab()" class="px-3 py-2 rounded-xl border border-[#decbb9] text-xs font-bold text-[#4a382f] bg-white">
             <option value="all">全部會員</option>
             <option value="hasBalance">有儲值金餘額</option>
             <option value="lineBound">已綁定 LINE</option>
             <option value="lineUnbound">未綁定 LINE</option>
           </select>
         </div>
-        <button onclick="openCustomerEditModal()" class="px-4 py-2 rounded-xl text-xs font-bold btn-primary whitespace-nowrap">
-          + 新增會員
-        </button>
       </div>
 
-      <div id="customersListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      <div id="customersListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3.5"></div>
     </section>
 
-    <!-- ---------- 分頁 3：優惠券管理 ---------- -->
+    <!-- ---------- 分頁 3：優惠券管理（美化＋固定自動發放規則設定） ---------- -->
     <section id="tab-coupons" class="space-y-4 hidden">
-      <div class="glass-card rounded-2xl p-4 sm:p-5">
-        <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+      <!-- 頂部統計與操作卡 -->
+      <div class="glass-card rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-[#fffdfb] to-[#faf2ea]">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
-            <h2 class="text-base font-bold text-[#33241d]">🎟️ 優惠券管理</h2>
-            <p class="text-xs text-[#8b7365]">當月壽星系統會自動於當月 1 號發放 $100 生日券；也可在此手動發放其他優惠券。</p>
+            <h2 class="text-base font-extrabold text-[#33241d]">🎟️ 優惠券與自動發放中心</h2>
+            <p class="text-xs text-[#8b7365] mt-0.5">設定固定自動發放規則（生日禮、新客見面禮），或手動發送專屬優惠券</p>
           </div>
           <button type="button" onclick="openIssueCouponModal()" class="px-4 py-2 rounded-xl text-xs font-bold btn-primary shadow whitespace-nowrap">
-            + 發放優惠券
+            + 手動發放優惠券
           </button>
         </div>
 
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-[#f1e7dc] mb-3">
-          <h3 class="text-xs font-bold text-[#4a382f]">📋 優惠券擁有名單與使用紀錄</h3>
+        <div class="grid grid-cols-3 gap-2.5 text-center">
+          <div class="p-3 rounded-2xl bg-white border border-[#efe2d5]">
+            <div class="text-[11px] text-[#8b7365]">可使用中</div>
+            <div id="cpStatAvail" class="text-lg font-extrabold text-emerald-700 mt-0.5">0 張</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-white border border-[#efe2d5]">
+            <div class="text-[11px] text-[#8b7365]">已核銷使用</div>
+            <div id="cpStatUsed" class="text-lg font-extrabold text-blue-700 mt-0.5">0 張</div>
+          </div>
+          <div class="p-3 rounded-2xl bg-white border border-[#efe2d5]">
+            <div class="text-[11px] text-[#8b7365]">累計發出總數</div>
+            <div id="cpStatTotal" class="text-lg font-extrabold text-[#8c5e43] mt-0.5">0 張</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 固定自動發放規則設定區 -->
+      <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-[#8c5e43]"></span>
+            <h3 class="text-sm font-extrabold text-[#33241d]">⚙️ 固定自動發放規則設定</h3>
+          </div>
+          <span class="text-[11px] text-[#8b7365]">符合條件時系統自動發放，不重複發送</span>
+        </div>
+
+        <div id="couponRulesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      </div>
+
+      <!-- 優惠券發放與核銷明細 -->
+      <div class="glass-card rounded-3xl p-4 sm:p-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+          <h3 class="text-sm font-extrabold text-[#33241d]">📋 優惠券擁有名單與使用紀錄</h3>
           <div class="flex flex-wrap gap-2">
             <input type="text" id="couponSearchInput" oninput="renderCouponsTab()" class="px-3 py-1.5 rounded-xl border border-[#decbb9] text-xs bg-white" placeholder="搜尋客戶或券名..." />
-            <select id="couponStatusFilter" onchange="renderCouponsTab()" class="px-3 py-1.5 rounded-xl border border-[#decbb9] text-xs bg-white">
+            <select id="couponStatusFilter" onchange="renderCouponsTab()" class="px-3 py-1.5 rounded-xl border border-[#decbb9] text-xs font-bold text-[#4a382f] bg-white">
               <option value="all">全部狀態</option>
               <option value="可使用">可使用</option>
               <option value="已使用">已使用</option>
@@ -587,57 +618,88 @@
             </select>
           </div>
         </div>
-        <div id="couponsListContainer" class="space-y-2.5"></div>
+        <div id="couponsListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-2.5"></div>
       </div>
     </section>
 
-    <!-- ---------- 分頁 4：帳務與儲值 ---------- -->
+    <!-- ---------- 分頁 4：帳務與儲值（清晰三頁籤分流＋美化） ---------- -->
     <section id="tab-finance" class="space-y-4 hidden">
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="glass-card rounded-2xl p-4">
-          <div class="text-xs text-[#8b7365]">本月結算營收</div>
-          <div id="finMonthRevenue" class="text-lg font-extrabold text-[#3a2a22] mt-1">$0</div>
+      <!-- 頂部月份篩選與 4 張財務概覽 -->
+      <div class="glass-card rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-[#fffdfb] to-[#faf3ec] space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 class="text-base font-extrabold text-[#33241d]">💰 營運帳務與儲值中心</h2>
+            <p class="text-xs text-[#8b7365]">清晰掌握每月服務收入、營運支出與會員儲值金流動</p>
+          </div>
+          <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-[#decbb9]">
+            <span class="text-xs font-bold text-[#6a4f3f]">檢視月份</span>
+            <input type="month" id="financeMonthPicker" onchange="renderFinanceTab()" class="text-xs font-extrabold text-[#33241d] bg-transparent focus:outline-none" />
+          </div>
         </div>
-        <div class="glass-card rounded-2xl p-4">
-          <div class="text-xs text-[#8b7365]">本月營運支出</div>
-          <div id="finMonthExpense" class="text-lg font-extrabold text-[#b42318] mt-1">-$0</div>
-        </div>
-        <div class="glass-card rounded-2xl p-4">
-          <div class="text-xs text-[#8b7365]">本月收支結餘</div>
-          <div id="finMonthNet" class="text-lg font-extrabold text-[#15803d] mt-1">$0</div>
-        </div>
-        <div class="glass-card rounded-2xl p-4">
-          <div class="text-xs text-[#8b7365]">全體會員儲值金總額</div>
-          <div id="finTotalBalance" class="text-lg font-extrabold text-[#8c5e43] mt-1">$0</div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          <div class="p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
+            <div class="text-[11px] font-bold text-[#8b7365]">當月結算營收</div>
+            <div id="finMonthRevenue" class="text-lg font-extrabold text-emerald-700 mt-1 tabular-nums">$0</div>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
+            <div class="text-[11px] font-bold text-[#8b7365]">當月營運支出</div>
+            <div id="finMonthExpense" class="text-lg font-extrabold text-[#b42318] mt-1 tabular-nums">-$0</div>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
+            <div class="text-[11px] font-bold text-[#8b7365]">當月收支淨額</div>
+            <div id="finMonthNet" class="text-lg font-extrabold text-[#3a2a22] mt-1 tabular-nums">$0</div>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
+            <div class="text-[11px] font-bold text-[#8b7365]">全體會員儲值餘額</div>
+            <div id="finTotalBalance" class="text-lg font-extrabold text-[#8c5e43] mt-1 tabular-nums">$0</div>
+          </div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="glass-card rounded-2xl p-4">
-          <h3 class="text-sm font-bold text-[#33241d] mb-3">🧾 記錄營運支出</h3>
-          <form onsubmit="handleAddExpense(event)" class="space-y-2.5">
-            <div class="grid grid-cols-2 gap-2">
-              <input type="date" id="exp_date" required class="px-3 py-2 rounded-xl border border-[#decbb9] text-xs bg-white" />
-              <select id="exp_category" class="px-3 py-2 rounded-xl border border-[#decbb9] text-xs bg-white">
-                <option value="耗材進貨">耗材進貨</option>
-                <option value="店租水電">店租水電</option>
-                <option value="行銷廣告">行銷廣告</option>
-                <option value="設備維護">設備維護</option>
-                <option value="其他雜支">其他雜支</option>
-              </select>
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-              <input type="number" id="exp_amount" required min="1" placeholder="支出金額" class="px-3 py-2 rounded-xl border border-[#decbb9] text-xs bg-white" />
-              <input type="text" id="exp_note" placeholder="支出說明" class="px-3 py-2 rounded-xl border border-[#decbb9] text-xs bg-white" />
-            </div>
-            <button type="submit" class="w-full py-2 rounded-xl text-xs font-bold btn-primary">新增支出紀錄</button>
-          </form>
-          <div id="expensesListContainer" class="mt-3 space-y-1.5 max-h-56 overflow-y-auto text-xs"></div>
+      <!-- 清晰分流子頁籤：收入明細 / 支出明細 / 儲值金紀錄 -->
+      <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#f0e5da]">
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="button" id="finSubBtn-income" onclick="switchFinanceSubTab('income')" class="px-4 py-2 rounded-xl text-xs font-extrabold subtab-active">
+              💵 收入明細
+            </button>
+            <button type="button" id="finSubBtn-expense" onclick="switchFinanceSubTab('expense')" class="px-4 py-2 rounded-xl text-xs font-extrabold subtab-inactive">
+              🧾 支出明細
+            </button>
+            <button type="button" id="finSubBtn-topup" onclick="switchFinanceSubTab('topup')" class="px-4 py-2 rounded-xl text-xs font-extrabold subtab-inactive">
+              💳 儲值金紀錄
+            </button>
+          </div>
+          <input type="text" id="financeSearchInput" oninput="renderFinanceTab()" placeholder="搜尋會員或項目說明..." class="px-3 py-1.5 rounded-xl border border-[#decbb9] text-xs bg-white w-full sm:w-52" />
         </div>
 
-        <div class="glass-card rounded-2xl p-4">
-          <h3 class="text-sm font-bold text-[#33241d] mb-3">💳 近期儲值金異動紀錄</h3>
-          <div id="transactionsListContainer" class="space-y-2 max-h-72 overflow-y-auto text-xs"></div>
+        <!-- 子頁籤 A：收入明細 -->
+        <div id="finSubPanel-income" class="space-y-2.5">
+          <div id="incomeListContainer" class="space-y-2"></div>
+        </div>
+
+        <!-- 子頁籤 B：支出明細 -->
+        <div id="finSubPanel-expense" class="space-y-3 hidden">
+          <form onsubmit="handleAddExpense(event)" class="p-3.5 rounded-2xl bg-[#fcf8f4] border border-[#ebd9c7] grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
+            <input type="date" id="exp_date" required class="sm:col-span-3 px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+            <select id="exp_category" class="sm:col-span-2 px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
+              <option value="耗材進貨">耗材進貨</option>
+              <option value="店租水電">店租水電</option>
+              <option value="行銷廣告">行銷廣告</option>
+              <option value="設備維護">設備維護</option>
+              <option value="其他雜支">其他雜支</option>
+            </select>
+            <input type="number" id="exp_amount" required min="1" placeholder="支出金額 *" class="sm:col-span-2 px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+            <input type="text" id="exp_note" placeholder="支出項目說明" class="sm:col-span-3 px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+            <button type="submit" class="sm:col-span-2 py-2 rounded-xl font-bold btn-primary">+ 新增支出</button>
+          </form>
+          <div id="expensesListContainer" class="space-y-2"></div>
+        </div>
+
+        <!-- 子頁籤 C：儲值金紀錄 -->
+        <div id="finSubPanel-topup" class="space-y-2.5">
+          <div id="transactionsListContainer" class="space-y-2"></div>
         </div>
       </div>
     </section>
@@ -693,7 +755,63 @@
     <div id="reminderModalContent" class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl max-h-[85vh] overflow-y-auto"></div>
   </div>
 
-  <!-- ==================== 彈窗 2：簡潔版新增／編輯／審批預約（同客戶端大分類挑選體驗） ==================== -->
+  <!-- ==================== 彈窗 1：完成結算（選擇付款方式、是否使用優惠券、確認金額） ==================== -->
+  <div id="settleModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-xl">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h3 class="text-base font-extrabold text-[#33241d]">✨ 預約完成結算</h3>
+          <p id="st_bookingSummary" class="text-xs text-[#8b7365] mt-0.5">-</p>
+        </div>
+        <button type="button" onclick="closeSettleModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
+      </div>
+
+      <form onsubmit="handleConfirmSettle(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="st_bookingId" />
+        <input type="hidden" id="st_basePrice" value="0" />
+
+        <div class="p-3 rounded-2xl bg-[#faf6f2] border border-[#ece0d3] flex items-center justify-between">
+          <span class="text-[#6a4f3f] font-semibold">原定項目金額</span>
+          <span id="st_basePriceText" class="text-sm font-extrabold text-[#33241d]">$0</span>
+        </div>
+
+        <div>
+          <label class="block font-bold text-[#4a382f] mb-1">是否使用優惠券</label>
+          <select id="st_couponId" onchange="onSettleCouponChange()" class="w-full px-3 py-2.5 rounded-xl border border-[#decbb9] bg-white font-semibold">
+            <option value="">不使用優惠券</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-bold text-[#4a382f] mb-1">付款方式 *</label>
+          <select id="st_payMethod" onchange="onSettlePayMethodChange()" class="w-full px-3 py-2.5 rounded-xl border border-[#decbb9] bg-white font-bold">
+            <option value="現金">💵 現金</option>
+            <option value="轉帳">🏦 轉帳</option>
+            <option value="扣儲值金">💳 扣儲值金</option>
+            <option value="三堂套票">🎫 三堂套票</option>
+          </select>
+          <p id="st_memberBalanceHint" class="hidden text-[11px] text-[#8c5e43] font-bold mt-1"></p>
+        </div>
+
+        <div>
+          <label class="block font-bold text-[#4a382f] mb-1">實收結算金額 ($) *</label>
+          <input type="number" id="st_finalPrice" required min="0" class="w-full px-3 py-2.5 rounded-xl border border-[#decbb9] bg-white text-base font-extrabold text-[#8c5e43]" />
+        </div>
+
+        <div>
+          <label class="block font-bold text-[#4a382f] mb-1">結算備註（選填）</label>
+          <input type="text" id="st_note" placeholder="例如：現場加購保養品" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-[#f1e7dc]">
+          <button type="button" onclick="closeSettleModal()" class="px-4 py-2 rounded-xl bg-[#f3ece5] text-[#6b5344] font-bold">取消</button>
+          <button type="submit" class="px-5 py-2 rounded-xl font-extrabold btn-primary shadow">確認完成結算</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 彈窗 2：簡潔版新增／編輯預約（含會員即時搜尋） ==================== -->
   <div id="bookingModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 overflow-y-auto hidden">
     <div class="bg-white rounded-3xl max-w-lg w-full p-5 shadow-xl my-8 max-h-[92vh] overflow-y-auto">
       <div class="flex items-center justify-between mb-3">
@@ -706,21 +824,24 @@
       <form onsubmit="handleSaveBooking(event)" class="space-y-3.5 text-xs">
         <input type="hidden" id="bk_id" />
 
-        <!-- 客戶選擇列 -->
-        <div class="grid grid-cols-2 gap-2">
-          <div>
-            <label class="block font-bold text-[#4a382f] mb-1">選擇會員</label>
-            <select id="bk_customerId" onchange="onBookingCustomerChange()" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
+        <!-- 會員即時搜尋＋下拉選擇列 -->
+        <div class="p-3 rounded-2xl bg-[#faf6f2] border border-[#eadbc9] space-y-2">
+          <div class="flex items-center justify-between">
+            <label class="font-extrabold text-[#4a382f]">🔍 搜尋並選擇會員</label>
+            <span class="text-[11px] text-[#8b7365]">輸入姓名 / LINE 名稱 / 電話即時篩選</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input type="text" id="bk_memberSearch" oninput="filterBookingCustomerSelect()" placeholder="輸入關鍵字搜尋會員..." class="px-3 py-2 rounded-xl border border-[#decbb9] bg-white focus:outline-none focus:border-[#8c5e43]" />
+            <select id="bk_customerId" onchange="onBookingCustomerChange()" class="px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-semibold">
               <option value="">-- 散客／非會員 --</option>
             </select>
           </div>
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">客戶姓名 *</label>
-            <input type="text" id="bk_customerName" required placeholder="輸入姓名" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+            <input type="text" id="bk_customerName" required placeholder="客戶顯示姓名 *" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold text-[#33241d]" />
           </div>
         </div>
 
-        <!-- 緊湊日期與時間列 -->
+        <!-- 日期與時間列 -->
         <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">預約日期 *</label>
@@ -752,7 +873,7 @@
           </div>
         </div>
 
-        <!-- 項目名稱與金額（自動帶入，也可微調） -->
+        <!-- 項目名稱與金額 -->
         <div class="grid grid-cols-3 gap-2">
           <div class="col-span-2">
             <label class="block font-bold text-[#4a382f] mb-1">預約項目摘要 *</label>
@@ -871,12 +992,12 @@
     <div id="topUpModalContent" class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl"></div>
   </div>
 
-  <!-- ==================== 彈窗 6：發放優惠券 ==================== -->
+  <!-- ==================== 彈窗 6：手動發放優惠券 ==================== -->
   <div id="issueCouponModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 overflow-y-auto hidden">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl my-8">
       <div class="flex items-center justify-between mb-3">
         <div>
-          <h3 class="text-base font-bold text-[#33241d]">🎟️ 發放優惠券</h3>
+          <h3 class="text-base font-bold text-[#33241d]">🎟️ 手動發放優惠券</h3>
           <p class="text-[11px] text-[#8b7365]">可單獨發放給特定會員，或批次發送給全體會員</p>
         </div>
         <button type="button" onclick="closeIssueCouponModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
@@ -910,6 +1031,7 @@
             <label class="block font-bold text-[#4a382f] mb-1">優惠類型</label>
             <select id="ic_type" onchange="applyCouponTypePreset()" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
               <option value="自訂優惠">自訂優惠</option>
+              <option value="新客見面禮">新客見面禮</option>
               <option value="新客介紹">新客介紹</option>
               <option value="生日優惠">生日優惠</option>
               <option value="活動回饋">活動回饋</option>
@@ -942,7 +1064,52 @@
     </div>
   </div>
 
-  <!-- ==================== 彈窗 7：新增／編輯服務與產品 ==================== -->
+  <!-- ==================== 彈窗 7：編輯固定自動發放規則 ==================== -->
+  <div id="couponRuleModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-xl">
+      <div class="flex items-center justify-between mb-3">
+        <h3 id="cr_modalTitle" class="text-base font-extrabold text-[#33241d]">設定自動發放規則</h3>
+        <button type="button" onclick="closeCouponRuleModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
+      </div>
+
+      <form onsubmit="handleSaveCouponRule(event)" class="space-y-3 text-xs">
+        <input type="hidden" id="cr_ruleKey" />
+
+        <label class="flex items-center justify-between p-3 rounded-2xl bg-[#faf6f2] border border-[#ebd9c7] cursor-pointer">
+          <span class="font-extrabold text-[#33241d]">啟用此自動發放規則</span>
+          <input type="checkbox" id="cr_enabled" class="w-4 h-4 accent-[#8c5e43]" />
+        </label>
+
+        <div>
+          <label class="block font-bold text-[#4a382f] mb-1">優惠券名稱 *</label>
+          <input type="text" id="cr_title" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-[#4a382f] mb-1">折抵金額 ($)*</label>
+            <input type="number" id="cr_discountAmount" required min="0" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold text-[#8c5e43]" />
+          </div>
+          <div>
+            <label class="block font-bold text-[#4a382f] mb-1">有效期限（月）*</label>
+            <input type="number" id="cr_validityMonths" required min="1" max="36" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-[#4a382f] mb-1">發放條件與使用說明</label>
+          <input type="text" id="cr_conditionNote" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" placeholder="例如：當月壽星當月1號自動發放" />
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-[#f1e7dc]">
+          <button type="button" onclick="closeCouponRuleModal()" class="px-3.5 py-2 rounded-xl bg-[#f3ece5] text-[#6b5344] font-bold">取消</button>
+          <button type="submit" class="px-4 py-2 rounded-xl font-bold btn-primary shadow">儲存規則設定</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== 彈窗 8：新增／編輯服務與產品 ==================== -->
   <div id="catalogModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 overflow-y-auto hidden">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl my-8">
       <div class="flex items-center justify-between mb-3">
@@ -996,7 +1163,7 @@
     </div>
   </div>
 
-  <!-- ==================== 彈窗 8：新增禁約時段 ==================== -->
+  <!-- ==================== 彈窗 9：新增禁約時段 ==================== -->
   <div id="blockedModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl">
       <div class="flex items-center justify-between mb-3">
@@ -1065,6 +1232,8 @@
       consultations: [],
       consultationLogs: [],
       coupons: [],
+      couponRules: {},
+      financeSubTab: "income",
       calYear: new Date().getFullYear(),
       calMonth: new Date().getMonth(),
       selectedDate: formatTodayStr(),
@@ -1143,6 +1312,7 @@
       document.getElementById("exp_date").value = formatTodayStr();
       document.getElementById("blk_date").value = formatTodayStr();
       document.getElementById("cb_date").value = formatTodayStr();
+      document.getElementById("financeMonthPicker").value = formatTodayStr().slice(0, 7);
       initSignaturePad();
       renderConsultationQuestionnaire();
 
@@ -1212,6 +1382,20 @@
       switchAdminTab("home");
     }
 
+    async function refreshAdminData() {
+      if (!state.adminPassword) return;
+      try {
+        setLoading(true, "即時同步最新客戶與預約資料中...");
+        const snap = await apiPost({ action: "verifyAdminAndLoadAll", password: state.adminPassword });
+        applyAdminSnapshot(snap);
+        showToast("已刷新為最新資料");
+      } catch (err) {
+        showToast(err.message || "刷新失敗", true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
     function logoutAdmin() {
       state.isAdmin = false;
       state.adminPassword = "";
@@ -1231,6 +1415,7 @@
       state.consultations = snap.consultations || [];
       state.consultationLogs = snap.consultationLogs || [];
       state.coupons = snap.coupons || [];
+      state.couponRules = snap.couponRules || {};
 
       renderHomeTab();
       renderCustomersTab();
@@ -1260,7 +1445,7 @@
       document.getElementById("btnOpenBlockedModal").classList.toggle("hidden", isCatalog);
     }
 
-    /* ==================== 首頁排程與本月壽星（當月 1 號自動發 $100 並顯示「已發卷」） ==================== */
+    /* ==================== 首頁排程與本月壽星 ==================== */
     function isApprovedCalendarStatus(status) {
       const st = String(status || "").trim();
       return st === "尚未到來" || st === "已報到" || st === "已完成";
@@ -1306,7 +1491,7 @@
           <div class="flex items-center justify-between mb-2">
             <div>
               <h3 class="text-base font-bold text-[#33241d]">🎂 ${curMonth}月壽星名單（${list.length} 位）</h3>
-              <p class="text-[11px] text-[#8b7365]">當月壽星系統會自動於當月 1 號發放「生日禮折 $100」</p>
+              <p class="text-[11px] text-[#8b7365]">當月壽星系統會自動於當月 1 號發放生日優惠券</p>
             </div>
             <button type="button" onclick="closeReminderModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
           </div>
@@ -1334,7 +1519,7 @@
                         </span>
                       ` : `
                         <button type="button" onclick="closeReminderModal(); switchAdminTab('coupons'); openIssueCouponModal('${escJs(c.id)}', '生日優惠');" class="px-2.5 py-1 rounded-lg bg-[#8c5e43] text-white font-bold">
-                          補發 $100 券
+                          補發生日券
                         </button>
                       `}
                     </div>
@@ -1541,9 +1726,9 @@
               </div>
             </div>
             <div class="flex flex-wrap items-center justify-end gap-1.5 pt-1 border-t border-[#f2e8dd]">
-              ${b.status === "尚未到來" ? `
-                <button onclick="quickSettleBooking('${escJs(b.id)}')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#8c5e43] text-white">
-                  完成結算
+              ${b.status === "尚未到來" || b.status === "已報到" ? `
+                <button onclick="openSettleModal('${escJs(b.id)}')" class="px-3 py-1 rounded-lg text-xs font-extrabold btn-primary shadow-sm">
+                  ✨ 完成結算
                 </button>
               ` : ""}
               <button onclick="openBookingModalById('${escJs(b.id)}')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white border border-[#decbb9] text-[#5c4638] hover:bg-[#f5eee7]">
@@ -1576,17 +1761,85 @@
       }
     }
 
-    async function quickSettleBooking(bookingId) {
+    /* ==================== 完成結算彈窗（付款方式、是否使用優惠券、確認金額） ==================== */
+    function openSettleModal(bookingId) {
+      const b = state.bookings.find(x => String(x.id) === String(bookingId));
+      if (!b) return;
+
+      const basePrice = safeNumber(b.finalPrice || b.originalPrice, 0);
+      document.getElementById("st_bookingId").value = b.id;
+      document.getElementById("st_basePrice").value = basePrice;
+      document.getElementById("st_basePriceText").textContent = `$${basePrice.toLocaleString()}`;
+      document.getElementById("st_bookingSummary").textContent = `${b.date} ${b.startTime} · ${b.customerName}（${b.service || "未指定項目"}）`;
+      document.getElementById("st_finalPrice").value = basePrice;
+      document.getElementById("st_note").value = b.note || "";
+
+      const defaultPay = ["現金", "轉帳", "扣儲值金", "三堂套票"].indexOf(b.payMethod) !== -1 ? b.payMethod : "現金";
+      document.getElementById("st_payMethod").value = defaultPay;
+
+      // 帶入該會員可用優惠券
+      const coupSel = document.getElementById("st_couponId");
+      const availCoupons = b.customerId
+        ? state.coupons.filter(cp => cp.status === "可使用" && String(cp.customerId) === String(b.customerId))
+        : [];
+      coupSel.innerHTML = `<option value="">不使用優惠券</option>` + availCoupons.map(cp =>
+        `<option value="${esc(cp.couponId)}" ${String(cp.couponId) === String(b.usedCouponId) ? "selected" : ""}>${esc(cp.title)}（折 $${safeNumber(cp.discountAmount, 0)}）</option>`
+      ).join("");
+
+      onSettleCouponChange();
+      onSettlePayMethodChange();
+      document.getElementById("settleModal").classList.remove("hidden");
+    }
+
+    function closeSettleModal() {
+      document.getElementById("settleModal").classList.add("hidden");
+    }
+
+    function onSettleCouponChange() {
+      const basePrice = safeNumber(document.getElementById("st_basePrice").value, 0);
+      const couponId = document.getElementById("st_couponId").value;
+      const cp = couponId ? state.coupons.find(x => String(x.couponId) === String(couponId)) : null;
+      const discount = cp ? safeNumber(cp.discountAmount, 0) : 0;
+      document.getElementById("st_finalPrice").value = Math.max(0, basePrice - discount);
+    }
+
+    function onSettlePayMethodChange() {
+      const method = document.getElementById("st_payMethod").value;
+      const hint = document.getElementById("st_memberBalanceHint");
+      const bkId = document.getElementById("st_bookingId").value;
+      const b = state.bookings.find(x => String(x.id) === String(bkId));
+      const cust = b && b.customerId ? state.customers.find(c => String(c.id) === String(b.customerId)) : null;
+
+      if (method === "扣儲值金") {
+        hint.classList.remove("hidden");
+        if (cust) {
+          hint.textContent = `會員「${cust.name}」目前儲值金餘額：$${safeNumber(cust.balance, 0).toLocaleString()}（確認結算將自動扣除實收金額）`;
+        } else {
+          hint.textContent = "⚠️ 此筆為非會員散客，無法扣儲值金";
+        }
+      } else {
+        hint.classList.add("hidden");
+      }
+    }
+
+    async function handleConfirmSettle(e) {
+      e.preventDefault();
       try {
-        setLoading(true, "完成結算中...");
+        setLoading(true, "辦理結算與核銷中...");
         const snap = await apiPost({
-          action: "quickUpdateBookingStatus",
+          action: "settleBookingAdmin",
           password: state.adminPassword,
-          bookingId,
-          newStatus: "已完成"
+          payload: {
+            bookingId: document.getElementById("st_bookingId").value,
+            payMethod: document.getElementById("st_payMethod").value,
+            usedCouponId: document.getElementById("st_couponId").value,
+            finalPrice: safeNumber(document.getElementById("st_finalPrice").value, 0),
+            note: document.getElementById("st_note").value.trim()
+          }
         });
         applyAdminSnapshot(snap);
-        showToast("預約已完成結算");
+        closeSettleModal();
+        showToast("已完成結算並寫入收入明細！");
       } catch (err) {
         showToast(err.message || "結算失敗", true);
       } finally {
@@ -1594,17 +1847,17 @@
       }
     }
 
-    /* ==================== 簡潔版新增／編輯預約彈窗（同客戶端大分類挑選體驗） ==================== */
+    /* ==================== 簡潔版新增／編輯預約彈窗（含會員即時搜尋） ==================== */
     function openBookingModal(prefillDate = null, prefillCustomerId = "") {
       document.getElementById("bk_id").value = "";
       document.getElementById("bookingModalTitle").textContent = "新增預約";
       document.getElementById("bk_deleteBtn").classList.add("hidden");
+      document.getElementById("bk_memberSearch").value = "";
 
       const cust = prefillCustomerId
         ? state.customers.find(c => String(c.id) === String(prefillCustomerId))
         : null;
 
-      document.getElementById("bk_customerId").value = cust ? cust.id : "";
       document.getElementById("bk_customerName").value = cust ? cust.name : "";
       document.getElementById("bk_date").value = prefillDate || state.selectedDate || formatTodayStr();
       document.getElementById("bk_startTime").value = "11:00";
@@ -1630,7 +1883,7 @@
       document.getElementById("bk_id").value = b.id;
       document.getElementById("bookingModalTitle").textContent = b.status === "待審核" ? "審批與修改預約" : "編輯預約";
       document.getElementById("bk_deleteBtn").classList.remove("hidden");
-      document.getElementById("bk_customerId").value = b.customerId || "";
+      document.getElementById("bk_memberSearch").value = "";
       document.getElementById("bk_customerName").value = b.customerName || "";
       document.getElementById("bk_date").value = b.date || state.selectedDate;
       document.getElementById("bk_startTime").value = b.startTime || "11:00";
@@ -1642,7 +1895,6 @@
       document.getElementById("bk_status").value = b.status || "尚未到來";
       document.getElementById("bk_note").value = b.note || "";
 
-      // 比對已選項目
       const parts = String(b.service || "").split(/\s*\+\s*/).map(s => s.trim()).filter(Boolean);
       const matchedIds = [];
       parts.forEach(p => {
@@ -1662,12 +1914,29 @@
       document.getElementById("bookingModal").classList.add("hidden");
     }
 
-    function populateBookingModalSelects(selectedCustId, selectedCouponId) {
+    function filterBookingCustomerSelect(keepCustomerId = null) {
+      const q = (document.getElementById("bk_memberSearch").value || "").trim().toLowerCase();
       const custSel = document.getElementById("bk_customerId");
-      custSel.innerHTML = `<option value="">-- 散客／非會員 --</option>` + state.customers.map(c =>
-        `<option value="${esc(c.id)}" ${String(c.id) === String(selectedCustId) ? "selected" : ""}>${esc(c.name)}${c.lineDisplayName ? `（${esc(c.lineDisplayName)}）` : ""}</option>`
+      const currentVal = keepCustomerId !== null ? keepCustomerId : custSel.value;
+
+      const list = state.customers.filter(c => {
+        if (!q) return true;
+        return `${c.name} ${c.lineDisplayName} ${c.nickname} ${c.contact}`.toLowerCase().includes(q);
+      });
+
+      custSel.innerHTML = `<option value="">-- 散客／非會員 --</option>` + list.map(c =>
+        `<option value="${esc(c.id)}" ${String(c.id) === String(currentVal) ? "selected" : ""}>${esc(c.name)}${c.lineDisplayName ? `（${esc(c.lineDisplayName)}）` : ""}${c.contact ? ` · ${esc(c.contact)}` : ""}</option>`
       ).join("");
 
+      // 若搜尋只精準剩 1 位會員，自動選取並帶入姓名
+      if (q && list.length === 1) {
+        custSel.value = list[0].id;
+        onBookingCustomerChange();
+      }
+    }
+
+    function populateBookingModalSelects(selectedCustId, selectedCouponId) {
+      filterBookingCustomerSelect(selectedCustId);
       refreshBookingCouponSelect(selectedCustId, selectedCouponId);
     }
 
@@ -1902,10 +2171,15 @@
       }
     }
 
-    /* ==================== 分頁 2：會員資料（直接新增預約按鈕 + 諮詢表異動紀錄） ==================== */
+    /* ==================== 分頁 2：會員資料（美化升級） ==================== */
     function renderCustomersTab() {
       const q = (document.getElementById("customerSearchInput").value || "").trim().toLowerCase();
       const filter = document.getElementById("customerFilterSelect").value;
+
+      const boundCount = state.customers.filter(c => c.lineUserId || c.lineDisplayName).length;
+      const totalBal = state.customers.reduce((s, c) => s + safeNumber(c.balance, 0), 0);
+      document.getElementById("customersSummaryStats").textContent =
+        `共 ${state.customers.length} 位會員 · 已串連 LINE ${boundCount} 位 · 總儲值餘額 $${totalBal.toLocaleString()}`;
 
       const filtered = state.customers.filter(c => {
         const hay = `${c.name} ${c.lineDisplayName} ${c.nickname} ${c.contact}`.toLowerCase();
@@ -1926,35 +2200,51 @@
         const bal = safeNumber(c.balance, 0);
         const visits = safeNumber(c.visitCount, 0);
         const cons = state.consultations.find(cn => String(cn.customerId) === String(c.id));
-        const lineNameText = c.lineDisplayName ? c.lineDisplayName : (c.lineUserId ? "已串連（待同步名稱）" : "未串連");
+        const availCpCount = state.coupons.filter(cp => String(cp.customerId) === String(c.id) && cp.status === "可使用").length;
+        const avatarChar = esc((c.name || "會").slice(0, 1));
+        const lineNameText = c.lineDisplayName ? c.lineDisplayName : (c.lineUserId ? "已串連 LINE" : "尚未串連");
 
         return `
-          <div class="glass-card rounded-2xl p-4 flex flex-col justify-between gap-3">
+          <div class="glass-card rounded-3xl p-4 sm:p-5 flex flex-col justify-between gap-3 hover:border-[#d6bea8] transition">
             <div>
-              <div class="flex items-start justify-between gap-2">
-                <div>
-                  <span class="font-bold text-base text-[#33241d]">${esc(c.name)}</span>
-                  ${c.nickname ? `<span class="text-xs text-[#8b7365]">（${esc(c.nickname)}）</span>` : ""}
-                  <div class="text-xs text-[#7c6557] mt-0.5">${esc(c.contact || "無電話")}${c.birthday ? ` · 🎂 ${esc(c.birthday)}` : ""}</div>
+              <div class="flex items-start justify-between gap-2.5">
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#a3765b] to-[#7c533c] text-white font-extrabold text-base flex items-center justify-center shrink-0 shadow-sm">
+                    ${avatarChar}
+                  </div>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="font-extrabold text-base text-[#33241d] truncate">${esc(c.name)}</span>
+                      ${c.nickname ? `<span class="text-xs text-[#8b7365]">(${esc(c.nickname)})</span>` : ""}
+                    </div>
+                    <div class="text-xs text-[#7c6557] mt-0.5 truncate">
+                      ${esc(c.contact || "無電話")}${c.birthday ? ` · 🎂 ${esc(c.birthday)}` : ""}
+                    </div>
+                  </div>
                 </div>
-                <span class="text-[11px] px-2 py-0.5 rounded-full font-bold ${cons ? "bg-emerald-100 text-emerald-800" : "bg-amber-50 text-amber-800"}">
-                  ${cons ? (cons.hiddenFromCustomer ? "📋 已簽（已隱藏）" : "📋 已簽諮詢表") : "未填諮詢表"}
-                </span>
+
+                <div class="flex flex-col items-end gap-1 shrink-0">
+                  <span class="text-[11px] px-2.5 py-0.5 rounded-full font-bold ${cons ? "bg-emerald-100 text-emerald-800" : "bg-amber-50 text-amber-800"}">
+                    ${cons ? "📋 已簽諮詢表" : "未填諮詢表"}
+                  </span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full font-semibold ${c.lineUserId || c.lineDisplayName ? "bg-[#f3ece5] text-[#6a4f3f]" : "bg-stone-100 text-stone-500"}">
+                    LINE：${esc(lineNameText)}
+                  </span>
+                </div>
               </div>
 
-              <div class="mt-2.5 px-3 py-2 rounded-xl bg-[#f7f3ee] border border-[#eae0d5] flex items-center justify-between text-xs">
-                <span class="text-[#7c6557] font-semibold">LINE 名稱</span>
-                <span class="font-bold text-[#2f2622]">${esc(lineNameText)}</span>
-              </div>
-
-              <div class="grid grid-cols-2 gap-2 mt-2.5 text-center bg-[#faf6f2] rounded-xl p-2 text-xs">
+              <div class="grid grid-cols-3 gap-2 mt-3 text-center bg-[#faf6f2] border border-[#efe4d8] rounded-2xl p-2.5 text-xs">
                 <div>
-                  <div class="text-[11px] text-[#8b7365]">儲值金</div>
-                  <div class="font-extrabold text-[#8c5e43]">$${bal.toLocaleString()}</div>
+                  <div class="text-[10px] text-[#8b7365]">儲值金餘額</div>
+                  <div class="font-extrabold text-[#8c5e43] tabular-nums mt-0.5">$${bal.toLocaleString()}</div>
+                </div>
+                <div class="border-x border-[#e8dacb]">
+                  <div class="text-[10px] text-[#8b7365]">累計來店</div>
+                  <div class="font-extrabold text-[#3a2a22] mt-0.5">${visits} 次</div>
                 </div>
                 <div>
-                  <div class="text-[11px] text-[#8b7365]">來店次數</div>
-                  <div class="font-bold text-[#3a2a22]">${visits} 次</div>
+                  <div class="text-[10px] text-[#8b7365]">可用優惠券</div>
+                  <div class="font-extrabold text-emerald-700 mt-0.5">${availCpCount} 張</div>
                 </div>
               </div>
             </div>
@@ -2396,8 +2686,16 @@
       }
     }
 
-    /* ==================== 分頁 3：優惠券管理 ==================== */
+    /* ==================== 分頁 3：優惠券管理＋固定自動發放規則設定 ==================== */
     function renderCouponsTab() {
+      const availCnt = state.coupons.filter(cp => cp.status === "可使用").length;
+      const usedCnt = state.coupons.filter(cp => cp.status === "已使用").length;
+      document.getElementById("cpStatAvail").textContent = `${availCnt} 張`;
+      document.getElementById("cpStatUsed").textContent = `${usedCnt} 張`;
+      document.getElementById("cpStatTotal").textContent = `${state.coupons.length} 張`;
+
+      renderCouponRulesSection();
+
       const q = (document.getElementById("couponSearchInput").value || "").trim().toLowerCase();
       const statusFilter = document.getElementById("couponStatusFilter").value;
 
@@ -2410,7 +2708,7 @@
 
       const container = document.getElementById("couponsListContainer");
       if (filtered.length === 0) {
-        container.innerHTML = `<div class="text-center py-6 text-xs text-[#8b7365]">目前沒有符合的優惠券紀錄</div>`;
+        container.innerHTML = `<div class="col-span-full text-center py-6 text-xs text-[#8b7365]">目前沒有符合的優惠券紀錄</div>`;
         return;
       }
 
@@ -2421,26 +2719,26 @@
           "bg-stone-200 text-stone-600";
 
         return `
-          <div class="p-3 rounded-xl border border-[#efe5da] bg-[#fcfaf8] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-            <div class="space-y-0.5">
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="font-bold text-sm text-[#33241d]">${esc(cp.customerName)}</span>
-                <span class="font-bold text-[#8c5e43]">${esc(cp.title)}</span>
-                <span class="px-2 py-0.5 rounded-full font-bold text-[#9c5733] bg-[#fdf1e7]">折 $${safeNumber(cp.discountAmount, 0).toLocaleString()}</span>
-                <span class="px-2 py-0.5 rounded-full font-bold ${badgeClass}">${esc(cp.status)}</span>
+          <div class="p-3.5 rounded-2xl border border-[#efe2d5] bg-[#fffdfb] flex items-center justify-between gap-3 text-xs relative overflow-hidden">
+            <div class="space-y-1 min-w-0 flex-1">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="font-extrabold text-sm text-[#33241d]">${esc(cp.customerName)}</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeClass}">${esc(cp.status)}</span>
               </div>
-              <div class="text-[#7c6557]">
-                類型：${esc(cp.type)} · 發放日：${esc(cp.issuedDate)} · 效期至：${esc(cp.expiresDate)}
-                ${cp.note ? ` · ${esc(cp.note)}` : ""}
+              <div class="font-bold text-[#8c5e43] text-sm">
+                ${esc(cp.title)} <span class="text-xs px-2 py-0.5 rounded-lg bg-[#fdf1e7] text-[#9c5733] ml-1">折 $${safeNumber(cp.discountAmount, 0).toLocaleString()}</span>
+              </div>
+              <div class="text-[11px] text-[#7c6557]">
+                ${esc(cp.type)} · 發放：${esc(cp.issuedDate)} · 效期至：${esc(cp.expiresDate)}
               </div>
               ${cp.status === "已使用" ? `
-                <div class="text-emerald-700 font-semibold">
-                  使用紀錄：${esc(cp.usedAt || "已核銷")}${cp.usedService ? `（折抵項目：${esc(cp.usedService)}）` : ""}
+                <div class="text-[11px] text-emerald-700 font-semibold">
+                  ✓ ${esc(cp.usedAt || "已核銷")}${cp.usedService ? `（${esc(cp.usedService)}）` : ""}
                 </div>
               ` : ""}
             </div>
             ${cp.status === "可使用" ? `
-              <button onclick="voidCoupon('${escJs(cp.couponId)}')" class="px-2.5 py-1 rounded-lg bg-[#fdf2f2] text-[#b42318] font-bold self-end sm:self-center">
+              <button onclick="voidCoupon('${escJs(cp.couponId)}')" class="px-2.5 py-1.5 rounded-xl bg-[#fdf2f2] text-[#b42318] font-bold shrink-0 hover:bg-[#fae2e2]">
                 作廢
               </button>
             ` : ""}
@@ -2449,23 +2747,114 @@
       }).join("");
     }
 
-    function openIssueCouponModal(preselectCustomerId = "", preselectType = "") {
+    function renderCouponRulesSection() {
+      const box = document.getElementById("couponRulesContainer");
+      const bdayRule = state.couponRules.birthday || {
+        ruleKey: "birthday",
+        enabled: true,
+        title: "生日禮折 $100",
+        discountAmount: 100,
+        validityMonths: 1,
+        conditionNote: "當月壽星於當月 1 號自動發放（限當月使用）"
+      };
+      const newRule = state.couponRules.new_customer || {
+        ruleKey: "new_customer",
+        enabled: true,
+        title: "新客見面禮折 $100",
+        discountAmount: 100,
+        validityMonths: 3,
+        conditionNote: "首次完成填寫諮詢表與同意書自動發放"
+      };
+
+      const cards = [
+        { icon: "🎂", label: "當月壽星固定發放", rule: bdayRule, accent: "border-rose-200 bg-rose-50/30" },
+        { icon: "🎁", label: "新客見面禮固定發放", rule: newRule, accent: "border-amber-200 bg-amber-50/30" }
+      ];
+
+      box.innerHTML = cards.map(item => {
+        const r = item.rule;
+        return `
+          <div class="p-4 rounded-2xl border ${item.accent} flex flex-col justify-between gap-2.5 text-xs">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-1.5">
+                <span class="font-extrabold text-sm text-[#33241d]">${item.icon} ${item.label}</span>
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold ${r.enabled ? "bg-emerald-100 text-emerald-800" : "bg-stone-200 text-stone-600"}">
+                  ${r.enabled ? "● 自動啟用中" : "○ 已暫停"}
+                </span>
+              </div>
+              <div class="font-bold text-[#8c5e43] text-sm">${esc(r.title)} · 折抵 $${safeNumber(r.discountAmount, 0).toLocaleString()}</div>
+              <div class="text-[11px] text-[#6d5648] mt-1">有效期限：自發放日起 <strong>${safeNumber(r.validityMonths, 1)} 個月</strong></div>
+              <div class="text-[11px] text-[#8b7365] mt-0.5">條件：${esc(r.conditionNote || "-")}</div>
+            </div>
+            <div class="flex justify-end pt-1">
+              <button type="button" onclick="openCouponRuleModal('${escJs(r.ruleKey)}')" class="px-3 py-1.5 rounded-xl bg-white border border-[#decbb9] text-[#5c4638] font-bold hover:bg-[#f5eee7]">
+                ✏️ 設定條件 / 金額 / 期限
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function openCouponRuleModal(ruleKey) {
+      const r = state.couponRules[ruleKey] || {
+        ruleKey,
+        enabled: true,
+        title: ruleKey === "birthday" ? "生日禮折 $100" : "新客見面禮折 $100",
+        discountAmount: 100,
+        validityMonths: ruleKey === "birthday" ? 1 : 3,
+        conditionNote: ""
+      };
+      document.getElementById("cr_modalTitle").textContent =
+        ruleKey === "birthday" ? "🎂 設定當月壽星自動發放規則" : "🎁 設定新客見面禮自動發放規則";
+      document.getElementById("cr_ruleKey").value = ruleKey;
+      document.getElementById("cr_enabled").checked = !!r.enabled;
+      document.getElementById("cr_title").value = r.title || "";
+      document.getElementById("cr_discountAmount").value = safeNumber(r.discountAmount, 100);
+      document.getElementById("cr_validityMonths").value = safeNumber(r.validityMonths, 1);
+      document.getElementById("cr_conditionNote").value = r.conditionNote || "";
+      document.getElementById("couponRuleModal").classList.remove("hidden");
+    }
+
+    function closeCouponRuleModal() {
+      document.getElementById("couponRuleModal").classList.add("hidden");
+    }
+
+    async function handleSaveCouponRule(e) {
+      e.preventDefault();
+      try {
+        setLoading(true, "儲存自動發放規則中...");
+        const snap = await apiPost({
+          action: "saveCouponRuleAdmin",
+          password: state.adminPassword,
+          payload: {
+            ruleKey: document.getElementById("cr_ruleKey").value,
+            enabled: document.getElementById("cr_enabled").checked,
+            title: document.getElementById("cr_title").value.trim(),
+            discountAmount: safeNumber(document.getElementById("cr_discountAmount").value, 100),
+            validityMonths: safeNumber(document.getElementById("cr_validityMonths").value, 1),
+            conditionNote: document.getElementById("cr_conditionNote").value.trim()
+          }
+        });
+        applyAdminSnapshot(snap);
+        closeCouponRuleModal();
+        showToast("已更新自動發放規則");
+      } catch (err) {
+        showToast(err.message || "儲存失敗", true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function openIssueCouponModal(prefillCustomerId = "", prefillType = "自訂優惠") {
       document.getElementById("ic_targetMode").value = "single";
       document.getElementById("ic_memberSearch").value = "";
-      document.getElementById("ic_type").value = preselectType || "自訂優惠";
-      document.getElementById("ic_title").value = "";
-      document.getElementById("ic_discountAmount").value = "100";
-      document.getElementById("ic_validityMonths").value = "6";
+      document.getElementById("ic_type").value = prefillType;
       document.getElementById("ic_note").value = "";
-
-      filterCouponCustomerSelect();
-      if (preselectCustomerId) {
-        document.getElementById("ic_customerId").value = preselectCustomerId;
-      }
-      if (preselectType) {
-        applyCouponTypePreset();
-      }
+      document.getElementById("ic_allCountBanner").textContent = `將批次發放給目前所有會員（${state.customers.length} 位）`;
       toggleCouponTargetMode();
+      filterCouponCustomerSelect(prefillCustomerId);
+      applyCouponTypePreset();
       document.getElementById("issueCouponModal").classList.remove("hidden");
     }
 
@@ -2478,69 +2867,101 @@
       const isAll = mode === "all";
       document.getElementById("ic_singleCustomerBox").classList.toggle("hidden", isAll);
       document.getElementById("ic_allCustomerHint").classList.toggle("hidden", !isAll);
-      document.getElementById("ic_allCountBanner").textContent = `將批次發放給目前所有會員（共 ${state.customers.length} 位）`;
-      document.getElementById("ic_submitBtn").textContent = isAll ? `批次發放給全部 ${state.customers.length} 位會員` : "確認發放優惠券";
     }
 
-    function filterCouponCustomerSelect() {
+    function filterCouponCustomerSelect(keepSelectedId = null) {
       const q = (document.getElementById("ic_memberSearch").value || "").trim().toLowerCase();
       const sel = document.getElementById("ic_customerId");
-      const prevVal = sel.value;
+      const currentVal = keepSelectedId !== null ? keepSelectedId : sel.value;
 
-      const list = state.customers.filter(c => {
+      const matched = state.customers.filter(c => {
         if (!q) return true;
-        return `${c.name} ${c.lineDisplayName} ${c.nickname} ${c.contact}`.toLowerCase().includes(q);
+        const hay = `${c.name} ${c.lineDisplayName} ${c.nickname} ${c.contact}`.toLowerCase();
+        return hay.includes(q);
       });
 
-      sel.innerHTML = list.length === 0
-        ? `<option value="">查無符合會員</option>`
-        : list.map(c => `<option value="${esc(c.id)}">${esc(c.name)}${c.lineDisplayName ? `（${esc(c.lineDisplayName)}）` : ""}${c.contact ? ` · ${esc(c.contact)}` : ""}</option>`).join("");
-
-      if (prevVal && list.some(c => String(c.id) === String(prevVal))) {
-        sel.value = prevVal;
+      if (matched.length === 0) {
+        sel.innerHTML = `<option value="">查無符合的會員</option>`;
+        return;
       }
+
+      sel.innerHTML = matched.map(c =>
+        `<option value="${esc(c.id)}" ${String(c.id) === String(currentVal) ? "selected" : ""}>${esc(c.name)}${c.lineDisplayName ? `（${esc(c.lineDisplayName)}）` : ""}${c.contact ? ` · ${esc(c.contact)}` : ""}</option>`
+      ).join("");
     }
 
     function applyCouponTypePreset() {
-      const type = document.getElementById("ic_type").value;
+      const t = document.getElementById("ic_type").value;
       const titleInput = document.getElementById("ic_title");
-      if (type === "新客介紹" && !titleInput.value.trim()) {
-        titleInput.value = "新客介紹折 $100";
-        document.getElementById("ic_discountAmount").value = 100;
-      } else if (type === "生日優惠" && !titleInput.value.trim()) {
-        titleInput.value = "生日禮折 $100";
-        document.getElementById("ic_discountAmount").value = 100;
-        document.getElementById("ic_validityMonths").value = 1;
+      const amtInput = document.getElementById("ic_discountAmount");
+      const monthsInput = document.getElementById("ic_validityMonths");
+      if (t === "新客見面禮") {
+        titleInput.value = "新客見面禮折 $100";
+        amtInput.value = 100;
+        monthsInput.value = 3;
+      } else if (t === "新客介紹") {
+        titleInput.value = "推薦親友感謝禮折 $200";
+        amtInput.value = 200;
+        monthsInput.value = 6;
+      } else if (t === "生日優惠") {
+        const bRule = state.couponRules.birthday;
+        titleInput.value = bRule ? bRule.title : "當月壽星生日禮折 $100";
+        amtInput.value = bRule ? safeNumber(bRule.discountAmount, 100) : 100;
+        monthsInput.value = bRule ? safeNumber(bRule.validityMonths, 1) : 1;
+      } else if (t === "活動回饋") {
+        titleInput.value = "VIP 專屬回饋折 $150";
+        amtInput.value = 150;
+        monthsInput.value = 3;
+      } else if (!titleInput.value) {
+        titleInput.value = "專屬折價券 $100";
+        amtInput.value = 100;
+        monthsInput.value = 6;
       }
     }
 
     async function handleIssueCouponSubmit(e) {
       e.preventDefault();
-      const mode = document.getElementById("ic_targetMode").value;
-      const payload = {
-        customerId: document.getElementById("ic_customerId").value,
-        type: document.getElementById("ic_type").value,
-        title: document.getElementById("ic_title").value.trim(),
-        discountAmount: safeNumber(document.getElementById("ic_discountAmount").value, 0),
-        validityMonths: safeNumber(document.getElementById("ic_validityMonths").value, 6),
-        note: document.getElementById("ic_note").value.trim()
-      };
+      const targetMode = document.getElementById("ic_targetMode").value;
+      const title = document.getElementById("ic_title").value.trim();
+      const type = document.getElementById("ic_type").value;
+      const discountAmount = safeNumber(document.getElementById("ic_discountAmount").value, 0);
+      const validityMonths = safeNumber(document.getElementById("ic_validityMonths").value, 6);
+      const note = document.getElementById("ic_note").value.trim();
 
-      if (mode === "single" && !payload.customerId) {
-        showToast("請選擇要發放的會員", true);
+      if (targetMode === "all") {
+        if (state.customers.length === 0) return showToast("目前尚無任何會員可發放", true);
+        if (!confirm(`確定要發放「${title}」給目前全部 ${state.customers.length} 位會員嗎？`)) return;
+        try {
+          setLoading(true, `批次發放優惠券給 ${state.customers.length} 位會員中...`);
+          const snap = await apiPost({
+            action: "issueCouponToAllAdmin",
+            password: state.adminPassword,
+            payload: { type, title, discountAmount, validityMonths, note }
+          });
+          applyAdminSnapshot(snap);
+          closeIssueCouponModal();
+          showToast(`已成功發放給全體 ${state.customers.length} 位會員`);
+        } catch (err) {
+          showToast(err.message || "批次發放失敗", true);
+        } finally {
+          setLoading(false);
+        }
         return;
       }
-      if (mode === "all" && !confirm(`確定要將「${payload.title}」發放給全部 ${state.customers.length} 位會員嗎？`)) {
-        return;
-      }
+
+      const customerId = document.getElementById("ic_customerId").value;
+      if (!customerId) return showToast("請先選擇要發放的會員", true);
 
       try {
-        setLoading(true, mode === "all" ? "批次發放優惠券中..." : "發放優惠券中...");
-        const action = mode === "all" ? "issueCouponToAllAdmin" : "issueCouponAdmin";
-        const snap = await apiPost({ action, password: state.adminPassword, payload });
+        setLoading(true, "發放優惠券中...");
+        const snap = await apiPost({
+          action: "issueCouponAdmin",
+          password: state.adminPassword,
+          payload: { customerId, type, title, discountAmount, validityMonths, note }
+        });
         applyAdminSnapshot(snap);
         closeIssueCouponModal();
-        showToast(mode === "all" ? `已批次發放給 ${state.customers.length} 位會員` : "已發放優惠券");
+        showToast("已成功發放優惠券");
       } catch (err) {
         showToast(err.message || "發放失敗", true);
       } finally {
@@ -2549,12 +2970,12 @@
     }
 
     async function voidCoupon(couponId) {
-      if (!confirm("確定要作廢這張優惠券嗎？")) return;
+      if (!confirm("確定要將此優惠券作廢嗎？")) return;
       try {
-        setLoading(true, "作廢優惠券中...");
+        setLoading(true, "作廢處理中...");
         const snap = await apiPost({ action: "voidCouponAdmin", password: state.adminPassword, couponId });
         applyAdminSnapshot(snap);
-        showToast("已作廢優惠券");
+        showToast("優惠券已作廢");
       } catch (err) {
         showToast(err.message || "作廢失敗", true);
       } finally {
@@ -2562,57 +2983,118 @@
       }
     }
 
-    /* ==================== 分頁 4：帳務與儲值 ==================== */
+    /* ==================== 分頁 4：帳務與儲值（清晰三頁籤分流＋美化） ==================== */
+    function switchFinanceSubTab(sub) {
+      state.financeSubTab = sub;
+      ["income", "expense", "topup"].forEach(k => {
+        document.getElementById(`finSubBtn-${k}`).className =
+          `px-4 py-2 rounded-xl text-xs font-extrabold ${k === sub ? "subtab-active" : "subtab-inactive"}`;
+        document.getElementById(`finSubPanel-${k}`).classList.toggle("hidden", k !== sub);
+      });
+    }
+
     function renderFinanceTab() {
-      const ym = formatTodayStr().slice(0, 7);
-      const settledBookings = state.bookings.filter(
-        b => String(b.date || "").startsWith(ym) && (b.status === "已完成" || b.status === "已報到")
-      );
+      const ym = document.getElementById("financeMonthPicker").value || formatTodayStr().slice(0, 7);
+      const q = (document.getElementById("financeSearchInput").value || "").trim().toLowerCase();
 
-      const monthRev = settledBookings.reduce((sum, b) => sum + safeNumber(b.finalPrice, 0), 0);
-      const monthExp = state.expenses
-        .filter(ex => String(ex.date || "").startsWith(ym))
-        .reduce((sum, ex) => sum + safeNumber(ex.amount, 0), 0);
+      const completedBks = state.bookings.filter(b => b.status === "已完成" && String(b.date).startsWith(ym));
+      const monthRev = completedBks.reduce((s, b) => s + safeNumber(b.finalPrice, 0), 0);
 
-      const totalBal = state.customers.reduce((sum, c) => sum + safeNumber(c.balance, 0), 0);
-      const netProfit = monthRev - monthExp;
+      const monthExps = state.expenses.filter(ex => String(ex.date).startsWith(ym));
+      const monthExpSum = monthExps.reduce((s, ex) => s + safeNumber(ex.amount, 0), 0);
+
+      const totalBal = state.customers.reduce((s, c) => s + safeNumber(c.balance, 0), 0);
 
       document.getElementById("finMonthRevenue").textContent = `$${monthRev.toLocaleString()}`;
-      document.getElementById("finMonthExpense").textContent = `-$${monthExp.toLocaleString()}`;
-      document.getElementById("finMonthNet").textContent = `${netProfit < 0 ? "-" : ""}$${Math.abs(netProfit).toLocaleString()}`;
+      document.getElementById("finMonthExpense").textContent = `-$${monthExpSum.toLocaleString()}`;
+      document.getElementById("finMonthNet").textContent = `$${(monthRev - monthExpSum).toLocaleString()}`;
       document.getElementById("finTotalBalance").textContent = `$${totalBal.toLocaleString()}`;
 
-      const expBox = document.getElementById("expensesListContainer");
-      expBox.innerHTML = state.expenses.length === 0
-        ? `<div class="text-[#8b7365]">尚無營運支出紀錄</div>`
-        : state.expenses.map(ex => `
-          <div class="flex items-center justify-between p-2 rounded-lg bg-[#fcfaf8] border border-[#efe5da]">
-            <div><span class="font-bold">${esc(ex.date)}</span> · ${esc(ex.category)}${ex.note ? `（${esc(ex.note)}）` : ""}</div>
-            <div class="flex items-center gap-2">
-              <span class="font-bold text-[#b42318]">-$${safeNumber(ex.amount, 0).toLocaleString()}</span>
-              <button onclick="deleteExpense('${escJs(ex.id)}')" class="text-[#8b7365] hover:text-[#b42318]">✕</button>
-            </div>
-          </div>
-        `).join("");
+      // 1. 收入明細（當月已完成結算的預約）
+      const filteredIncomes = completedBks
+        .filter(b => !q || `${b.customerName} ${b.service} ${b.payMethod}`.toLowerCase().includes(q))
+        .sort((a, b) => `${b.date} ${b.startTime}`.localeCompare(`${a.date} ${a.startTime}`));
 
-      const txBox = document.getElementById("transactionsListContainer");
-      txBox.innerHTML = state.transactions.length === 0
-        ? `<div class="text-[#8b7365]">尚無儲值異動紀錄</div>`
-        : state.transactions.slice(0, 30).map(t => {
-          const pts = safeNumber(t.pointsChange, 0);
+      const incBox = document.getElementById("incomeListContainer");
+      if (filteredIncomes.length === 0) {
+        incBox.innerHTML = `<div class="text-xs text-[#8b7365] py-8 text-center bg-[#fcfaf8] rounded-2xl border border-dashed border-[#e5d8ca]">${ym} 月尚無已完成結算的收入明細</div>`;
+      } else {
+        incBox.innerHTML = filteredIncomes.map(b => {
+          const rev = safeNumber(b.finalPrice, 0);
+          const payBadge =
+            b.payMethod === "扣儲值金" ? "bg-amber-100 text-amber-900" :
+            b.payMethod === "轉帳" ? "bg-sky-100 text-sky-900" :
+            "bg-emerald-100 text-emerald-900";
           return `
-            <div class="flex items-center justify-between p-2 rounded-lg bg-[#fcfaf8] border border-[#efe5da]">
-              <div>
-                <span class="font-bold text-[#33241d]">${esc(t.customerName)}</span> · <span class="text-[#6a4f3f]">${esc(t.type)}</span>
-                <div class="text-[11px] text-[#8b7365]">${esc(t.time)}${t.note ? ` · ${esc(t.note)}` : ""}</div>
+            <div class="p-3.5 rounded-2xl bg-[#fcfaf8] border border-[#efe4d8] flex items-center justify-between gap-3 text-xs">
+              <div class="min-w-0 flex-1 space-y-0.5">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="font-bold text-[#6d5648] tabular-nums">${esc(b.date)} ${esc(b.startTime)}</span>
+                  <span class="font-extrabold text-sm text-[#33241d]">${esc(b.customerName)}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${payBadge}">${esc(b.payMethod)}</span>
+                </div>
+                <div class="text-[#5c4638] truncate">${esc(b.service || "美學服務")}</div>
               </div>
-              <div class="text-right">
-                <div class="font-bold ${pts >= 0 ? "text-emerald-700" : "text-[#b42318]"}">${pts >= 0 ? "+" : ""}${pts.toLocaleString()}</div>
-                <div class="text-[11px] text-[#8b7365]">餘額 $${safeNumber(t.balanceAfter, 0).toLocaleString()}</div>
+              <div class="text-right shrink-0">
+                <div class="font-extrabold text-sm text-emerald-700 tabular-nums">+$${rev.toLocaleString()}</div>
               </div>
             </div>
           `;
         }).join("");
+      }
+
+      // 2. 支出明細
+      const filteredExps = monthExps.filter(ex => !q || `${ex.category} ${ex.note}`.toLowerCase().includes(q));
+      const expBox = document.getElementById("expensesListContainer");
+      if (filteredExps.length === 0) {
+        expBox.innerHTML = `<div class="text-xs text-[#8b7365] py-8 text-center bg-[#fcfaf8] rounded-2xl border border-dashed border-[#e5d8ca]">${ym} 月尚無營運支出紀錄</div>`;
+      } else {
+        expBox.innerHTML = filteredExps.map(ex => `
+          <div class="p-3.5 rounded-2xl bg-[#fcfaf8] border border-[#efe4d8] flex items-center justify-between gap-2 text-xs">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-[#6d5648] tabular-nums">${esc(ex.date)}</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">${esc(ex.category)}</span>
+              </div>
+              <div class="text-[#3a2a22] font-semibold mt-0.5">${esc(ex.note || "日常營運支出")}</div>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span class="font-extrabold text-sm text-[#b42318] tabular-nums">-$${safeNumber(ex.amount, 0).toLocaleString()}</span>
+              <button onclick="deleteExpense('${escJs(ex.id)}')" class="text-[#8b7365] hover:text-[#b42318] font-bold px-1.5">✕</button>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      // 3. 儲值金紀錄
+      const filteredTxs = state.transactions.filter(tx => !q || `${tx.customerName} ${tx.type} ${tx.note}`.toLowerCase().includes(q));
+      const txBox = document.getElementById("transactionsListContainer");
+      if (filteredTxs.length === 0) {
+        txBox.innerHTML = `<div class="text-xs text-[#8b7365] py-8 text-center bg-[#fcfaf8] rounded-2xl border border-dashed border-[#e5d8ca]">尚無儲值金異動紀錄</div>`;
+      } else {
+        txBox.innerHTML = filteredTxs.slice(0, 80).map(tx => {
+          const pts = safeNumber(tx.pointsChange, 0);
+          const isPositive = pts >= 0;
+          return `
+            <div class="p-3.5 rounded-2xl bg-[#fcfaf8] border border-[#efe4d8] flex items-center justify-between gap-3 text-xs">
+              <div class="min-w-0 flex-1 space-y-0.5">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="font-extrabold text-sm text-[#33241d]">${esc(tx.customerName)}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isPositive ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}">${esc(tx.type)}</span>
+                  <span class="text-[11px] text-[#8b7365]">${esc(tx.time)}</span>
+                </div>
+                ${tx.note ? `<div class="text-[#6d5648] truncate">${esc(tx.note)}</div>` : ""}
+              </div>
+              <div class="text-right shrink-0">
+                <div class="font-extrabold text-sm tabular-nums ${isPositive ? "text-emerald-700" : "text-[#b42318]"}">
+                  ${isPositive ? "+" : ""}$${pts.toLocaleString()}
+                </div>
+                <div class="text-[11px] text-[#8b7365] tabular-nums">異動後餘額 $${safeNumber(tx.balanceAfter, 0).toLocaleString()}</div>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
     }
 
     async function handleAddExpense(e) {
@@ -2641,12 +3123,12 @@
     }
 
     async function deleteExpense(expenseId) {
-      if (!confirm("確定要刪除此筆支出紀錄嗎？")) return;
+      if (!confirm("確定要刪除此筆支出嗎？")) return;
       try {
         setLoading(true, "刪除支出中...");
         const snap = await apiPost({ action: "deleteExpenseAdmin", password: state.adminPassword, expenseId });
         applyAdminSnapshot(snap);
-        showToast("已刪除支出紀錄");
+        showToast("已刪除支出");
       } catch (err) {
         showToast(err.message || "刪除失敗", true);
       } finally {
@@ -2654,141 +3136,113 @@
       }
     }
 
-    /* ==================== 分頁 5：管理 ==================== */
-    function selectCatalogCategoryFilter(cat) {
-      state.selectedCatalogCategory = cat;
+    /* ==================== 分頁 5：管理（服務與產品 / 禁約時段） ==================== */
+    function selectCatalogCategory(catName) {
+      state.selectedCatalogCategory = catName;
       renderCatalogTab();
     }
 
-    function getCategoryCardAccent(catName, isProductCat) {
-      if (isProductCat) {
-        return {
-          headerBg: "bg-[#f5f2ef] border-[#e2d9d0]",
-          badgeBg: "bg-[#3a2a22] text-white",
-          icon: "🧴"
-        };
-      }
-      if (catName.indexOf("熱蠟") !== -1) {
-        return {
-          headerBg: "bg-rose-50/80 border-rose-200/80",
-          badgeBg: "bg-rose-700 text-white",
-          icon: "🕯️"
-        };
-      }
-      if (catName.indexOf("日式") !== -1 || catName.indexOf("冰肌") !== -1 || catName.indexOf("淨毛") !== -1) {
-        return {
-          headerBg: "bg-sky-50/80 border-sky-200/80",
-          badgeBg: "bg-sky-700 text-white",
-          icon: "✨"
-        };
-      }
-      return {
-        headerBg: "bg-[#faf3ec] border-[#ebd9c7]",
-        badgeBg: "bg-[#8c5e43] text-white",
-        icon: "💆‍♀️"
-      };
-    }
-
     function renderCatalogTab() {
-      const presetCats = ["日式無痛淨毛（單堂）", "日式無痛淨毛（三堂）", "熱蠟", "產品"];
-      const existingCats = state.catalog.map(x => String(x.category || "").trim()).filter(Boolean);
-      const allCats = Array.from(new Set([...presetCats, ...existingCats]));
-
-      document.getElementById("catalogCategoryDatalist").innerHTML = allCats
-        .map(c => `<option value="${esc(c)}"></option>`)
-        .join("");
+      const bar = document.getElementById("catalogCategoryBar");
+      const container = document.getElementById("catalogGroupedContainer");
+      const datalist = document.getElementById("catalogCategoryDatalist");
 
       const grouped = {};
       state.catalog.forEach(item => {
-        const cat = String(item.category || "其他").trim();
+        const cat = String(item.category || "未分類").trim();
         if (!grouped[cat]) grouped[cat] = [];
         grouped[cat].push(item);
       });
 
-      const activeCatKeys = Object.keys(grouped).sort((a, b) => {
-        const ia = presetCats.indexOf(a);
-        const ib = presetCats.indexOf(b);
-        if (ia !== -1 && ib !== -1) return ia - ib;
-        if (ia !== -1) return -1;
-        if (ib !== -1) return 1;
-        return a.localeCompare(b, "zh-Hant");
-      });
+      const categories = Object.keys(grouped);
+      datalist.innerHTML = categories.map(c => `<option value="${esc(c)}"></option>`).join("");
 
       if (state.selectedCatalogCategory !== "ALL" && !grouped[state.selectedCatalogCategory]) {
         state.selectedCatalogCategory = "ALL";
       }
 
-      const barEl = document.getElementById("catalogCategoryBar");
-      const pills = [
-        `<button type="button" onclick="selectCatalogCategoryFilter('ALL')" class="px-3.5 py-1.5 rounded-full text-xs font-bold border transition ${
-          state.selectedCatalogCategory === "ALL" ? "cat-pill-active" : "cat-pill-inactive"
-        }">全部項目（${state.catalog.length}）</button>`
-      ];
+      const allPill = `
+        <button type="button" onclick="selectCatalogCategory('ALL')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold border transition flex items-center gap-1.5 ${
+          state.selectedCatalogCategory === "ALL" ? "cat-pill-active" : "cat-pill-inactive hover:bg-[#f6efe8]"
+        }">
+          <span>全部分類</span>
+          <span class="px-1.5 py-0.5 rounded-full text-[10px] ${
+            state.selectedCatalogCategory === "ALL" ? "bg-white/25 text-white" : "bg-[#efe5da] text-[#6d5648]"
+          }">${state.catalog.length}</span>
+        </button>
+      `;
 
-      activeCatKeys.forEach(cat => {
-        const isAct = state.selectedCatalogCategory === cat;
-        pills.push(`
-          <button type="button" onclick="selectCatalogCategoryFilter('${escJs(cat)}')" class="px-3.5 py-1.5 rounded-full text-xs font-bold border transition ${
-            isAct ? "cat-pill-active" : "cat-pill-inactive"
+      const catPills = categories.map(cat => {
+        const isSel = state.selectedCatalogCategory === cat;
+        return `
+          <button type="button" onclick="selectCatalogCategory('${escJs(cat)}')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold border transition flex items-center gap-1.5 ${
+            isSel ? "cat-pill-active" : "cat-pill-inactive hover:bg-[#f6efe8]"
           }">
-            ${esc(cat)}（${grouped[cat].length}）
+            <span>${esc(cat)}</span>
+            <span class="px-1.5 py-0.5 rounded-full text-[10px] ${
+              isSel ? "bg-white/25 text-white" : "bg-[#efe5da] text-[#6d5648]"
+            }">${grouped[cat].length}</span>
           </button>
-        `);
-      });
-      barEl.innerHTML = pills.join("");
+        `;
+      }).join("");
 
-      const box = document.getElementById("catalogGroupedContainer");
-      if (state.catalog.length === 0) {
-        box.innerHTML = `<div class="col-span-full text-center py-8 text-xs text-[#8b7365] glass-card rounded-2xl">尚無服務或產品項目，請點選右上角「+ 新增服務」或「+ 新增產品」</div>`;
+      bar.innerHTML = allPill + catPills;
+
+      if (categories.length === 0) {
+        container.innerHTML = `<div class="col-span-full text-center py-8 text-xs text-[#8b7365] glass-card rounded-2xl">尚未建立服務或產品價目，請點擊上方「+ 新增服務」或「+ 新增產品」</div>`;
         return;
       }
 
-      const displayCategories = state.selectedCatalogCategory === "ALL"
-        ? activeCatKeys
+      const targetCats = state.selectedCatalogCategory === "ALL"
+        ? categories
         : [state.selectedCatalogCategory];
 
-      box.innerHTML = displayCategories.map(cat => {
-        const items = grouped[cat] || [];
-        const isProductCat = cat.indexOf("產品") !== -1 || items.every(i => i.itemType === "產品");
-        const accent = getCategoryCardAccent(cat, isProductCat);
-
+      container.innerHTML = targetCats.map(cat => {
+        const items = grouped[cat];
+        const isProductCat = cat.indexOf("產品") !== -1;
         return `
           <div class="glass-card rounded-2xl overflow-hidden flex flex-col">
-            <div class="px-4 py-3 border-b ${accent.headerBg} flex items-center justify-between gap-2">
+            <div class="px-4 py-3 bg-[#f7efe7] border-b border-[#ead9c8] flex items-center justify-between gap-2">
               <div class="flex items-center gap-2 min-w-0">
-                <span class="px-3 py-1 rounded-full ${accent.badgeBg} text-xs font-extrabold truncate shadow-sm">
-                  ${accent.icon} ${esc(cat)}
-                </span>
-                <span class="text-xs font-bold text-[#6a4f3f] shrink-0">${items.length} 項</span>
+                <span class="font-extrabold text-sm text-[#33241d] truncate">${esc(cat)}</span>
+                <span class="text-[11px] px-2 py-0.5 rounded-full bg-white text-[#8c5e43] font-bold shrink-0">${items.length} 項</span>
               </div>
-              <button type="button" onclick="openCatalogModal('', '${escJs(cat)}', '${isProductCat ? "產品" : "服務"}')" class="px-3 py-1 rounded-xl bg-white/90 border border-[#decbb9] text-[#5c4638] text-xs font-bold hover:bg-white shrink-0">
-                + 新增
+              <button type="button" onclick="openCatalogModal('', '${escJs(cat)}', '${isProductCat ? "產品" : "服務"}')" class="px-2.5 py-1 rounded-lg bg-white text-[#8c5e43] border border-[#decbb9] text-[11px] font-bold hover:bg-[#fdf8f3] shrink-0">
+                + 新增細項
               </button>
             </div>
-
-            <div class="p-3.5 divide-y divide-[#f3eae1] flex-1">
+            <div class="divide-y divide-[#f2e8df]">
               ${items.map(item => {
-                const price = safeNumber(item.price, 0);
-                const visibleBadge = item.customerVisible
-                  ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">客戶可見</span>`
-                  : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-stone-200 text-stone-700">僅後台</span>`;
-
+                const dur = safeNumber(item.duration, 0);
+                const isProduct = item.itemType === "產品" || String(item.category).indexOf("產品") !== -1;
                 return `
-                  <div class="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3 text-xs">
-                    <div class="min-w-0 flex-1 space-y-1">
+                  <div class="p-3.5 flex items-center justify-between gap-2 text-xs hover:bg-[#fcf9f5]">
+                    <div class="space-y-1 min-w-0 flex-1">
                       <div class="flex flex-wrap items-center gap-1.5">
+                        <span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${isProduct ? "bg-amber-100 text-amber-800" : "bg-[#f3ece5] text-[#6b5344]"}">
+                          ${isProduct ? "產品" : "服務"}
+                        </span>
                         <span class="font-bold text-sm text-[#33241d]">${esc(item.name)}</span>
-                        ${visibleBadge}
-                        ${!item.active ? `<span class="px-2 py-0.5 rounded-full text-[10px] bg-red-100 text-red-800 font-bold">已停用</span>` : ""}
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${item.customerVisible ? "bg-emerald-100 text-emerald-800" : "bg-stone-200 text-stone-600"}">
+                          ${item.customerVisible ? "客戶可見" : "客戶隱藏"}
+                        </span>
+                        ${!item.active ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">已停用</span>` : ""}
                       </div>
-                      <div class="text-[#5c4638]">
-                        售價 <strong class="text-sm text-[#8c5e43] tabular-nums">$${price.toLocaleString()}</strong>
-                        ${safeNumber(item.duration, 0) > 0 ? `<span class="ml-2 text-[#8b7365]">· ⏱ ${safeNumber(item.duration, 0)} 分鐘</span>` : ""}
+                      <div class="text-[#7c6557]">
+                        售價：<strong class="text-[#8c5e43]">$${safeNumber(item.price, 0).toLocaleString()}</strong>${dur > 0 ? ` · 時長 ${dur} 分` : ""}
                       </div>
                     </div>
-                    <button type="button" onclick="openCatalogModal('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl bg-[#faf6f2] border border-[#decbb9] text-[#5c4638] font-bold hover:bg-[#f0e6dc] shrink-0">
-                      編輯
-                    </button>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      <button type="button" onclick="toggleCatalogCustomerVisible('${escJs(item.id)}', ${!item.customerVisible})" class="px-2.5 py-1 rounded-lg border text-[11px] font-bold ${
+                        item.customerVisible
+                          ? "bg-white border-[#decbb9] text-[#5c4638]"
+                          : "bg-emerald-50 border-emerald-200 text-emerald-800"
+                      }">
+                        ${item.customerVisible ? "隱藏" : "顯示"}
+                      </button>
+                      <button type="button" onclick="openCatalogModal('${escJs(item.id)}')" class="px-2.5 py-1 rounded-lg bg-[#f3ece5] text-[#5c4638] font-bold">編輯</button>
+                      <button type="button" onclick="deleteCatalogItem('${escJs(item.id)}')" class="px-2.5 py-1 rounded-lg bg-[#fdf2f2] text-[#b42318] font-bold">刪除</button>
+                    </div>
                   </div>
                 `;
               }).join("")}
@@ -2798,45 +3252,35 @@
       }).join("");
     }
 
-    function onCatalogItemTypeChange() {
-      const t = document.getElementById("cat_itemType").value;
-      const isProd = t === "產品";
-      document.getElementById("cat_nameLabel").textContent = isProd ? "產品名稱 *" : "服務項目名稱 *";
-      if (isProd && safeNumber(document.getElementById("cat_duration").value, 60) === 60) {
-        document.getElementById("cat_duration").value = "0";
-      } else if (!isProd && safeNumber(document.getElementById("cat_duration").value, 0) === 0) {
-        document.getElementById("cat_duration").value = "60";
-      }
-    }
-
-    function openCatalogModal(itemId = "", presetCategory = "", presetItemType = "服務") {
+    function openCatalogModal(itemId = "", prefillCategory = "", prefillType = "服務") {
       const item = itemId ? state.catalog.find(x => String(x.id) === String(itemId)) : null;
-      if (item) {
-        document.getElementById("catalogModalTitle").textContent = `編輯項目：${item.name}`;
-        document.getElementById("cat_id").value = item.id;
-        document.getElementById("cat_category").value = item.category || "";
-        document.getElementById("cat_name").value = item.name || "";
-        document.getElementById("cat_price").value = safeNumber(item.price, 0);
-        document.getElementById("cat_duration").value = safeNumber(item.duration, 30);
-        document.getElementById("cat_itemType").value = item.itemType || "服務";
-        document.getElementById("cat_customerVisible").checked = !!item.customerVisible;
-        document.getElementById("cat_active").checked = !!item.active;
-      } else {
-        const isProd = presetItemType === "產品" || presetCategory.indexOf("產品") !== -1;
-        document.getElementById("catalogModalTitle").textContent = isProd
-          ? "新增販售產品"
-          : (presetCategory ? `在「${presetCategory}」新增服務` : "新增服務項目");
-        document.getElementById("cat_id").value = "";
-        document.getElementById("cat_category").value = presetCategory || (isProd ? "產品" : "");
-        document.getElementById("cat_name").value = "";
-        document.getElementById("cat_price").value = "";
-        document.getElementById("cat_duration").value = isProd ? "0" : "60";
-        document.getElementById("cat_itemType").value = isProd ? "產品" : "服務";
-        document.getElementById("cat_customerVisible").checked = true;
-        document.getElementById("cat_active").checked = true;
-      }
+      const itemType = item
+        ? (item.itemType || (String(item.category).indexOf("產品") !== -1 ? "產品" : "服務"))
+        : prefillType;
+
+      document.getElementById("catalogModalTitle").textContent = item
+        ? `編輯${itemType === "產品" ? "產品" : "服務"}項目`
+        : `新增${itemType === "產品" ? "產品" : "服務"}項目`;
+      document.getElementById("cat_id").value = item ? item.id : "";
+      document.getElementById("cat_category").value = item ? item.category : (prefillCategory || "");
+      document.getElementById("cat_name").value = item ? item.name : "";
+      document.getElementById("cat_price").value = item ? safeNumber(item.price, 0) : "";
+      document.getElementById("cat_duration").value = item ? safeNumber(item.duration, 0) : (itemType === "產品" ? 0 : 60);
+      document.getElementById("cat_itemType").value = itemType;
+      document.getElementById("cat_customerVisible").checked = item ? !!item.customerVisible : true;
+      document.getElementById("cat_active").checked = item ? !!item.active : true;
       onCatalogItemTypeChange();
       document.getElementById("catalogModal").classList.remove("hidden");
+    }
+
+    function onCatalogItemTypeChange() {
+      const t = document.getElementById("cat_itemType").value;
+      const catInput = document.getElementById("cat_category");
+      const durInput = document.getElementById("cat_duration");
+      if (t === "產品") {
+        if (!catInput.value.trim()) catInput.value = "產品";
+        if (!document.getElementById("cat_id").value) durInput.value = 0;
+      }
     }
 
     function closeCatalogModal() {
@@ -2846,7 +3290,7 @@
     async function handleSaveCatalog(e) {
       e.preventDefault();
       try {
-        setLoading(true, "儲存價目設定中...");
+        setLoading(true, "儲存項目中...");
         const snap = await apiPost({
           action: "saveCatalogItemAdmin",
           password: state.adminPassword,
@@ -2863,9 +3307,42 @@
         });
         applyAdminSnapshot(snap);
         closeCatalogModal();
-        showToast("已儲存項目設定");
+        showToast("已儲存項目");
       } catch (err) {
         showToast(err.message || "儲存失敗", true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function toggleCatalogCustomerVisible(itemId, visible) {
+      const item = state.catalog.find(x => String(x.id) === String(itemId));
+      if (!item) return;
+      try {
+        setLoading(true, "更新客戶端顯示設定...");
+        const snap = await apiPost({
+          action: "saveCatalogItemAdmin",
+          password: state.adminPassword,
+          item: { ...item, customerVisible: visible }
+        });
+        applyAdminSnapshot(snap);
+        showToast(visible ? "已設定讓客戶端看到此項目" : "已設定對客戶端隱藏此項目");
+      } catch (err) {
+        showToast(err.message || "更新失敗", true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function deleteCatalogItem(itemId) {
+      if (!confirm("確定要刪除此項目嗎？")) return;
+      try {
+        setLoading(true, "刪除中...");
+        const snap = await apiPost({ action: "deleteCatalogItemAdmin", password: state.adminPassword, itemId });
+        applyAdminSnapshot(snap);
+        showToast("已刪除項目");
+      } catch (err) {
+        showToast(err.message || "刪除失敗", true);
       } finally {
         setLoading(false);
       }
@@ -2886,29 +3363,9 @@
     }
 
     function toggleBlockedTimeInputs() {
-      const fullDay = document.getElementById("blk_fullDay").checked;
-      document.getElementById("blk_startTime").disabled = fullDay;
-      document.getElementById("blk_endTime").disabled = fullDay;
-    }
-
-    function renderBlockedSlotsTab() {
-      const box = document.getElementById("blockedSlotsListContainer");
-      if (state.blockedSlots.length === 0) {
-        box.innerHTML = `<div class="text-center py-8 text-xs text-[#8b7365] glass-card rounded-2xl">目前沒有禁約時段設定，點選右上角「+ 新增禁約時段」新增</div>`;
-        return;
-      }
-      box.innerHTML = state.blockedSlots.map(blk => `
-        <div class="glass-card rounded-2xl p-3.5 flex items-center justify-between gap-2 text-xs border-l-4 border-l-red-600">
-          <div>
-            <span class="font-extrabold text-sm text-[#33241d]">${esc(blk.date)}</span>
-            <span class="ml-2 px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-bold">
-              ${blk.fullDay ? "整天禁止預約" : `${esc(blk.startTime)} - ${esc(blk.endTime)}`}
-            </span>
-            <span class="ml-2 text-[#4a382f] font-medium">${esc(blk.reason || "不可預約")}</span>
-          </div>
-          <button onclick="deleteBlockedSlot('${escJs(blk.id)}')" class="px-2.5 py-1 rounded-lg bg-[#fdf2f2] text-[#b42318] font-bold">移除</button>
-        </div>
-      `).join("");
+      const isFull = document.getElementById("blk_fullDay").checked;
+      document.getElementById("blk_startTime").disabled = isFull;
+      document.getElementById("blk_endTime").disabled = isFull;
     }
 
     async function handleSaveBlockedSlot(e) {
@@ -2920,9 +3377,9 @@
           password: state.adminPassword,
           payload: {
             date: document.getElementById("blk_date").value,
+            fullDay: document.getElementById("blk_fullDay").checked,
             startTime: document.getElementById("blk_startTime").value,
             endTime: document.getElementById("blk_endTime").value,
-            fullDay: document.getElementById("blk_fullDay").checked,
             reason: document.getElementById("blk_reason").value.trim() || "不可預約"
           }
         });
@@ -2936,240 +3393,75 @@
       }
     }
 
+    function renderBlockedSlotsTab() {
+      const container = document.getElementById("blockedSlotsListContainer");
+      if (state.blockedSlots.length === 0) {
+        container.innerHTML = `<div class="text-xs text-[#8b7365] py-8 text-center glass-card rounded-2xl">目前沒有設定禁止預約時段</div>`;
+        return;
+      }
+      container.innerHTML = state.blockedSlots.map(blk => `
+        <div class="glass-card rounded-xl p-3.5 flex items-center justify-between gap-2 text-xs">
+          <div>
+            <span class="font-extrabold text-sm text-[#b91c1c]">🚫 ${esc(blk.date)}</span>
+            <span class="ml-2 px-2 py-0.5 rounded-full bg-red-100 text-red-800 font-bold">
+              ${blk.fullDay ? "整天禁止預約" : `${esc(blk.startTime)} - ${esc(blk.endTime)}`}
+            </span>
+            <span class="ml-2 text-[#5c4638]">${esc(blk.reason)}</span>
+          </div>
+          <button onclick="deleteBlockedSlot('${escJs(blk.id)}')" class="px-2.5 py-1 rounded-lg bg-[#fdf2f2] text-[#b42318] font-bold">刪除</button>
+        </div>
+      `).join("");
+    }
+
     async function deleteBlockedSlot(blockId) {
-      if (!confirm("確定要移除此禁約設定嗎？")) return;
+      if (!confirm("確定要刪除此禁約時段嗎？")) return;
       try {
-        setLoading(true, "移除禁約中...");
+        setLoading(true, "刪除中...");
         const snap = await apiPost({ action: "deleteBlockedSlotAdmin", password: state.adminPassword, blockId });
         applyAdminSnapshot(snap);
-        showToast("已移除禁約設定");
+        showToast("已刪除禁約時段");
       } catch (err) {
-        showToast(err.message || "移除失敗", true);
+        showToast(err.message || "刪除失敗", true);
       } finally {
         setLoading(false);
       }
     }
 
+    /* ==================== 客戶端模式與問卷引擎 ==================== */
     function openCustomerPortalPreview() {
-      const firstCust = state.customers[0];
-      const base = getFrontendBaseUrl();
-      const url = firstCust
-        ? `${base}?cid=${encodeURIComponent(firstCust.id)}`
-        : `${base}?mode=customer`;
+      const firstCustId = state.customers.length > 0 ? state.customers[0].id : "";
+      const url = firstCustId
+        ? buildCustomerRebindLink(firstCustId, false)
+        : `${getFrontendBaseUrl()}?mode=customer`;
       window.open(url, "_blank");
     }
 
-    /* ==================== 客戶端（初次全空問卷 + 鎖定摘要 + 點修改才可編輯 + 差異紀錄） ==================== */
-    function resetConsultationFormToBlank() {
-      document.getElementById("cf_name").value = "";
-      document.getElementById("cf_nickname").value = "";
-      document.getElementById("cf_birthday").value = "";
-      document.getElementById("cf_phone").value = "";
-      document.getElementById("cf_address").value = "";
-
-      state.qAnswers = {
-        pastHairRemoval: [],
-        firstTimeWaxing: "",
-        sensitiveTypes: [],
-        isPregnant: "",
-        isSickOrLowImmunity: "",
-        isMenstruating: "",
-        isOilyOrAcneArea: ""
-      };
-      clearSignature();
-      renderConsultationQuestionnaire();
+    function toggleSelfRebindBox() {
+      document.getElementById("selfRebindForm").classList.toggle("hidden");
     }
 
-    function renderConsultationQuestionnaire() {
-      renderMultiCheckboxQuestion("q_pastHairRemovalList", "pastHairRemoval", QUESTION_CONFIG.pastHairRemoval);
-      renderSingleRadioQuestion("q_firstTimeWaxingList", "firstTimeWaxing", QUESTION_CONFIG.yesNo);
-      renderMultiCheckboxQuestion("q_sensitiveTypesList", "sensitiveTypes", QUESTION_CONFIG.sensitiveTypes);
-      renderSingleRadioQuestion("q_isPregnantList", "isPregnant", QUESTION_CONFIG.yesNo);
-      renderSingleRadioQuestion("q_isSickOrLowImmunityList", "isSickOrLowImmunity", QUESTION_CONFIG.yesNo);
-      renderSingleRadioQuestion("q_isMenstruatingList", "isMenstruating", QUESTION_CONFIG.yesNo);
-      renderSingleRadioQuestion("q_isOilyOrAcneAreaList", "isOilyOrAcneArea", QUESTION_CONFIG.yesNo);
-    }
-
-    function renderMultiCheckboxQuestion(containerId, fieldKey, options) {
-      const box = document.getElementById(containerId);
-      if (!box) return;
-      const selectedArr = state.qAnswers[fieldKey] || [];
-      box.innerHTML = options.map(opt => {
-        const checked = selectedArr.indexOf(opt) !== -1;
-        return `
-          <div onclick="toggleQuestionCheckbox('${fieldKey}', '${escJs(opt)}')" class="q-option-row ${checked ? "q-option-selected" : ""}">
-            <span class="w-4 h-4 rounded border flex items-center justify-center text-[11px] font-bold shrink-0 ${
-              checked ? "bg-[#8c5e43] border-[#8c5e43] text-white" : "bg-white border-[#c9b7a7] text-transparent"
-            }">✓</span>
-            <span class="text-sm ${checked ? "font-bold text-[#33241d]" : "text-[#4a382f]"}">${esc(opt)}</span>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function renderSingleRadioQuestion(containerId, fieldKey, options) {
-      const box = document.getElementById(containerId);
-      if (!box) return;
-      const currentVal = state.qAnswers[fieldKey] || "";
-      box.innerHTML = options.map(opt => {
-        const checked = currentVal === opt;
-        return `
-          <div onclick="selectQuestionRadio('${fieldKey}', '${escJs(opt)}')" class="q-option-row ${checked ? "q-option-selected" : ""}">
-            <span class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-              checked ? "border-[#8c5e43]" : "border-[#c9b7a7]"
-            }">
-              ${checked ? `<span class="w-2 h-2 rounded-full bg-[#8c5e43]"></span>` : ""}
-            </span>
-            <span class="text-sm ${checked ? "font-bold text-[#33241d]" : "text-[#4a382f]"}">${esc(opt)}</span>
-          </div>
-        `;
-      }).join("");
-    }
-
-    function toggleQuestionCheckbox(fieldKey, opt) {
-      let arr = [...(state.qAnswers[fieldKey] || [])];
-      const idx = arr.indexOf(opt);
-      if (idx !== -1) {
-        arr.splice(idx, 1);
-      } else {
-        if (opt === "無") {
-          arr = ["無"];
-        } else {
-          arr = arr.filter(x => x !== "無");
-          arr.push(opt);
-        }
-      }
-      state.qAnswers[fieldKey] = arr;
-      renderConsultationQuestionnaire();
-    }
-
-    function selectQuestionRadio(fieldKey, opt) {
-      state.qAnswers[fieldKey] = opt;
-      renderConsultationQuestionnaire();
-    }
-
-    function parseSavedMultiAnswer(rawStr, validOptions) {
-      if (!rawStr) return [];
-      const parts = String(rawStr).split(/[、,，\/]+/).map(s => s.trim()).filter(Boolean);
-      const matched = parts.filter(p => validOptions.indexOf(p) !== -1);
-      return matched.length > 0 ? matched : parts;
-    }
-
-    function enterConsultationEditMode() {
-      const cons = state.portalData && state.portalData.consultation;
-      if (!cons) return;
-      state.isEditingConsultation = true;
-
-      document.getElementById("cf_name").value = cons.name || "";
-      document.getElementById("cf_nickname").value = cons.nickname || "";
-      document.getElementById("cf_phone").value = cons.phone || "";
-      document.getElementById("cf_birthday").value = cons.birthday || "";
-      document.getElementById("cf_address").value = cons.address || "";
-
-      state.qAnswers.pastHairRemoval = parseSavedMultiAnswer(cons.pastHairRemoval, QUESTION_CONFIG.pastHairRemoval);
-      state.qAnswers.firstTimeWaxing = cons.firstTimeWaxing || "";
-      state.qAnswers.sensitiveTypes = parseSavedMultiAnswer(cons.sensitiveTypes, QUESTION_CONFIG.sensitiveTypes);
-      state.qAnswers.isPregnant = cons.isPregnant || "";
-      state.qAnswers.isSickOrLowImmunity = cons.isSickOrLowImmunity || "";
-      state.qAnswers.isMenstruating = cons.isMenstruating || "";
-      state.qAnswers.isOilyOrAcneArea = cons.isOilyOrAcneArea || "";
-      renderConsultationQuestionnaire();
-
-      const sigPreview = document.getElementById("existingSignaturePreview");
-      if (cons.signatureDataUrl) {
-        sigPreview.classList.remove("hidden");
-        document.getElementById("existingSignatureImg").src = cons.signatureDataUrl;
-      } else {
-        sigPreview.classList.add("hidden");
-      }
-      clearSignature();
-
-      document.getElementById("consultFormHeaderTitle").textContent = "修改問卷與除毛諮詢同意書";
-      document.getElementById("consultSubmitBtn").textContent = "儲存修改並送出同意書";
-      document.getElementById("cancelConsultEditBtn").classList.remove("hidden");
-
-      document.getElementById("customerConsultLockedCard").classList.add("hidden");
-      document.getElementById("customerConsultFormBox").classList.remove("hidden");
-    }
-
-    function cancelConsultationEditMode() {
-      state.isEditingConsultation = false;
-      renderCustomerConsultationView();
-    }
-
-    function renderCustomerConsultationView() {
-      const data = state.portalData || {};
-      const hiddenNotice = document.getElementById("customerConsultHiddenNotice");
-      const lockedCard = document.getElementById("customerConsultLockedCard");
-      const formBox = document.getElementById("customerConsultFormBox");
-
-      if (data.consultationHidden) {
-        hiddenNotice.classList.remove("hidden");
-        lockedCard.classList.add("hidden");
-        formBox.classList.add("hidden");
-        return;
-      }
-      hiddenNotice.classList.add("hidden");
-
-      const cons = data.consultation;
-      // 已填寫過且目前不在修改模式 -> 顯示唯讀摘要卡片，需點「修改問卷與除毛諮詢同意書」才可進去
-      if (cons && !state.isEditingConsultation) {
-        formBox.classList.add("hidden");
-        lockedCard.classList.remove("hidden");
-
-        document.getElementById("lockedConsultUpdatedText").textContent =
-          `最後更新：${cons.updatedAt || "已歸檔"}${safeNumber(cons.editCount, 1) > 1 ? `（已修改 ${safeNumber(cons.editCount, 1) - 1} 次）` : ""}`;
-
-        document.getElementById("lockedConsultSummaryBox").innerHTML = `
-          <div class="grid grid-cols-2 gap-2.5 p-3.5 rounded-2xl bg-[#faf6f2] border border-[#ede0d3]">
-            <div><span class="text-[#8b7365] block text-[11px]">姓名／暱稱</span><strong class="text-[#33241d]">${esc(cons.name)}（${esc(cons.nickname)}）</strong></div>
-            <div><span class="text-[#8b7365] block text-[11px]">生日</span><strong class="text-[#33241d]">${esc(cons.birthday)}</strong></div>
-            <div><span class="text-[#8b7365] block text-[11px]">聯絡電話</span><strong class="text-[#33241d]">${esc(cons.phone || "未填寫")}</strong></div>
-            <div><span class="text-[#8b7365] block text-[11px]">居住地址</span><strong class="text-[#33241d]">${esc(cons.address || "未填寫")}</strong></div>
-          </div>
-
-          <div class="p-3.5 rounded-2xl bg-[#fffdfb] border border-[#ede0d3] space-y-2">
-            <div class="flex justify-between gap-2 border-b border-[#f4ece3] pb-1.5">
-              <span class="text-[#7c6557]">過往毛髮處理方式</span>
-              <span class="font-bold text-[#33241d] text-right">${esc(cons.pastHairRemoval)}</span>
-            </div>
-            <div class="flex justify-between gap-2 border-b border-[#f4ece3] pb-1.5">
-              <span class="text-[#7c6557]">首次施作熱蠟除毛</span>
-              <span class="font-bold text-[#33241d]">${esc(cons.firstTimeWaxing)}</span>
-            </div>
-            <div class="flex justify-between gap-2 border-b border-[#f4ece3] pb-1.5">
-              <span class="text-[#7c6557]">是否為敏感體質</span>
-              <span class="font-bold text-[#33241d] text-right">${esc(cons.sensitiveTypes)}</span>
-            </div>
-            <div class="flex justify-between gap-2 border-b border-[#f4ece3] pb-1.5">
-              <span class="text-[#7c6557]">懷孕／生病或免疫力下降</span>
-              <span class="font-bold text-[#33241d]">懷孕：${esc(cons.isPregnant)} · 免疫力：${esc(cons.isSickOrLowImmunity)}</span>
-            </div>
-            <div class="flex justify-between gap-2">
-              <span class="text-[#7c6557]">生理期／部位出油長痘</span>
-              <span class="font-bold text-[#33241d]">生理期：${esc(cons.isMenstruating)} · 出油痘痘：${esc(cons.isOilyOrAcneArea)}</span>
-            </div>
-          </div>
-
-          ${cons.signatureDataUrl ? `
-            <div class="p-3.5 rounded-2xl bg-[#fffdfb] border border-[#ede0d3]">
-              <div class="text-[11px] font-bold text-[#7c6557] mb-1.5">已留存親筆簽名</div>
-              <img src="${esc(cons.signatureDataUrl)}" alt="簽名" class="max-h-24 rounded-xl border border-[#e3d4c5] bg-white p-1.5" />
-            </div>
-          ` : ""}
-        `;
-        return;
-      }
-
-      // 第一次填寫：預設內容全部都是空的！
-      lockedCard.classList.add("hidden");
-      formBox.classList.remove("hidden");
-      if (!cons) {
-        document.getElementById("consultFormHeaderTitle").textContent = "初次填寫｜問卷與除毛諮詢同意書";
-        document.getElementById("consultSubmitBtn").textContent = "確認送出問卷與同意書";
-        document.getElementById("cancelConsultEditBtn").classList.add("hidden");
-        document.getElementById("existingSignaturePreview").classList.add("hidden");
-        resetConsultationFormToBlank();
+    async function handleSelfRebindSubmit(e) {
+      e.preventDefault();
+      try {
+        setLoading(true, "比對並串連會員資料中...");
+        const res = await apiPost({
+          action: "rebindCustomerLineSelf",
+          payload: {
+            name: document.getElementById("rb_name").value.trim(),
+            phone: document.getElementById("rb_phone").value.trim(),
+            lineUserId: state.portalLineUserId,
+            lineDisplayName: state.portalLineDisplayName
+          }
+        });
+        state.portalCid = res.cid || state.portalCid;
+        state.portalForceRebind = true;
+        await reloadCustomerPortalData();
+        document.getElementById("selfRebindForm").classList.add("hidden");
+        showToast("已成功重新串連您的會員資料！");
+      } catch (err) {
+        showToast(err.message || "重新串連失敗", true);
+      } finally {
+        setLoading(false);
       }
     }
 
@@ -3178,17 +3470,20 @@
       document.getElementById("adminView").classList.add("hidden");
       document.getElementById("adminHeaderActions").classList.add("hidden");
       document.getElementById("customerView").classList.remove("hidden");
-      document.getElementById("modeSubtitle").textContent = "客戶專屬服務中心";
+      document.getElementById("modeSubtitle").textContent = "顧客專屬服務平台";
 
       try {
-        setLoading(true, "載入您的專屬會員資料中...");
-        try {
-          if (window.liff && typeof liff.getProfile === "function" && liff.isLoggedIn && liff.isLoggedIn()) {
-            const prof = await liff.getProfile();
-            state.portalLineUserId = prof.userId || "";
-            state.portalLineDisplayName = prof.displayName || "";
-          }
-        } catch (_) {}
+        setLoading(true, "載入您的專屬資料...");
+        if (window.liff) {
+          try {
+            await liff.init({ liffId: "2008024885-35D77D7e" });
+            if (liff.isLoggedIn()) {
+              const prof = await liff.getProfile();
+              state.portalLineUserId = prof.userId || "";
+              state.portalLineDisplayName = prof.displayName || "";
+            }
+          } catch (_) {}
+        }
 
         await reloadCustomerPortalData();
       } catch (err) {
@@ -3207,119 +3502,291 @@
         forceRebind: state.portalForceRebind
       });
       state.portalData = data;
-      state.isEditingConsultation = false;
-      renderCustomerPortal();
+      renderCustomerPortal(data);
     }
 
-    function toggleSelfRebindBox() {
-      document.getElementById("selfRebindForm").classList.toggle("hidden");
-    }
-
-    async function handleSelfRebindSubmit(e) {
-      e.preventDefault();
-      const name = document.getElementById("rb_name").value.trim();
-      const phone = document.getElementById("rb_phone").value.trim();
-      try {
-        setLoading(true, "比對舊會員資料並串連 LINE 中...");
-        const res = await apiPost({
-          action: "rebindCustomerLineSelf",
-          payload: {
-            name,
-            phone,
-            lineUserId: state.portalLineUserId,
-            lineDisplayName: state.portalLineDisplayName
-          }
-        });
-        if (res && res.cid) {
-          state.portalCid = res.cid;
-          state.portalForceRebind = true;
-          await reloadCustomerPortalData();
-          document.getElementById("selfRebindForm").classList.add("hidden");
-          showToast("已成功串連您原有的會員資料！");
-        }
-      } catch (err) {
-        showToast(err.message || "串連失敗", true);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    function renderCustomerPortal() {
-      const data = state.portalData || {};
+    function renderCustomerPortal(data) {
       const cust = data.customer;
-      const rebindBanner = document.getElementById("customerRebindBanner");
+      const cons = data.consultation;
+      const consHidden = !!data.consultationHidden;
       const profileCard = document.getElementById("customerProfileCard");
       const subTabs = document.getElementById("customerSubTabs");
+      const rebindBanner = document.getElementById("customerRebindBanner");
 
-      if (!cust) {
-        rebindBanner.classList.remove("hidden");
+      rebindBanner.classList.toggle("hidden", !!(cust && !state.portalForceRebind));
+
+      if (cust) {
+        profileCard.classList.remove("hidden");
+        document.getElementById("custPortalName").textContent = `${cust.name}${cust.nickname ? `（${cust.nickname}）` : ""}`;
+        document.getElementById("custPortalMeta").textContent = `${cust.lineDisplayName ? `LINE：${cust.lineDisplayName} · ` : ""}${cust.contact || "已綁定會員"}`;
+        document.getElementById("custPortalBalance").textContent = `$${safeNumber(cust.balance, 0).toLocaleString()}`;
+        document.getElementById("custPortalVisits").textContent = `累計來店 ${safeNumber(cust.visitCount, 0)} 次`;
+
+        const coupons = data.coupons || [];
+        document.getElementById("custPortalCoupons").innerHTML = `
+          <div class="text-xs font-bold text-[#4a382f] mb-1.5">🎟️ 我的優惠券（${coupons.length} 張）</div>
+          ${coupons.length === 0
+            ? `<div class="text-xs text-[#8b7365]">目前沒有優惠券</div>`
+            : `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${coupons.map(cp => `
+                <div class="p-2.5 rounded-xl border ${cp.status === "可使用" ? "border-emerald-200 bg-emerald-50/40" : "border-stone-200 bg-stone-50"} text-xs flex items-center justify-between">
+                  <div>
+                    <div class="font-bold text-[#33241d]">${esc(cp.title)}</div>
+                    <div class="text-[11px] text-[#7c6557]">折 $${safeNumber(cp.discountAmount, 0)} · 效期至 ${esc(cp.expiresDate)}</div>
+                  </div>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${cp.status === "可使用" ? "bg-emerald-100 text-emerald-800" : "bg-stone-200 text-stone-600"}">${esc(cp.status)}</span>
+                </div>
+              `).join("")}</div>`
+          }
+        `;
+
+        // 區分「進行中／即將到來」與「已完成的過去預約紀錄」
+        const allBookings = data.bookings || [];
+        const upcomingBookings = allBookings.filter(b => b.status !== "已完成" && b.status !== "取消");
+        const pastBookings = allBookings.filter(b => b.status === "已完成" || b.status === "取消");
+
+        const renderBkRow = (b, isPast) => {
+          const stClass =
+            b.status === "已完成" ? "bg-emerald-100 text-emerald-800" :
+            b.status === "取消" ? "bg-stone-200 text-stone-600" :
+            b.status === "待審核" ? "bg-amber-100 text-amber-800" :
+            "bg-[#efe5da] text-[#6a4f3f]";
+          return `
+            <div class="p-2.5 rounded-xl ${isPast ? "bg-stone-50 border border-stone-200/80" : "bg-[#fcf8f4] border border-[#f0e5da]"} text-xs flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-bold text-[#33241d] tabular-nums">${esc(b.date)} ${esc(b.startTime)}</div>
+                <div class="text-[#7c6557] truncate">${esc(b.service)}</div>
+              </div>
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="font-bold text-[#6a4f3f] tabular-nums">$${safeNumber(b.finalPrice, 0).toLocaleString()}</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${stClass}">${esc(b.status)}</span>
+              </div>
+            </div>
+          `;
+        };
+
+        document.getElementById("custPortalBookings").innerHTML = `
+          <div class="space-y-3">
+            <div>
+              <div class="text-xs font-bold text-[#4a382f] mb-1.5">📅 我的預約（${upcomingBookings.length} 筆）</div>
+              ${upcomingBookings.length === 0
+                ? `<div class="text-xs text-[#8b7365]">目前沒有進行中的預約</div>`
+                : `<div class="space-y-1.5">${upcomingBookings.map(b => renderBkRow(b, false)).join("")}</div>`
+              }
+            </div>
+            ${pastBookings.length > 0 ? `
+              <div class="pt-2.5 border-t border-dashed border-[#eaded2]">
+                <div class="text-xs font-bold text-[#7c6557] mb-1.5">📜 過去預約紀錄（${pastBookings.length} 筆）</div>
+                <div class="space-y-1.5 max-h-48 overflow-y-auto">${pastBookings.map(b => renderBkRow(b, true)).join("")}</div>
+              </div>
+            ` : ""}
+          </div>
+        `;
+      } else {
         profileCard.classList.add("hidden");
+      }
+
+      if (cust) {
+        document.getElementById("cf_name").value = cust.name || "";
+        document.getElementById("cf_nickname").value = cust.nickname || "";
+        document.getElementById("cf_phone").value = cust.contact || "";
+        document.getElementById("cf_birthday").value = cust.birthday || "";
+        document.getElementById("cf_address").value = cust.address || "";
+      }
+
+      if (cons) {
+        document.getElementById("cf_name").value = cons.name || document.getElementById("cf_name").value;
+        document.getElementById("cf_nickname").value = cons.nickname || document.getElementById("cf_nickname").value;
+        document.getElementById("cf_phone").value = cons.phone || document.getElementById("cf_phone").value;
+        document.getElementById("cf_birthday").value = cons.birthday || document.getElementById("cf_birthday").value;
+        document.getElementById("cf_address").value = cons.address || document.getElementById("cf_address").value;
+
+        state.qAnswers.pastHairRemoval = parseMultiAnswer(cons.pastHairRemoval);
+        state.qAnswers.firstTimeWaxing = cons.firstTimeWaxing || "";
+        state.qAnswers.sensitiveTypes = parseMultiAnswer(cons.sensitiveTypes);
+        state.qAnswers.isPregnant = cons.isPregnant || "";
+        state.qAnswers.isSickOrLowImmunity = cons.isSickOrLowImmunity || "";
+        state.qAnswers.isMenstruating = cons.isMenstruating || "";
+        state.qAnswers.isOilyOrAcneArea = cons.isOilyOrAcneArea || "";
+        renderConsultationQuestionnaire();
+
+        if (cons.signatureDataUrl) {
+          document.getElementById("existingSignaturePreview").classList.remove("hidden");
+          document.getElementById("existingSignatureImg").src = cons.signatureDataUrl;
+        }
+      }
+
+      if (consHidden) {
+        document.getElementById("customerConsultHiddenNotice").classList.remove("hidden");
+        document.getElementById("customerConsultLockedCard").classList.add("hidden");
+        document.getElementById("customerConsultFormBox").classList.add("hidden");
+      } else if (cons && !state.isEditingConsultation) {
+        document.getElementById("customerConsultHiddenNotice").classList.add("hidden");
+        document.getElementById("customerConsultLockedCard").classList.remove("hidden");
+        document.getElementById("customerConsultFormBox").classList.add("hidden");
+        renderLockedConsultationSummary(cons);
+      } else {
+        document.getElementById("customerConsultHiddenNotice").classList.add("hidden");
+        document.getElementById("customerConsultLockedCard").classList.add("hidden");
+        document.getElementById("customerConsultFormBox").classList.remove("hidden");
+        document.getElementById("cancelConsultEditBtn").classList.toggle("hidden", !cons);
+        document.getElementById("consultFormHeaderTitle").textContent = cons
+          ? "修改問卷與除毛諮詢同意書"
+          : "問卷與除毛諮詢同意書";
+      }
+
+      renderCustomerBookingCatalog(data.catalog || []);
+
+      if (cons) {
+        subTabs.classList.remove("hidden");
+        switchCustomerTab("book");
+      } else {
         subTabs.classList.add("hidden");
-        document.getElementById("customerBookSection").classList.add("hidden");
         document.getElementById("customerConsultSection").classList.remove("hidden");
-        renderCustomerConsultationView();
-        return;
+        document.getElementById("customerBookSection").classList.add("hidden");
       }
+    }
 
-      if (state.portalForceRebind) {
-        rebindBanner.classList.remove("hidden");
-      } else {
-        rebindBanner.classList.add("hidden");
-      }
+    function renderLockedConsultationSummary(cons) {
+      document.getElementById("lockedConsultUpdatedText").textContent =
+        `最後更新：${cons.updatedAt || "已歸檔"}（累計填寫／修改 ${safeNumber(cons.editCount, 1)} 次）`;
 
-      profileCard.classList.remove("hidden");
-      subTabs.classList.remove("hidden");
-
-      document.getElementById("custPortalName").textContent = `${cust.name}${cust.nickname ? `（${cust.nickname}）` : ""}`;
-      document.getElementById("custPortalMeta").textContent = `${cust.contact || ""}${cust.birthday ? ` · 🎂 ${cust.birthday}` : ""}`;
-      document.getElementById("custPortalBalance").textContent = `$${safeNumber(cust.balance, 0).toLocaleString()}`;
-      document.getElementById("custPortalVisits").textContent = `累計來店 ${safeNumber(cust.visitCount, 0)} 次`;
-
-      const coupBox = document.getElementById("custPortalCoupons");
-      const availCoupons = (data.coupons || []).filter(cp => cp.status === "可使用");
-      coupBox.innerHTML = availCoupons.length === 0
-        ? `<div class="text-xs text-[#8b7365]">🎟️ 目前無可用優惠券</div>`
-        : `<div class="text-xs font-bold text-[#4a382f] mb-1.5">🎟️ 我的可用優惠券（${availCoupons.length} 張）</div>
-           <div class="flex flex-wrap gap-1.5">${availCoupons.map(cp => `
-             <span class="px-2.5 py-1 rounded-xl bg-[#fdf1e7] border border-[#f0d5be] text-xs font-bold text-[#9c5733]">
-               ${esc(cp.title)}（折 $${safeNumber(cp.discountAmount, 0)} · 至 ${esc(cp.expiresDate)}）
-             </span>
-           `).join("")}</div>`;
-
-      const bkBox = document.getElementById("custPortalBookings");
-      const allBks = data.bookings || [];
-      const upcomingBks = allBks.filter(b => b.status === "待審核" || b.status === "尚未到來" || b.status === "已報到");
-      const pastBks = allBks.filter(b => b.status === "已完成" || b.status === "取消");
-
-      let bkHtml = `<div class="text-xs font-bold text-[#4a382f] mb-1.5">📅 我的預約</div>`;
-      if (upcomingBks.length === 0) {
-        bkHtml += `<div class="text-xs text-[#8b7365] mb-2">目前沒有待進行的預約</div>`;
-      } else {
-        bkHtml += `<div class="space-y-1.5 mb-3">${upcomingBks.map(b => `
-          <div class="text-xs flex items-center justify-between px-3 py-2 rounded-xl bg-[#faf6f2] border border-[#efe5da]">
-            <span><strong>${esc(b.date)} ${esc(b.startTime)}</strong> · ${esc(b.service)}</span>
-            <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${b.status === "待審核" ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"}">${esc(b.status)}</span>
+      const box = document.getElementById("lockedConsultSummaryBox");
+      box.innerHTML = `
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div class="p-3 rounded-2xl bg-[#fcf9f5] border border-[#efe5da]">
+            <div class="text-[11px] text-[#8b7365]">基本資料</div>
+            <div class="font-bold text-[#33241d] mt-1">${esc(cons.name)}（${esc(cons.nickname || "-")}）</div>
+            <div class="text-[#5c4638] mt-0.5">生日：${esc(cons.birthday || "-")}${cons.phone ? ` · 電話：${esc(cons.phone)}` : ""}</div>
+            ${cons.address ? `<div class="text-[#5c4638] mt-0.5">地址：${esc(cons.address)}</div>` : ""}
           </div>
-        `).join("")}</div>`;
-      }
-
-      bkHtml += `<div class="text-xs font-bold text-[#4a382f] mb-1.5 pt-2 border-t border-[#f3ebe3]">📜 過去預約紀錄</div>`;
-      if (pastBks.length === 0) {
-        bkHtml += `<div class="text-xs text-[#8b7365]">尚無過去預約紀錄</div>`;
-      } else {
-        bkHtml += `<div class="space-y-1.5 max-h-40 overflow-y-auto">${pastBks.map(b => `
-          <div class="text-xs flex items-center justify-between px-3 py-1.5 rounded-xl bg-[#fcfaf8] text-[#6d5648]">
-            <span>${esc(b.date)} ${esc(b.startTime)} · ${esc(b.service)}</span>
-            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${b.status === "已完成" ? "bg-stone-200 text-stone-700" : "bg-red-50 text-red-700"}">${esc(b.status)}</span>
+          <div class="p-3 rounded-2xl bg-[#fcf9f5] border border-[#efe5da] space-y-1">
+            <div class="text-[11px] text-[#8b7365]">健康與除毛評估</div>
+            <div><strong>過往毛髮處理：</strong>${esc(cons.pastHairRemoval || "-")}</div>
+            <div><strong>首次施作熱蠟：</strong>${esc(cons.firstTimeWaxing || "-")}</div>
+            <div><strong>敏感體質：</strong>${esc(cons.sensitiveTypes || "-")}</div>
           </div>
-        `).join("")}</div>`;
-      }
-      bkBox.innerHTML = bkHtml;
+        </div>
 
-      renderCustomerConsultationView();
-      renderCustomerCatalogPicker();
-      validateCustomerSlotAvailability();
-      switchCustomerTab(data.consultation ? "book" : "consult");
+        <div class="p-3 rounded-2xl bg-[#fcf9f5] border border-[#efe5da] grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+          <div>
+            <div class="text-[10px] text-[#8b7365]">懷孕期間</div>
+            <div class="font-bold text-[#33241d] mt-0.5">${esc(cons.isPregnant || "-")}</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-[#8b7365]">生病/免疫力低</div>
+            <div class="font-bold text-[#33241d] mt-0.5">${esc(cons.isSickOrLowImmunity || "-")}</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-[#8b7365]">生理期間</div>
+            <div class="font-bold text-[#33241d] mt-0.5">${esc(cons.isMenstruating || "-")}</div>
+          </div>
+          <div>
+            <div class="text-[10px] text-[#8b7365]">常出油/長痘痘</div>
+            <div class="font-bold text-[#33241d] mt-0.5">${esc(cons.isOilyOrAcneArea || "-")}</div>
+          </div>
+        </div>
+
+        ${cons.signatureDataUrl ? `
+          <div class="p-3 rounded-2xl bg-[#fcf9f5] border border-[#efe5da] flex items-center justify-between gap-3">
+            <div>
+              <div class="font-bold text-[#33241d]">本人親筆簽名已歸檔</div>
+              <div class="text-[11px] text-[#8b7365]">如需更改資料或重新簽名，請點擊右上角「修改問卷與除毛諮詢同意書」</div>
+            </div>
+            <img src="${esc(cons.signatureDataUrl)}" alt="已歸檔簽名" class="max-h-16 rounded-xl border border-[#decbb9] bg-white p-1 shrink-0" />
+          </div>
+        ` : ""}
+      `;
+    }
+
+    function enterConsultationEditMode() {
+      state.isEditingConsultation = true;
+      if (state.portalData) {
+        renderCustomerPortal(state.portalData);
+        switchCustomerTab("consult");
+      }
+    }
+
+    function cancelConsultationEditMode() {
+      state.isEditingConsultation = false;
+      if (state.portalData) {
+        renderCustomerPortal(state.portalData);
+        switchCustomerTab("consult");
+      }
+    }
+
+    function parseMultiAnswer(str) {
+      return String(str || "")
+        .split(/[、,，]/)
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+
+    function renderConsultationQuestionnaire() {
+      renderMultiChoiceGroup("q_pastHairRemovalList", "pastHairRemoval", QUESTION_CONFIG.pastHairRemoval);
+      renderSingleChoiceGroup("q_firstTimeWaxingList", "firstTimeWaxing", QUESTION_CONFIG.yesNo);
+      renderMultiChoiceGroup("q_sensitiveTypesList", "sensitiveTypes", QUESTION_CONFIG.sensitiveTypes);
+      renderSingleChoiceGroup("q_isPregnantList", "isPregnant", QUESTION_CONFIG.yesNo);
+      renderSingleChoiceGroup("q_isSickOrLowImmunityList", "isSickOrLowImmunity", QUESTION_CONFIG.yesNo);
+      renderSingleChoiceGroup("q_isMenstruatingList", "isMenstruating", QUESTION_CONFIG.yesNo);
+      renderSingleChoiceGroup("q_isOilyOrAcneAreaList", "isOilyOrAcneArea", QUESTION_CONFIG.yesNo);
+    }
+
+    function renderMultiChoiceGroup(containerId, fieldKey, options) {
+      const container = document.getElementById(containerId);
+      const selected = state.qAnswers[fieldKey] || [];
+      container.innerHTML = options.map(opt => {
+        const checked = selected.indexOf(opt) !== -1;
+        return `
+          <div onclick="toggleMultiAnswer('${fieldKey}', '${escJs(opt)}')" class="q-option-row ${checked ? "q-option-selected" : ""}">
+            <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
+              checked ? "bg-[#8c5e43] border-[#8c5e43] text-white" : "border-[#b8a596] bg-white"
+            }">
+              ${checked ? `<span class="text-[11px] font-bold leading-none">✓</span>` : ""}
+            </div>
+            <span class="text-xs sm:text-sm ${checked ? "font-bold text-[#33241d]" : "text-[#4a382f]"}">${esc(opt)}</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderSingleChoiceGroup(containerId, fieldKey, options) {
+      const container = document.getElementById(containerId);
+      const current = state.qAnswers[fieldKey] || "";
+      container.innerHTML = options.map(opt => {
+        const checked = current === opt;
+        return `
+          <div onclick="selectSingleAnswer('${fieldKey}', '${escJs(opt)}')" class="q-option-row ${checked ? "q-option-selected" : ""}">
+            <div class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+              checked ? "border-[#8c5e43]" : "border-[#b8a596] bg-white"
+            }">
+              ${checked ? `<div class="w-2 h-2 rounded-full bg-[#8c5e43]"></div>` : ""}
+            </div>
+            <span class="text-xs sm:text-sm ${checked ? "font-bold text-[#33241d]" : "text-[#4a382f]"}">${esc(opt)}</span>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function toggleMultiAnswer(fieldKey, opt) {
+      let arr = [...(state.qAnswers[fieldKey] || [])];
+      const idx = arr.indexOf(opt);
+      if (idx !== -1) {
+        arr.splice(idx, 1);
+      } else {
+        if (opt === "無") {
+          arr = ["無"];
+        } else {
+          arr = arr.filter(x => x !== "無");
+          arr.push(opt);
+        }
+      }
+      state.qAnswers[fieldKey] = arr;
+      renderConsultationQuestionnaire();
+    }
+
+    function selectSingleAnswer(fieldKey, opt) {
+      state.qAnswers[fieldKey] = opt;
+      renderConsultationQuestionnaire();
     }
 
     function switchCustomerTab(tab) {
@@ -3330,20 +3797,124 @@
       document.getElementById("cTabBookBtn").className = `py-2.5 rounded-xl text-sm font-bold ${!isConsult ? "tab-active" : "tab-inactive"}`;
     }
 
-    function selectCustomerCategoryPill(catName) {
-      state.activeCustomerCatalogCategory = catName;
-      renderCustomerCatalogPicker();
+    let sigCanvas, sigCtx, isDrawing = false, hasSignedNew = false;
+    function initSignaturePad() {
+      sigCanvas = document.getElementById("signatureCanvas");
+      if (!sigCanvas) return;
+      sigCtx = sigCanvas.getContext("2d");
+      sigCtx.strokeStyle = "#2f2622";
+      sigCtx.lineWidth = 2.6;
+      sigCtx.lineCap = "round";
+
+      const getPos = (e) => {
+        const rect = sigCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return {
+          x: (clientX - rect.left) * (sigCanvas.width / rect.width),
+          y: (clientY - rect.top) * (sigCanvas.height / rect.height)
+        };
+      };
+
+      const start = (e) => { isDrawing = true; hasSignedNew = true; const p = getPos(e); sigCtx.beginPath(); sigCtx.moveTo(p.x, p.y); };
+      const move = (e) => { if (!isDrawing) return; e.preventDefault(); const p = getPos(e); sigCtx.lineTo(p.x, p.y); sigCtx.stroke(); };
+      const end = () => { isDrawing = false; };
+
+      sigCanvas.addEventListener("mousedown", start);
+      sigCanvas.addEventListener("mousemove", move);
+      window.addEventListener("mouseup", end);
+      sigCanvas.addEventListener("touchstart", start, { passive: false });
+      sigCanvas.addEventListener("touchmove", move, { passive: false });
+      sigCanvas.addEventListener("touchend", end);
     }
 
-    function renderCustomerCatalogPicker() {
+    function clearSignature() {
+      if (!sigCtx) return;
+      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+      hasSignedNew = false;
+    }
+
+    async function handleConsultationSubmit(e) {
+      e.preventDefault();
+      if (state.qAnswers.pastHairRemoval.length === 0) return showToast("請勾選「過往毛髮處理方式」", true);
+      if (!state.qAnswers.firstTimeWaxing) return showToast("請選擇「本次是否為首次施作熱蠟除毛」", true);
+      if (state.qAnswers.sensitiveTypes.length === 0) return showToast("請勾選「是否為敏感體質」", true);
+      if (!state.qAnswers.isPregnant) return showToast("請選擇「目前是否為懷孕期間」", true);
+      if (!state.qAnswers.isSickOrLowImmunity) return showToast("請選擇「目前是否為生病或免疫力下降期間」", true);
+      if (!state.qAnswers.isMenstruating) return showToast("請選擇「目前是否為生理期間」", true);
+      if (!state.qAnswers.isOilyOrAcneArea) return showToast("請選擇「除毛部位是否常出油或長痘痘／毛囊炎」", true);
+
+      const existingSig = state.portalData && state.portalData.consultation ? state.portalData.consultation.signatureDataUrl : "";
+      const sigDataUrl = hasSignedNew ? sigCanvas.toDataURL("image/png") : existingSig;
+      if (!sigDataUrl) return showToast("請在簽名區親筆簽名後再送出", true);
+
+      try {
+        setLoading(true, "儲存諮詢表與同意書中...");
+        const res = await apiPost({
+          action: "submitCustomerConsultation",
+          payload: {
+            cid: state.portalCid || (state.portalData && state.portalData.customer ? state.portalData.customer.id : ""),
+            lineUserId: state.portalLineUserId,
+            lineDisplayName: state.portalLineDisplayName,
+            name: document.getElementById("cf_name").value.trim(),
+            nickname: document.getElementById("cf_nickname").value.trim(),
+            phone: document.getElementById("cf_phone").value.trim(),
+            birthday: document.getElementById("cf_birthday").value,
+            address: document.getElementById("cf_address").value.trim(),
+            pastHairRemoval: state.qAnswers.pastHairRemoval.join("、"),
+            firstTimeWaxing: state.qAnswers.firstTimeWaxing,
+            sensitiveTypes: state.qAnswers.sensitiveTypes.join("、"),
+            isPregnant: state.qAnswers.isPregnant,
+            isSickOrLowImmunity: state.qAnswers.isSickOrLowImmunity,
+            isMenstruating: state.qAnswers.isMenstruating,
+            isOilyOrAcneArea: state.qAnswers.isOilyOrAcneArea,
+            signatureDataUrl: sigDataUrl,
+            signatureUpdated: hasSignedNew
+          }
+        });
+        state.portalCid = res.cid || state.portalCid;
+        state.isEditingConsultation = false;
+        hasSignedNew = false;
+        await reloadCustomerPortalData();
+        showToast("已完成問卷與諮詢同意書送出！");
+      } catch (err) {
+        showToast(err.message || "送出失敗", true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function selectCustomerCatalogCategory(catName) {
+      state.activeCustomerCatalogCategory = catName;
+      const catalog = (state.portalData && state.portalData.catalog) ? state.portalData.catalog : [];
+      renderCustomerBookingCatalog(catalog);
+    }
+
+    function addCustomerServiceItem(itemId) {
+      const idStr = String(itemId);
+      if (state.selectedCustomerServiceIds.indexOf(idStr) === -1) {
+        state.selectedCustomerServiceIds.push(idStr);
+      }
+      const catalog = (state.portalData && state.portalData.catalog) ? state.portalData.catalog : [];
+      renderCustomerBookingCatalog(catalog);
+    }
+
+    function removeCustomerServiceItem(itemId) {
+      const idStr = String(itemId);
+      state.selectedCustomerServiceIds = state.selectedCustomerServiceIds.filter(x => x !== idStr);
+      const catalog = (state.portalData && state.portalData.catalog) ? state.portalData.catalog : [];
+      renderCustomerBookingCatalog(catalog);
+    }
+
+    function renderCustomerBookingCatalog(catalog) {
       const pillsBox = document.getElementById("cb_categoryPills");
       const activeItemsBox = document.getElementById("cb_activeCategoryItems");
-      const catalog = (state.portalData && state.portalData.catalog) || [];
+      const selectedListBox = document.getElementById("cb_selectedItemsList");
 
-      if (catalog.length === 0) {
+      if (!catalog || catalog.length === 0) {
         pillsBox.innerHTML = "";
-        activeItemsBox.innerHTML = `<div class="p-3 text-xs text-[#8b7365]">目前尚無開放預約項目</div>`;
-        renderCustomerSelectedItemsList();
+        activeItemsBox.innerHTML = `<div class="p-4 text-xs text-[#8b7365] text-center">目前暫無開放線上預約的服務項目</div>`;
+        selectedListBox.innerHTML = `<div class="text-xs text-[#8b7365]">尚未加入任何項目</div>`;
         return;
       }
 
@@ -3362,7 +3933,7 @@
       pillsBox.innerHTML = catNames.map(cat => {
         const isAct = state.activeCustomerCatalogCategory === cat;
         return `
-          <button type="button" onclick="selectCustomerCategoryPill('${escJs(cat)}')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold border transition ${
+          <button type="button" onclick="selectCustomerCatalogCategory('${escJs(cat)}')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold border transition ${
             isAct ? "cat-pill-active" : "cat-pill-inactive hover:bg-[#f6efe8]"
           }">
             ${esc(cat)}
@@ -3377,18 +3948,15 @@
         return `
           <div class="p-3 flex items-center justify-between gap-2 text-xs">
             <div class="min-w-0 flex-1">
-              <div class="font-bold text-sm text-[#33241d]">${esc(item.name)}</div>
-              <div class="text-[#7c6557] mt-0.5">
-                <strong class="text-[#8c5e43]">$${safeNumber(item.price, 0).toLocaleString()}</strong>
-                ${dur > 0 ? `<span class="ml-2">· 約 ${dur} 分鐘</span>` : ""}
-              </div>
+              <div class="font-bold text-[#33241d]">${esc(item.name)}</div>
+              <div class="text-[#8c5e43] font-bold mt-0.5">$${safeNumber(item.price, 0).toLocaleString()}${dur > 0 ? ` · 約 ${dur} 分` : ""}</div>
             </div>
             ${isAdded ? `
-              <button type="button" onclick="removeCustomerSelectedService('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold shrink-0">
-                ✓ 已加入（點擊移除）
+              <button type="button" onclick="removeCustomerServiceItem('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold shrink-0">
+                ✓ 已加入（點此移除）
               </button>
             ` : `
-              <button type="button" onclick="addCustomerSelectedService('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl bg-[#f4e8de] text-[#8c5e43] font-extrabold hover:bg-[#ebd8c8] shrink-0">
+              <button type="button" onclick="addCustomerServiceItem('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl btn-primary font-bold shrink-0">
                 ＋ 加入
               </button>
             `}
@@ -3396,55 +3964,34 @@
         `;
       }).join("");
 
-      renderCustomerSelectedItemsList();
-    }
-
-    function renderCustomerSelectedItemsList() {
-      const box = document.getElementById("cb_selectedItemsList");
-      const catalog = (state.portalData && state.portalData.catalog) || [];
       const selectedItems = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
-
       document.getElementById("cb_selectedCountBadge").textContent = `已選 ${selectedItems.length} 項`;
 
       if (selectedItems.length === 0) {
-        box.innerHTML = `<div class="text-xs text-[#8b7365] py-2 px-3 rounded-xl bg-[#fcfaf8] border border-dashed border-[#e3d5c7]">尚未加入任何項目，請從上方大分類點選「＋ 加入」</div>`;
+        selectedListBox.innerHTML = `<div class="text-xs text-[#8b7365] py-2 text-center bg-[#fcfaf8] rounded-xl border border-dashed border-[#e5d8ca]">尚未加入任何項目，請從上方大分類點選加入</div>`;
       } else {
-        box.innerHTML = selectedItems.map(item => `
-          <div class="px-3 py-2 rounded-xl bg-[#faf5ef] border border-[#e6d6c6] flex items-center justify-between gap-2 text-xs">
+        selectedListBox.innerHTML = selectedItems.map(item => `
+          <div class="p-2.5 rounded-xl bg-[#fcf8f4] border border-[#ead9c8] flex items-center justify-between gap-2 text-xs">
             <div class="min-w-0 flex-1">
-              <span class="text-[11px] text-[#8b7365]">[${esc(item.category)}]</span>
-              <span class="font-bold text-[#33241d] ml-1">${esc(item.name)}</span>
-              <span class="font-bold text-[#8c5e43] ml-1.5">$${safeNumber(item.price, 0).toLocaleString()}</span>
+              <span class="px-1.5 py-0.5 rounded bg-[#f2e6da] text-[#6d5648] text-[10px] font-bold mr-1">${esc(item.category)}</span>
+              <span class="font-bold text-[#33241d]">${esc(item.name)}</span>
+              <span class="text-[#8c5e43] font-bold ml-1.5">$${safeNumber(item.price, 0).toLocaleString()}</span>
             </div>
-            <button type="button" onclick="removeCustomerSelectedService('${escJs(item.id)}')" class="px-2 py-1 rounded-lg bg-white border border-rose-200 text-rose-700 font-bold hover:bg-rose-50 shrink-0">
-              ✕ 移除
+            <button type="button" onclick="removeCustomerServiceItem('${escJs(item.id)}')" class="px-2 py-1 rounded-lg bg-[#fdf2f2] text-[#b42318] font-bold shrink-0">
+              移除
             </button>
           </div>
         `).join("");
       }
 
-      recalcCustomerBookingEstimate();
+      recalcCustomerBookingSummary();
     }
 
-    function addCustomerSelectedService(itemId) {
-      const idStr = String(itemId);
-      if (state.selectedCustomerServiceIds.indexOf(idStr) === -1) {
-        state.selectedCustomerServiceIds.push(idStr);
-      }
-      renderCustomerCatalogPicker();
-    }
-
-    function removeCustomerSelectedService(itemId) {
-      const idStr = String(itemId);
-      state.selectedCustomerServiceIds = state.selectedCustomerServiceIds.filter(x => x !== idStr);
-      renderCustomerCatalogPicker();
-    }
-
-    function recalcCustomerBookingEstimate() {
-      const catalog = (state.portalData && state.portalData.catalog) || [];
-      const selected = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
-      const totalDur = selected.reduce((sum, x) => sum + safeNumber(x.duration, 0), 0);
-      const totalPrice = selected.reduce((sum, x) => sum + safeNumber(x.price, 0), 0);
+    function recalcCustomerBookingSummary() {
+      const catalog = (state.portalData && state.portalData.catalog) ? state.portalData.catalog : [];
+      const selectedItems = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
+      const totalDur = selectedItems.reduce((s, item) => s + safeNumber(item.duration, 0), 0);
+      const totalPrice = selectedItems.reduce((s, item) => s + safeNumber(item.price, 0), 0);
       document.getElementById("cb_totalDurationText").textContent = `${totalDur} 分鐘`;
       document.getElementById("cb_totalPriceText").textContent = `$${totalPrice.toLocaleString()}`;
       validateCustomerSlotAvailability();
@@ -3453,46 +4000,46 @@
     function validateCustomerSlotAvailability() {
       const banner = document.getElementById("cb_slotConflictBanner");
       const btn = document.getElementById("cb_submitBtn");
-      const data = state.portalData || {};
+      if (!state.portalData) return true;
+
       const dateStr = document.getElementById("cb_date").value;
-      const startTime = document.getElementById("cb_startTime").value || "11:00";
+      const startStr = document.getElementById("cb_startTime").value || "11:00";
+      const catalog = state.portalData.catalog || [];
+      const selectedItems = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
+      const dur = selectedItems.reduce((s, i) => s + safeNumber(i.duration, 0), 0) || 60;
 
-      const catalog = data.catalog || [];
-      const selected = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
-      const dur = selected.reduce((sum, x) => sum + safeNumber(x.duration, 0), 0) || 60;
-
-      const startMin = timeToMinutes(startTime);
+      const startMin = timeToMinutes(startStr);
       const endMin = Math.min(22 * 60, startMin + dur + 10);
 
-      const blocked = (data.blockedSlots || []).filter(blk => {
+      const blocked = (state.portalData.blockedSlots || []).filter(blk => {
         if (blk.date !== dateStr) return false;
         if (blk.fullDay) return true;
         return startMin < timeToMinutes(blk.endTime) && endMin > timeToMinutes(blk.startTime);
       });
 
       if (blocked.length > 0) {
-        const msg = blocked.map(b => b.fullDay ? `${b.date} 整天不開放預約（${b.reason}）` : `${b.startTime}-${b.endTime} 不開放預約（${b.reason}）`).join("；");
-        banner.textContent = "🚫 " + msg + "，請改選其他日期或時間。";
         banner.classList.remove("hidden");
+        banner.textContent = "🚫 此日期或時段店家不開放預約（" + blocked.map(b => b.fullDay ? `整天休假：${b.reason}` : `${b.startTime}-${b.endTime}：${b.reason}`).join("；") + "），請改選其他時間。";
         btn.disabled = true;
         btn.classList.add("opacity-50", "cursor-not-allowed");
         return false;
       }
 
-      const occupied = (data.occupiedSlots || []).filter(occ => {
-        if (occ.date !== dateStr) return false;
-        return startMin < timeToMinutes(occ.endTime) && endMin > timeToMinutes(occ.startTime);
+      const occupied = (state.portalData.occupiedSlots || []).filter(oc => {
+        if (oc.date !== dateStr) return false;
+        return startMin < timeToMinutes(oc.endTime) && endMin > timeToMinutes(oc.startTime);
       });
 
       if (occupied.length > 0) {
-        banner.textContent = `⚠️ ${dateStr} ${startTime} 該時段已被預約，請選擇其他時間。`;
         banner.classList.remove("hidden");
+        banner.textContent = "⚠️ 該時段已有其他貴賓預約，請選擇其他時間。";
         btn.disabled = true;
         btn.classList.add("opacity-50", "cursor-not-allowed");
         return false;
       }
 
       banner.classList.add("hidden");
+      banner.textContent = "";
       btn.disabled = false;
       btn.classList.remove("opacity-50", "cursor-not-allowed");
       return true;
@@ -3502,37 +4049,35 @@
       e.preventDefault();
       if (!validateCustomerSlotAvailability()) return;
 
-      const catalog = (state.portalData && state.portalData.catalog) || [];
-      const selected = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
-      if (selected.length === 0) {
-        showToast("請至少加入一項服務或產品", true);
-        return;
-      }
+      const catalog = (state.portalData && state.portalData.catalog) ? state.portalData.catalog : [];
+      const selectedItems = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
+      if (selectedItems.length === 0) return showToast("請先加入至少一項預約服務或產品", true);
 
-      const cust = state.portalData && state.portalData.customer;
-      const totalDur = selected.reduce((sum, x) => sum + safeNumber(x.duration, 0), 0) || 60;
-      const totalPrice = selected.reduce((sum, x) => sum + safeNumber(x.price, 0), 0);
+      const totalDuration = selectedItems.reduce((s, item) => s + safeNumber(item.duration, 0), 0) || 30;
+      const totalPrice = selectedItems.reduce((s, item) => s + safeNumber(item.price, 0), 0);
+      const servicesText = selectedItems.map(item => item.name).join(" + ");
+      const primaryCategory = String(selectedItems[0].category || "");
 
       try {
         setLoading(true, "送出預約申請中...");
         await apiPost({
           action: "submitCustomerBookingRequest",
           payload: {
-            cid: cust ? cust.id : state.portalCid,
-            customerName: cust ? cust.name : "",
+            cid: state.portalCid || (state.portalData && state.portalData.customer ? state.portalData.customer.id : ""),
+            customerName: state.portalData && state.portalData.customer ? state.portalData.customer.name : document.getElementById("cf_name").value.trim(),
             date: document.getElementById("cb_date").value,
             startTime: document.getElementById("cb_startTime").value,
-            totalDuration: totalDur,
-            totalPrice: totalPrice,
-            primaryCategory: String(selected[0].category || ""),
-            servicesText: selected.map(x => x.name).join(" + "),
+            totalDuration,
+            totalPrice,
+            primaryCategory,
+            servicesText,
             note: document.getElementById("cb_note").value.trim()
           }
         });
-        document.getElementById("cb_note").value = "";
         state.selectedCustomerServiceIds = [];
-        showToast("已送出預約申請，待美學師審核後將為您排入月曆！");
+        document.getElementById("cb_note").value = "";
         await reloadCustomerPortalData();
+        showToast("已送出預約申請，待美學師審核確認！");
       } catch (err) {
         showToast(err.message || "預約送出失敗", true);
       } finally {
@@ -3540,144 +4085,20 @@
       }
     }
 
-    /* ==================== 手寫簽名板與諮詢表送出 ==================== */
-    let sigCanvas, sigCtx, sigDrawing = false, sigHasStroke = false;
-
-    function initSignaturePad() {
-      sigCanvas = document.getElementById("signatureCanvas");
-      if (!sigCanvas) return;
-      sigCtx = sigCanvas.getContext("2d");
-      sigCtx.lineWidth = 2.4;
-      sigCtx.lineCap = "round";
-      sigCtx.strokeStyle = "#2f2622";
-
-      const getPos = (e) => {
-        const rect = sigCanvas.getBoundingClientRect();
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        return {
-          x: (clientX - rect.left) * (sigCanvas.width / rect.width),
-          y: (clientY - rect.top) * (sigCanvas.height / rect.height)
-        };
-      };
-
-      const start = (e) => {
-        sigDrawing = true;
-        sigHasStroke = true;
-        const p = getPos(e);
-        sigCtx.beginPath();
-        sigCtx.moveTo(p.x, p.y);
-      };
-      const move = (e) => {
-        if (!sigDrawing) return;
-        e.preventDefault();
-        const p = getPos(e);
-        sigCtx.lineTo(p.x, p.y);
-        sigCtx.stroke();
-      };
-      const end = () => { sigDrawing = false; };
-
-      sigCanvas.addEventListener("mousedown", start);
-      sigCanvas.addEventListener("mousemove", move);
-      window.addEventListener("mouseup", end);
-      sigCanvas.addEventListener("touchstart", start, { passive: false });
-      sigCanvas.addEventListener("touchmove", move, { passive: false });
-      window.addEventListener("touchend", end);
-    }
-
-    function clearSignature() {
-      if (!sigCanvas || !sigCtx) return;
-      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
-      sigHasStroke = false;
-    }
-
-    async function handleConsultationSubmit(e) {
-      e.preventDefault();
-      const existingCons = state.portalData && state.portalData.consultation;
-
-      if (state.qAnswers.pastHairRemoval.length === 0) {
-        showToast("請勾選「過往毛髮處理方式」", true);
-        return;
-      }
-      if (!state.qAnswers.firstTimeWaxing) {
-        showToast("請選擇「本次是否為首次施作熱蠟除毛」", true);
-        return;
-      }
-      if (state.qAnswers.sensitiveTypes.length === 0) {
-        showToast("請勾選「是否為敏感體質」", true);
-        return;
-      }
-      if (!state.qAnswers.isPregnant) {
-        showToast("請選擇「目前是否為懷孕期間」", true);
-        return;
-      }
-      if (!state.qAnswers.isSickOrLowImmunity) {
-        showToast("請選擇「目前是否為生病或免疫力下降期間」", true);
-        return;
-      }
-      if (!state.qAnswers.isMenstruating) {
-        showToast("請選擇「目前是否為生理期間」", true);
-        return;
-      }
-      if (!state.qAnswers.isOilyOrAcneArea) {
-        showToast("請選擇「除毛部位是否常出油或長痘痘」", true);
-        return;
-      }
-
-      if (!sigHasStroke && (!existingCons || !existingCons.signatureDataUrl)) {
-        showToast("請先於簽名區親筆簽名", true);
-        return;
-      }
-
-      const finalSigUrl = sigHasStroke
-        ? sigCanvas.toDataURL("image/png")
-        : (existingCons ? existingCons.signatureDataUrl : "");
-
-      try {
-        setLoading(true, "儲存問卷與諮詢同意書中...");
-        const res = await apiPost({
-          action: "submitCustomerConsultation",
-          payload: {
-            cid: (state.portalData && state.portalData.customer && state.portalData.customer.id) || state.portalCid,
-            lineUserId: state.portalLineUserId,
-            lineDisplayName: state.portalLineDisplayName,
-            name: document.getElementById("cf_name").value.trim(),
-            nickname: document.getElementById("cf_nickname").value.trim(),
-            phone: document.getElementById("cf_phone").value.trim(),
-            birthday: document.getElementById("cf_birthday").value,
-            address: document.getElementById("cf_address").value.trim(),
-            pastHairRemoval: state.qAnswers.pastHairRemoval.join("、"),
-            firstTimeWaxing: state.qAnswers.firstTimeWaxing,
-            sensitiveTypes: state.qAnswers.sensitiveTypes.join("、"),
-            isPregnant: state.qAnswers.isPregnant,
-            isSickOrLowImmunity: state.qAnswers.isSickOrLowImmunity,
-            isMenstruating: state.qAnswers.isMenstruating,
-            isOilyOrAcneArea: state.qAnswers.isOilyOrAcneArea,
-            signatureDataUrl: finalSigUrl,
-            signatureUpdated: sigHasStroke
-          }
-        });
-        if (res && res.cid) state.portalCid = res.cid;
-        state.isEditingConsultation = false;
-        showToast(existingCons ? "問卷修改已儲存並完整留存異動紀錄！" : "問卷與諮詢同意書已送出，感謝您的填寫！");
-        await reloadCustomerPortalData();
-      } catch (err) {
-        showToast(err.message || "送出失敗", true);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     function esc(str) {
-      return String(str || "")
+      return String(str === null || str === undefined ? "" : str)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
     }
 
     function escJs(str) {
-      return String(str || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+      return String(str === null || str === undefined ? "" : str)
+        .replace(/\\/g, "\\\\")
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '\\"');
     }
   </script>
 </body>
