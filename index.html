@@ -100,6 +100,15 @@
       background-color: #fffdfa;
       border: 1.5px dashed #c7ab95;
     }
+    .cal-full-blocked {
+      background-image: repeating-linear-gradient(
+        -45deg,
+        #fff5f5,
+        #fff5f5 6px,
+        #fee2e2 6px,
+        #fee2e2 12px
+      );
+    }
   </style>
 </head>
 <body class="min-h-screen pb-14">
@@ -131,16 +140,16 @@
     </div>
   </header>
 
-  <!-- 全域提示 Toast -->
-  <div id="toastBox" class="fixed top-16 right-4 z-50 max-w-sm hidden">
-    <div id="toastInner" class="px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white bg-[#2f2622]"></div>
+  <!-- 全域提示 Toast（最頂層 z-[9999]，確保不被任何視窗遮擋） -->
+  <div id="toastBox" class="fixed top-5 left-1/2 -translate-x-1/2 sm:left-auto sm:translate-x-0 sm:top-16 sm:right-4 z-[9999] max-w-sm w-[90%] sm:w-auto hidden pointer-events-none">
+    <div id="toastInner" class="px-4 py-3 rounded-2xl shadow-2xl text-sm font-bold text-white bg-[#2f2622] border border-white/15 text-center sm:text-left"></div>
   </div>
 
-  <!-- 載入遮罩 -->
-  <div id="loadingOverlay" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center hidden">
-    <div class="bg-white rounded-2xl px-6 py-5 shadow-xl flex items-center gap-3">
+  <!-- 全域載入遮罩（最頂層 z-[9999]，確保在所有彈窗前方顯示） -->
+  <div id="loadingOverlay" class="fixed inset-0 z-[9999] modal-backdrop flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl px-6 py-5 shadow-2xl border border-[#eadfd4] flex items-center gap-3.5">
       <div class="w-5 h-5 border-2 border-[#8c5e43] border-t-transparent rounded-full animate-spin"></div>
-      <span id="loadingText" class="text-sm font-medium text-[#3a2a22]">資料處理中...</span>
+      <span id="loadingText" class="text-sm font-extrabold text-[#3a2a22]">資料處理中...</span>
     </div>
   </div>
 
@@ -508,8 +517,8 @@
           <!-- 圖例列 + 本月壽星（移至最右側並調整為適當大小） -->
           <div class="mt-3 pt-2.5 border-t border-[#f2e8df] flex flex-wrap items-center justify-between gap-2 text-[11px] text-[#6d5648]">
             <div class="flex flex-wrap items-center gap-2.5 sm:gap-3">
-              <span class="inline-flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-sm bg-[#e11d48]"></i>熱蠟</span>
-              <span class="inline-flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-sm bg-[#0284c7]"></i>冰肌／日式</span>
+              <span class="inline-flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-sm bg-rose-400"></i>熱蠟</span>
+              <span class="inline-flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-sm bg-sky-400"></i>冰肌／日式</span>
               <span class="inline-flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-sm bg-[#8c5e43]"></i>其他項目</span>
               <span class="inline-flex items-center gap-1 text-[#b91c1c] font-bold"><i class="w-2.5 h-2.5 rounded-sm bg-[#dc2626]"></i>禁止預約</span>
             </div>
@@ -521,13 +530,15 @@
           </div>
         </div>
 
-        <div class="lg:col-span-5 glass-card rounded-2xl p-4">
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <div>
-              <h3 id="selectedDateTitle" class="font-bold text-base text-[#33241d]">當日已排入預約</h3>
-              <p id="selectedDateBlockedHint" class="text-xs font-bold text-[#b91c1c] mt-0.5"></p>
-            </div>
+        <div class="lg:col-span-5 glass-card rounded-2xl p-4 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <h3 id="selectedDateTitle" class="font-bold text-base text-[#33241d]">當日已排入預約</h3>
+            <button type="button" onclick="openBookingModal(state.selectedDate)" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#f4ece4] text-[#6a4f3f] hover:bg-[#e9ddd0]">
+              + 排入此日
+            </button>
           </div>
+          <!-- 當日禁約時段清晰警告卡片 -->
+          <div id="selectedDateBlockedCard" class="hidden"></div>
           <div id="dayBookingsList" class="space-y-2.5"></div>
         </div>
       </div>
@@ -1334,11 +1345,22 @@
       return Number.isFinite(n) ? n : fallback;
     }
 
+    // 過濾週年慶／周年慶優惠券
+    function isAnniversaryCoupon(cp) {
+      if (!cp) return false;
+      const combined = `${cp.title || ""} ${cp.type || ""} ${cp.note || ""}`;
+      return /週年慶|周年慶/.test(combined);
+    }
+
+    function getVisibleCoupons(list = state.coupons) {
+      return (list || []).filter(cp => !isAnniversaryCoupon(cp));
+    }
+
     function showToast(msg, isError = false) {
       const box = document.getElementById("toastBox");
       const inner = document.getElementById("toastInner");
       inner.textContent = msg;
-      inner.className = `px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white ${isError ? "bg-[#b42318]" : "bg-[#2f2622]"}`;
+      inner.className = `px-4 py-3 rounded-2xl shadow-2xl text-sm font-bold text-white border border-white/15 text-center sm:text-left ${isError ? "bg-[#b42318]" : "bg-[#2f2622]"}`;
       box.classList.remove("hidden");
       clearTimeout(showToast._timer);
       showToast._timer = setTimeout(() => box.classList.add("hidden"), 3400);
@@ -1504,7 +1526,7 @@
       state.blockedSlots = snap.blockedSlots || [];
       state.consultations = snap.consultations || [];
       state.consultationLogs = snap.consultationLogs || [];
-      state.coupons = snap.coupons || [];
+      state.coupons = getVisibleCoupons(snap.coupons || []);
       state.couponRules = snap.couponRules || {};
 
       // 即時校正前端會員來客數顯示
@@ -1598,7 +1620,7 @@
             ? `<div class="text-xs text-[#8b7365] py-6 text-center">本月暫無壽星資料</div>`
             : `<div class="space-y-2 text-xs mt-3">${list.map(c => {
                 const bDay = String(c.birthday).slice(5);
-                const bdayCoupon = state.coupons.find(cp =>
+                const bdayCoupon = getVisibleCoupons().find(cp =>
                   String(cp.customerId) === String(c.id) &&
                   cp.type === "生日優惠" &&
                   String(cp.issuedDate || "").startsWith(ymPrefix) &&
@@ -1710,7 +1732,7 @@
       const cells = [];
 
       for (let i = 0; i < firstDay; i++) {
-        cells.push(`<div class="min-h-[86px] rounded-xl bg-[#faf7f4]/50"></div>`);
+        cells.push(`<div class="min-h-[92px] rounded-xl bg-[#faf7f4]/50"></div>`);
       }
 
       for (let day = 1; day <= daysInMonth; day++) {
@@ -1718,12 +1740,39 @@
         const dayBks = approvedBookings
           .filter(b => b.date === dateStr)
           .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
-        const dayBlocks = state.blockedSlots.filter(blk => blk.date === dateStr);
+        const dayBlocks = state.blockedSlots
+          .filter(blk => blk.date === dateStr)
+          .sort((a, b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
         const isSelected = state.selectedDate === dateStr;
-        const isFullBlocked = dayBlocks.some(blk => blk.fullDay);
-        const hasPartialBlock = dayBlocks.some(blk => !blk.fullDay);
+        const fullBlockObj = dayBlocks.find(blk => blk.fullDay);
+        const partialBlocks = dayBlocks.filter(blk => !blk.fullDay);
 
-        const itemsHtml = dayBks.slice(0, 3).map(b => {
+        // 禁約視覺標籤清晰化
+        let blockBanner = "";
+        if (fullBlockObj) {
+          const reasonTxt = esc(fullBlockObj.reason || "公休／不開放");
+          blockBanner = `
+            <div class="w-full px-1.5 py-0.5 rounded-md bg-red-600 text-white text-[10px] font-extrabold leading-tight shadow-2xs truncate" title="整天禁約：${reasonTxt}">
+              🚫 整天禁約${fullBlockObj.reason ? `·${reasonTxt}` : ""}
+            </div>
+          `;
+        } else if (partialBlocks.length > 0) {
+          const shownBlocks = partialBlocks.slice(0, 2).map(blk => {
+            const rTxt = esc(blk.reason || "禁約時段");
+            return `
+              <div class="w-full px-1 py-0.5 rounded bg-red-600/90 text-white text-[10px] font-extrabold leading-tight truncate tabular-nums" title="禁約 ${esc(blk.startTime)}-${esc(blk.endTime)}（${rTxt}）">
+                🚫 ${esc(blk.startTime)}-${esc(blk.endTime)}
+              </div>
+            `;
+          }).join("");
+          const moreBlk = partialBlocks.length > 2
+            ? `<div class="text-[9px] font-extrabold text-red-700 px-1">+${partialBlocks.length - 2} 禁約</div>`
+            : "";
+          blockBanner = shownBlocks + moreBlk;
+        }
+
+        const maxBookingPreview = fullBlockObj ? 1 : (partialBlocks.length > 0 ? 2 : 3);
+        const itemsHtml = dayBks.slice(0, maxBookingPreview).map(b => {
           const st = getServiceColorStyle(b);
           const timeText = esc(b.startTime || "--:--");
           const nameText = esc(b.customerName || "");
@@ -1735,29 +1784,29 @@
           `;
         }).join("");
 
-        const extraCount = dayBks.length > 3
-          ? `<div class="text-[10px] font-bold text-[#8c5e43] px-1">還有 +${dayBks.length - 3} 筆</div>`
+        const extraCount = dayBks.length > maxBookingPreview
+          ? `<div class="text-[10px] font-bold text-[#8c5e43] px-1">+${dayBks.length - maxBookingPreview} 筆預約</div>`
           : "";
 
-        let blockBanner = "";
-        if (isFullBlocked) {
-          blockBanner = `<div class="w-full px-1 py-0.5 rounded bg-red-600 text-white text-[10px] font-extrabold truncate">🚫 整天禁約</div>`;
-        } else if (hasPartialBlock) {
-          const firstBlk = dayBlocks.find(blk => !blk.fullDay);
-          blockBanner = `<div class="w-full px-1 py-0.5 rounded bg-red-100 text-red-800 border border-red-300 text-[10px] font-bold truncate tabular-nums">🚫 ${esc(firstBlk.startTime)}-${esc(firstBlk.endTime)}</div>`;
+        let cardSurfaceClass = "bg-[#fcfaf8] hover:bg-[#f6efe8] border-[#ede1d5]";
+        if (isSelected) {
+          cardSurfaceClass = fullBlockObj
+            ? "cal-full-blocked border-2 border-red-600 ring-2 ring-red-200"
+            : "bg-[#fffaf5] border-2 border-[#8c5e43] ring-1 ring-[#8c5e43]/30";
+        } else if (fullBlockObj) {
+          cardSurfaceClass = "cal-full-blocked border-red-300 hover:border-red-400";
+        } else if (partialBlocks.length > 0) {
+          cardSurfaceClass = "bg-red-50/40 border-red-300 hover:bg-red-50/70";
         }
 
         cells.push(`
-          <button type="button" onclick="selectCalendarDate('${dateStr}')" class="min-h-[90px] p-1 sm:p-1.5 rounded-xl flex flex-col items-start justify-start border transition text-left overflow-hidden ${
-            isSelected
-              ? "bg-[#fffaf5] border-2 border-[#8c5e43] ring-1 ring-[#8c5e43]/30"
-              : (isFullBlocked || hasPartialBlock)
-                ? "bg-red-50/50 border-red-300 hover:bg-red-50"
-                : "bg-[#fcfaf8] hover:bg-[#f6efe8] border-[#ede1d5]"
-          }">
+          <button type="button" onclick="selectCalendarDate('${dateStr}')" class="min-h-[94px] p-1 sm:p-1.5 rounded-xl flex flex-col items-start justify-start border transition text-left overflow-hidden ${cardSurfaceClass}">
             <div class="w-full flex items-center justify-between mb-1">
-              <span class="text-xs font-extrabold ${isSelected ? "text-[#8c5e43]" : (isFullBlocked ? "text-red-700" : "text-[#3a2a22]")}">${day}</span>
-              ${dayBks.length > 0 ? `<span class="text-[10px] font-bold text-[#8b7365]">${dayBks.length}筆</span>` : ""}
+              <span class="text-xs font-extrabold ${fullBlockObj ? "text-red-700" : isSelected ? "text-[#8c5e43]" : "text-[#3a2a22]"}">${day}</span>
+              ${fullBlockObj
+                ? `<span class="text-[9px] px-1 rounded bg-red-100 text-red-700 font-extrabold">休</span>`
+                : (dayBks.length > 0 ? `<span class="text-[10px] font-bold text-[#8b7365]">${dayBks.length}筆</span>` : "")
+              }
             </div>
             <div class="w-full space-y-1">
               ${blockBanner}
@@ -1779,16 +1828,38 @@
 
     function renderDayBookings() {
       const dateStr = state.selectedDate;
-      document.getElementById("selectedDateTitle").textContent = `${dateStr} 已排入預約`;
+      document.getElementById("selectedDateTitle").textContent = `${dateStr} 排程與時段狀態`;
 
-      const dayBlocks = state.blockedSlots.filter(blk => blk.date === dateStr);
-      const hintEl = document.getElementById("selectedDateBlockedHint");
+      const dayBlocks = state.blockedSlots
+        .filter(blk => blk.date === dateStr)
+        .sort((a, b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
+      const blockedCardEl = document.getElementById("selectedDateBlockedCard");
+
       if (dayBlocks.length > 0) {
-        hintEl.textContent = "🚫 禁止預約：" + dayBlocks.map(blk =>
-          blk.fullDay ? `整天不可預約（${blk.reason}）` : `${blk.startTime}-${blk.endTime} 不可預約（${blk.reason}）`
-        ).join("；");
+        blockedCardEl.classList.remove("hidden");
+        blockedCardEl.innerHTML = `
+          <div class="p-3 rounded-2xl bg-red-50 border border-red-200 space-y-1.5 text-xs">
+            <div class="flex items-center justify-between gap-2">
+              <span class="font-extrabold text-red-800 flex items-center gap-1">🚫 本日已設定禁止預約時段</span>
+              <button type="button" onclick="switchAdminTab('management'); switchManagementSubTab('blocked'); openBlockedModal('${dateStr}');" class="text-[11px] font-bold text-red-700 underline hover:text-red-900">
+                管理禁約
+              </button>
+            </div>
+            <div class="space-y-1">
+              ${dayBlocks.map(blk => `
+                <div class="px-2.5 py-1.5 rounded-xl bg-white/90 border border-red-100 flex items-center justify-between gap-2">
+                  <span class="font-extrabold text-red-700 tabular-nums">
+                    ${blk.fullDay ? "全天 00:00 - 23:59（整天禁約）" : `${esc(blk.startTime)} - ${esc(blk.endTime)}`}
+                  </span>
+                  <span class="text-[#5c4638] font-semibold truncate">${esc(blk.reason || "不可預約")}</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
       } else {
-        hintEl.textContent = "";
+        blockedCardEl.classList.add("hidden");
+        blockedCardEl.innerHTML = "";
       }
 
       const list = state.bookings
@@ -1886,9 +1957,7 @@
           }
         });
         applyAdminSnapshot(snap);
-      } catch (_) {
-        // 若後端欄位未額外接收 visitCount，前端 applyAdminSnapshot 仍已根據已完成預約計算最新來客數
-      }
+      } catch (_) {}
     }
 
     /* ==================== 完成結算彈窗 ==================== */
@@ -1909,7 +1978,7 @@
 
       const coupSel = document.getElementById("st_couponId");
       const availCoupons = b.customerId
-        ? state.coupons.filter(cp => cp.status === "可使用" && String(cp.customerId) === String(b.customerId))
+        ? getVisibleCoupons().filter(cp => cp.status === "可使用" && String(cp.customerId) === String(b.customerId))
         : [];
       coupSel.innerHTML = `<option value="">不使用優惠券</option>` + availCoupons.map(cp =>
         `<option value="${esc(cp.couponId)}" ${String(cp.couponId) === String(b.usedCouponId) ? "selected" : ""}>${esc(cp.title)}（折 $${safeNumber(cp.discountAmount, 0)}）</option>`
@@ -1927,7 +1996,7 @@
     function onSettleCouponChange() {
       const basePrice = safeNumber(document.getElementById("st_basePrice").value, 0);
       const couponId = document.getElementById("st_couponId").value;
-      const cp = couponId ? state.coupons.find(x => String(x.couponId) === String(couponId)) : null;
+      const cp = couponId ? getVisibleCoupons().find(x => String(x.couponId) === String(couponId)) : null;
       const discount = cp ? safeNumber(cp.discountAmount, 0) : 0;
       document.getElementById("st_finalPrice").value = Math.max(0, basePrice - discount);
       onSettlePayMethodChange();
@@ -2096,7 +2165,7 @@
 
     function refreshBookingCouponSelect(custId, selectedCouponId = "") {
       const coupSel = document.getElementById("bk_usedCouponId");
-      const avail = state.coupons.filter(cp =>
+      const avail = getVisibleCoupons().filter(cp =>
         (cp.status === "可使用" || (selectedCouponId && String(cp.couponId) === String(selectedCouponId))) &&
         (!custId || String(cp.customerId) === String(custId))
       );
@@ -2223,7 +2292,7 @@
     function recalcAdminBookingFromSelectedItems(overwriteFields = true) {
       const selectedItems = state.catalog.filter(x => state.selectedAdminBookingServiceIds.indexOf(String(x.id)) !== -1);
       const couponId = document.getElementById("bk_usedCouponId").value;
-      const couponObj = couponId ? state.coupons.find(cp => String(cp.couponId) === String(couponId)) : null;
+      const couponObj = couponId ? getVisibleCoupons().find(cp => String(cp.couponId) === String(couponId)) : null;
       const discount = couponObj ? safeNumber(couponObj.discountAmount, 0) : 0;
 
       if (overwriteFields && selectedItems.length > 0) {
@@ -2314,7 +2383,6 @@
         const snap = await apiPost({ action: "saveBookingAdmin", password: state.adminPassword, payload });
         applyAdminSnapshot(snap);
 
-        // 當預約狀態新變更為「已完成」時，自動同步來客數 +1 與紀錄至會員資料
         const becameCompleted = newStatus === "已完成" && (!prevBooking || prevBooking.status !== "已完成");
         if (becameCompleted && customerId) {
           await syncCustomerVisitRecordAfterCompletion(customerId, customerName, serviceText, dateStr, finalPrice);
@@ -2377,7 +2445,7 @@
         const completedBks = getCustomerCompletedBookings(c);
         const lastVisit = completedBks.length > 0 ? completedBks[0] : null;
         const cons = state.consultations.find(cn => String(cn.customerId) === String(c.id));
-        const availCpCount = state.coupons.filter(cp => String(cp.customerId) === String(c.id) && cp.status === "可使用").length;
+        const availCpCount = getVisibleCoupons().filter(cp => String(cp.customerId) === String(c.id) && cp.status === "可使用").length;
         const avatarChar = esc((c.name || "會").slice(0, 1));
         const isLineBound = !!(c.lineUserId || c.lineDisplayName);
         const lineNameText = c.lineDisplayName ? c.lineDisplayName : (c.lineUserId ? "已串連 LINE" : "尚未串連");
@@ -2386,12 +2454,10 @@
 
         return `
           <div class="glass-card rounded-3xl overflow-hidden flex flex-col justify-between hover:border-[#cfa888] hover:shadow-md transition">
-            <!-- 卡片頂部柔和漸層裝飾條 -->
             <div class="h-1.5 w-full ${isLineBound ? "bg-gradient-to-r from-[#8c5e43] via-[#b88668] to-emerald-500" : "bg-gradient-to-r from-[#c7ab95] to-[#e5d4c3]"}"></div>
 
             <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-3">
               <div>
-                <!-- 頭像、姓名與標籤 -->
                 <div class="flex items-start justify-between gap-2.5">
                   <div class="flex items-center gap-3 min-w-0">
                     <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#9f7156] to-[#744c36] text-white font-extrabold text-base flex items-center justify-center shrink-0 shadow-sm">
@@ -2419,7 +2485,6 @@
                   </div>
                 </div>
 
-                <!-- 店家內部備註（外顯於卡片最醒目位置） -->
                 ${privateNote ? `
                   <div class="mt-3 px-3 py-2 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-xs flex items-start gap-2">
                     <span class="shrink-0 text-amber-700 font-extrabold">📌 備註：</span>
@@ -2427,7 +2492,6 @@
                   </div>
                 ` : ""}
 
-                <!-- 數據儀表板（儲值金 / 來店次數 / 優惠券） -->
                 <div class="grid grid-cols-3 gap-2 mt-3 text-center bg-[#faf6f2] border border-[#efe4d8] rounded-2xl p-2.5 text-xs">
                   <div>
                     <div class="text-[10px] text-[#8b7365]">儲值金餘額</div>
@@ -2450,7 +2514,6 @@
                 ` : ""}
               </div>
 
-              <!-- 操作按鈕列 -->
               <div class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#f2e8df]">
                 <button onclick="openBookingModal(null, '${escJs(c.id)}')" class="py-1.5 px-3 rounded-xl text-xs font-extrabold btn-primary shadow-sm">
                   📅 預約
@@ -2931,18 +2994,19 @@
 
     /* ==================== 分頁 3：優惠券管理＋固定自動發放規則設定 ==================== */
     function renderCouponsTab() {
-      const availCnt = state.coupons.filter(cp => cp.status === "可使用").length;
-      const usedCnt = state.coupons.filter(cp => cp.status === "已使用").length;
+      const visibleList = getVisibleCoupons();
+      const availCnt = visibleList.filter(cp => cp.status === "可使用").length;
+      const usedCnt = visibleList.filter(cp => cp.status === "已使用").length;
       document.getElementById("cpStatAvail").textContent = `${availCnt} 張`;
       document.getElementById("cpStatUsed").textContent = `${usedCnt} 張`;
-      document.getElementById("cpStatTotal").textContent = `${state.coupons.length} 張`;
+      document.getElementById("cpStatTotal").textContent = `${visibleList.length} 張`;
 
       renderCouponRulesSection();
 
       const q = (document.getElementById("couponSearchInput").value || "").trim().toLowerCase();
       const statusFilter = document.getElementById("couponStatusFilter").value;
 
-      const filtered = state.coupons.filter(cp => {
+      const filtered = visibleList.filter(cp => {
         if (statusFilter !== "all" && cp.status !== statusFilter) return false;
         const hay = `${cp.customerName} ${cp.title} ${cp.type} ${cp.note}`.toLowerCase();
         if (q && !hay.includes(q)) return false;
@@ -3151,7 +3215,7 @@
         titleInput.value = bRule ? bRule.title : "當月壽星生日禮折 $100";
         amtInput.value = bRule ? safeNumber(bRule.discountAmount, 100) : 100;
         monthsInput.value = bRule ? safeNumber(bRule.validityMonths, 1) : 1;
-      } else if (!titleInput.value || titleInput.value.indexOf("周年慶") !== -1 || titleInput.value.indexOf("週年慶") !== -1) {
+      } else if (!titleInput.value || /週年慶|周年慶/.test(titleInput.value)) {
         titleInput.value = "專屬折價券 $100";
         amtInput.value = 100;
         monthsInput.value = 6;
@@ -3761,7 +3825,7 @@
         });
         applyAdminSnapshot(snap);
         closeBlockedModal();
-        showToast("已新增禁約時段");
+        showToast("已成功新增禁約時段");
       } catch (err) {
         showToast(err.message || "新增失敗", true);
       } finally {
@@ -3797,10 +3861,10 @@
 
           if (isFull) {
             const firstBlk = dayBlocks.find(blk => blk.fullDay);
-            cardClass = "bg-red-50 border-red-400 hover:bg-red-100/80";
+            cardClass = "cal-full-blocked border-red-400 hover:border-red-500";
             badgeHtml = `
               <div class="w-full px-1 py-0.5 rounded bg-red-600 text-white text-[10px] font-extrabold truncate">🚫 整天禁約</div>
-              <div class="w-full text-[10px] text-red-800 truncate">${esc(firstBlk.reason || "")}</div>
+              <div class="w-full text-[10px] text-red-800 font-semibold truncate">${esc(firstBlk.reason || "")}</div>
             `;
           } else if (isPartial) {
             cardClass = "bg-amber-50/80 border-amber-300 hover:bg-amber-100/60";
@@ -3970,7 +4034,7 @@
         const effectiveVisits = Math.max(completedCount, safeNumber(cust.visitCount, 0));
         document.getElementById("custPortalVisits").textContent = `累計來店 ${effectiveVisits} 次`;
 
-        const coupons = data.coupons || [];
+        const coupons = getVisibleCoupons(data.coupons || []);
         document.getElementById("custPortalCoupons").innerHTML = `
           <div class="text-xs font-bold text-[#4a382f] mb-1.5">🎟️ 我的優惠券（${coupons.length} 張）</div>
           ${coupons.length === 0
@@ -4161,77 +4225,72 @@
     }
 
     function parseMultiAnswer(str) {
-      return String(str || "")
-        .split(/[、,，]/)
-        .map(s => s.trim())
-        .filter(Boolean);
+      if (!str) return [];
+      return String(str).split(/[,、]/).map(s => s.trim()).filter(Boolean);
     }
 
     function renderConsultationQuestionnaire() {
-      renderMultiChoiceGroup("q_pastHairRemovalList", "pastHairRemoval", QUESTION_CONFIG.pastHairRemoval);
-      renderSingleChoiceGroup("q_firstTimeWaxingList", "firstTimeWaxing", QUESTION_CONFIG.yesNo);
-      renderMultiChoiceGroup("q_sensitiveTypesList", "sensitiveTypes", QUESTION_CONFIG.sensitiveTypes);
-      renderSingleChoiceGroup("q_isPregnantList", "isPregnant", QUESTION_CONFIG.yesNo);
-      renderSingleChoiceGroup("q_isSickOrLowImmunityList", "isSickOrLowImmunity", QUESTION_CONFIG.yesNo);
-      renderSingleChoiceGroup("q_isMenstruatingList", "isMenstruating", QUESTION_CONFIG.yesNo);
-      renderSingleChoiceGroup("q_isOilyOrAcneAreaList", "isOilyOrAcneArea", QUESTION_CONFIG.yesNo);
+      renderMultiChoiceList("q_pastHairRemovalList", "pastHairRemoval", QUESTION_CONFIG.pastHairRemoval);
+      renderSingleChoiceList("q_firstTimeWaxingList", "firstTimeWaxing", QUESTION_CONFIG.yesNo);
+      renderMultiChoiceList("q_sensitiveTypesList", "sensitiveTypes", QUESTION_CONFIG.sensitiveTypes);
+      renderSingleChoiceList("q_isPregnantList", "isPregnant", QUESTION_CONFIG.yesNo);
+      renderSingleChoiceList("q_isSickOrLowImmunityList", "isSickOrLowImmunity", QUESTION_CONFIG.yesNo);
+      renderSingleChoiceList("q_isMenstruatingList", "isMenstruating", QUESTION_CONFIG.yesNo);
+      renderSingleChoiceList("q_isOilyOrAcneAreaList", "isOilyOrAcneArea", QUESTION_CONFIG.yesNo);
     }
 
-    function renderMultiChoiceGroup(containerId, fieldKey, options) {
-      const container = document.getElementById(containerId);
-      const selected = state.qAnswers[fieldKey] || [];
-      container.innerHTML = options.map(opt => {
-        const checked = selected.indexOf(opt) !== -1;
+    function renderMultiChoiceList(containerId, key, options) {
+      const box = document.getElementById(containerId);
+      const selected = state.qAnswers[key] || [];
+      box.innerHTML = options.map(opt => {
+        const isChecked = selected.indexOf(opt) !== -1;
         return `
-          <div onclick="toggleMultiAnswer('${fieldKey}', '${escJs(opt)}')" class="q-option-row ${checked ? "q-option-selected" : ""}">
-            <div class="w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-              checked ? "bg-[#8c5e43] border-[#8c5e43] text-white" : "border-[#b8a596] bg-white"
+          <div onclick="toggleMultiChoice('${key}', '${escJs(opt)}')" class="q-option-row ${isChecked ? "q-option-selected" : ""}">
+            <span class="w-4 h-4 rounded-[4px] border flex items-center justify-center shrink-0 transition ${
+              isChecked ? "bg-[#8c5e43] border-[#8c5e43] text-white" : "border-[#b59f8f] bg-white"
             }">
-              ${checked ? `<span class="text-[11px] font-bold leading-none">✓</span>` : ""}
-            </div>
-            <span class="text-xs sm:text-sm ${checked ? "font-bold text-[#33241d]" : "text-[#4a382f]"}">${esc(opt)}</span>
+              ${isChecked ? `<svg class="w-3 h-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.704 5.29a1 1 0 010 1.42l-7.2 7.2a1 1 0 01-1.42 0l-3.6-3.6a1 1 0 111.42-1.42l2.89 2.89 6.49-6.49a1 1 0 011.42 0z" clip-rule="evenodd"/></svg>` : ""}
+            </span>
+            <span class="text-sm font-medium ${isChecked ? "text-[#33241d] font-bold" : "text-[#4a382f]"}">${esc(opt)}</span>
           </div>
         `;
       }).join("");
     }
 
-    function renderSingleChoiceGroup(containerId, fieldKey, options) {
-      const container = document.getElementById(containerId);
-      const current = state.qAnswers[fieldKey] || "";
-      container.innerHTML = options.map(opt => {
-        const checked = current === opt;
+    function renderSingleChoiceList(containerId, key, options) {
+      const box = document.getElementById(containerId);
+      const current = state.qAnswers[key] || "";
+      box.innerHTML = options.map(opt => {
+        const isSelected = current === opt;
         return `
-          <div onclick="selectSingleAnswer('${fieldKey}', '${escJs(opt)}')" class="q-option-row ${checked ? "q-option-selected" : ""}">
-            <div class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-              checked ? "border-[#8c5e43]" : "border-[#b8a596] bg-white"
+          <div onclick="selectSingleChoice('${key}', '${escJs(opt)}')" class="q-option-row ${isSelected ? "q-option-selected" : ""}">
+            <span class="w-4 h-4 rounded-full border flex items-center justify-center shrink-0 transition ${
+              isSelected ? "border-[#8c5e43]" : "border-[#b59f8f] bg-white"
             }">
-              ${checked ? `<div class="w-2 h-2 rounded-full bg-[#8c5e43]"></div>` : ""}
-            </div>
-            <span class="text-xs sm:text-sm ${checked ? "font-bold text-[#33241d]" : "text-[#4a382f]"}">${esc(opt)}</span>
+              ${isSelected ? `<span class="w-2 h-2 rounded-full bg-[#8c5e43]"></span>` : ""}
+            </span>
+            <span class="text-sm font-medium ${isSelected ? "text-[#33241d] font-bold" : "text-[#4a382f]"}">${esc(opt)}</span>
           </div>
         `;
       }).join("");
     }
 
-    function toggleMultiAnswer(fieldKey, opt) {
-      let arr = [...(state.qAnswers[fieldKey] || [])];
-      const idx = arr.indexOf(opt);
-      if (idx !== -1) {
-        arr.splice(idx, 1);
+    function toggleMultiChoice(key, val) {
+      let arr = [...(state.qAnswers[key] || [])];
+      if (val === "無") {
+        arr = arr.indexOf("無") !== -1 ? [] : ["無"];
       } else {
-        if (opt === "無") {
-          arr = ["無"];
-        } else {
-          arr = arr.filter(x => x !== "無");
-          arr.push(opt);
-        }
+        arr = arr.filter(x => x !== "無");
+        const idx = arr.indexOf(val);
+        if (idx !== -1) arr.splice(idx, 1);
+        else arr.push(val);
       }
-      state.qAnswers[fieldKey] = arr;
+      state.qAnswers[key] = arr;
       renderConsultationQuestionnaire();
     }
 
-    function selectSingleAnswer(fieldKey, opt) {
-      state.qAnswers[fieldKey] = opt;
+    function selectSingleChoice(key, val) {
+      state.qAnswers[key] = val;
       renderConsultationQuestionnaire();
     }
 
@@ -4241,16 +4300,12 @@
       document.getElementById("customerBookSection").classList.toggle("hidden", isConsult);
       document.getElementById("cTabConsultBtn").className = `py-2.5 rounded-xl text-sm font-bold ${isConsult ? "tab-active" : "tab-inactive"}`;
       document.getElementById("cTabBookBtn").className = `py-2.5 rounded-xl text-sm font-bold ${!isConsult ? "tab-active" : "tab-inactive"}`;
-      if (!isConsult) {
-        validateCustomerSlotAvailability();
-      }
     }
 
+    /* ==================== 客戶端預約：大分類篩選 + 細項加入/移除 ==================== */
     function selectCustomerCatalogCategory(catName) {
       state.activeCustomerCatalogCategory = catName;
-      if (state.portalData) {
-        renderCustomerBookingCatalog(state.portalData.catalog || []);
-      }
+      renderCustomerBookingCatalog(state.portalData ? state.portalData.catalog || [] : []);
     }
 
     function addCustomerServiceItem(itemId) {
@@ -4258,17 +4313,13 @@
       if (state.selectedCustomerServiceIds.indexOf(idStr) === -1) {
         state.selectedCustomerServiceIds.push(idStr);
       }
-      if (state.portalData) {
-        renderCustomerBookingCatalog(state.portalData.catalog || []);
-      }
+      renderCustomerBookingCatalog(state.portalData ? state.portalData.catalog || [] : []);
     }
 
     function removeCustomerServiceItem(itemId) {
       const idStr = String(itemId);
       state.selectedCustomerServiceIds = state.selectedCustomerServiceIds.filter(x => x !== idStr);
-      if (state.portalData) {
-        renderCustomerBookingCatalog(state.portalData.catalog || []);
-      }
+      renderCustomerBookingCatalog(state.portalData ? state.portalData.catalog || [] : []);
     }
 
     function renderCustomerBookingCatalog(catalogList) {
@@ -4278,15 +4329,15 @@
 
       if (!catalogList || catalogList.length === 0) {
         pillsBox.innerHTML = "";
-        activeBox.innerHTML = `<div class="p-3 text-xs text-[#8b7365]">目前尚未開放線上預約項目</div>`;
-        selectedBox.innerHTML = `<div class="text-xs text-[#8b7365]">尚未加入任何項目</div>`;
-        updateCustomerBookingTotals();
+        activeBox.innerHTML = `<div class="p-4 text-xs text-[#8b7365] text-center">目前暫無開放線上預約的項目</div>`;
+        selectedBox.innerHTML = "";
+        recalcCustomerBookingEstimate();
         return;
       }
 
       const grouped = {};
       catalogList.forEach(item => {
-        const cat = String(item.category || "美學服務").trim();
+        const cat = String(item.category || "其他").trim();
         if (!grouped[cat]) grouped[cat] = [];
         grouped[cat].push(item);
       });
@@ -4297,12 +4348,15 @@
       }
 
       pillsBox.innerHTML = catNames.map(cat => {
-        const isAct = state.activeCustomerCatalogCategory === cat;
+        const isActive = state.activeCustomerCatalogCategory === cat;
         return `
-          <button type="button" onclick="selectCustomerCatalogCategory('${escJs(cat)}')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold border transition ${
-            isAct ? "cat-pill-active" : "cat-pill-inactive hover:bg-[#f6efe8]"
+          <button type="button" onclick="selectCustomerCatalogCategory('${escJs(cat)}')" class="px-3.5 py-2 rounded-xl text-xs font-extrabold border transition flex items-center gap-1.5 ${
+            isActive ? "cat-pill-active" : "cat-pill-inactive hover:bg-[#f6efe8]"
           }">
-            ${esc(cat)}
+            <span>${esc(cat)}</span>
+            <span class="px-1.5 py-0.5 rounded-full text-[10px] ${
+              isActive ? "bg-white/25 text-white" : "bg-[#efe5da] text-[#6d5648]"
+            }">${grouped[cat].length}</span>
           </button>
         `;
       }).join("");
@@ -4312,19 +4366,19 @@
         const isAdded = state.selectedCustomerServiceIds.indexOf(String(item.id)) !== -1;
         const dur = safeNumber(item.duration, 0);
         return `
-          <div class="p-3 flex items-center justify-between gap-2 text-xs">
+          <div class="p-3 flex items-center justify-between gap-2 text-xs hover:bg-[#faf5ef] transition">
             <div class="min-w-0 flex-1">
-              <div class="font-bold text-sm text-[#33241d]">${esc(item.name)}</div>
-              <div class="text-[#7c6557] mt-0.5">
-                <span class="font-extrabold text-[#8c5e43]">$${safeNumber(item.price, 0).toLocaleString()}</span>${dur > 0 ? ` · 約 ${dur} 分鐘` : ""}
+              <div class="font-bold text-[#33241d]">${esc(item.name)}</div>
+              <div class="text-[11px] text-[#7c6557] mt-0.5">
+                <strong class="text-[#8c5e43]">$${safeNumber(item.price, 0).toLocaleString()}</strong>${dur > 0 ? ` · 約 ${dur} 分鐘` : ""}
               </div>
             </div>
             ${isAdded ? `
               <button type="button" onclick="removeCustomerServiceItem('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold shrink-0">
-                ✓ 已加入（點此移除）
+                ✓ 已加入（移除）
               </button>
             ` : `
-              <button type="button" onclick="addCustomerServiceItem('${escJs(item.id)}')" class="px-3.5 py-1.5 rounded-xl btn-primary font-bold shrink-0 shadow-sm">
+              <button type="button" onclick="addCustomerServiceItem('${escJs(item.id)}')" class="px-3.5 py-1.5 rounded-xl btn-primary font-bold shadow-sm shrink-0">
                 ＋ 加入
               </button>
             `}
@@ -4332,115 +4386,121 @@
         `;
       }).join("");
 
-      const selectedItems = catalogList.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
+      const selectedItems = catalogList.filter(item => state.selectedCustomerServiceIds.indexOf(String(item.id)) !== -1);
       document.getElementById("cb_selectedCountBadge").textContent = `已選 ${selectedItems.length} 項`;
 
       if (selectedItems.length === 0) {
-        selectedBox.innerHTML = `<div class="text-xs text-[#8b7365] py-2 px-3 rounded-xl bg-[#faf7f4] border border-dashed border-[#e2d3c4]">尚未加入任何項目，請從上方挑選</div>`;
+        selectedBox.innerHTML = `<div class="text-xs text-[#8b7365] py-2.5 px-3 rounded-xl bg-[#faf7f4] border border-dashed border-[#e2d3c4]">尚未加入任何項目，請從上方點選「＋ 加入」</div>`;
       } else {
         selectedBox.innerHTML = selectedItems.map(item => {
           const dur = safeNumber(item.duration, 0);
           return `
             <div class="p-2.5 rounded-xl bg-[#fdf8f3] border border-[#e7d6c5] flex items-center justify-between gap-2 text-xs">
-              <div class="min-w-0 flex-1">
+              <div class="min-w-0">
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-[#efe4d8] text-[#6d5648] font-bold mr-1">${esc(item.category)}</span>
                 <span class="font-bold text-[#33241d]">${esc(item.name)}</span>
                 <span class="text-[#8c5e43] font-bold ml-1.5">$${safeNumber(item.price, 0).toLocaleString()}</span>
-                ${dur > 0 ? `<span class="text-[#8b7365] ml-1">(${dur}分)</span>` : ""}
+                ${dur > 0 ? `<span class="text-[#8b7365] text-[11px]">(${dur}分)</span>` : ""}
               </div>
               <button type="button" onclick="removeCustomerServiceItem('${escJs(item.id)}')" class="px-2 py-1 rounded-lg bg-white border border-rose-200 text-rose-700 font-bold hover:bg-rose-50 shrink-0">
-                移除
+                ✕ 移除
               </button>
             </div>
           `;
         }).join("");
       }
 
-      updateCustomerBookingTotals();
+      recalcCustomerBookingEstimate();
     }
 
-    function updateCustomerBookingTotals() {
-      const catalogList = (state.portalData && state.portalData.catalog) || [];
-      const selectedItems = catalogList.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
-      const totalDur = selectedItems.reduce((s, i) => s + safeNumber(i.duration, 0), 0);
-      const totalPrice = selectedItems.reduce((s, i) => s + safeNumber(i.price, 0), 0);
-      document.getElementById("cb_totalDurationText").textContent = `${totalDur} 分鐘`;
+    function recalcCustomerBookingEstimate() {
+      const catalogList = state.portalData ? (state.portalData.catalog || []) : [];
+      const selected = catalogList.filter(item => state.selectedCustomerServiceIds.indexOf(String(item.id)) !== -1);
+      const totalDuration = selected.reduce((s, x) => s + safeNumber(x.duration, 0), 0);
+      const totalPrice = selected.reduce((s, x) => s + safeNumber(x.price, 0), 0);
+      document.getElementById("cb_totalDurationText").textContent = `${totalDuration} 分鐘`;
       document.getElementById("cb_totalPriceText").textContent = `$${totalPrice.toLocaleString()}`;
       validateCustomerSlotAvailability();
     }
 
     function validateCustomerSlotAvailability() {
       const banner = document.getElementById("cb_slotConflictBanner");
-      const submitBtn = document.getElementById("cb_submitBtn");
-      if (!banner || !submitBtn || !state.portalData) return true;
+      const btn = document.getElementById("cb_submitBtn");
+      if (!state.portalData) return true;
 
       const dateStr = document.getElementById("cb_date").value;
       const startStr = document.getElementById("cb_startTime").value || "11:00";
       const catalogList = state.portalData.catalog || [];
-      const selectedItems = catalogList.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
-      const dur = selectedItems.reduce((s, i) => s + safeNumber(i.duration, 0), 0) || 60;
+      const selected = catalogList.filter(item => state.selectedCustomerServiceIds.indexOf(String(item.id)) !== -1);
+      const dur = selected.reduce((s, x) => s + safeNumber(x.duration, 0), 0) || 60;
 
       const startMin = timeToMinutes(startStr);
       const endMin = startMin + dur + 10;
 
       const blockedList = state.portalData.blockedSlots || [];
-      const blockedConflict = blockedList.find(blk => {
+      const hitBlock = blockedList.find(blk => {
         if (blk.date !== dateStr) return false;
         if (blk.fullDay) return true;
         return startMin < timeToMinutes(blk.endTime) && endMin > timeToMinutes(blk.startTime);
       });
 
-      const occupiedList = state.portalData.occupiedBookings || [];
-      const bookingConflict = occupiedList.find(occ => {
-        if (occ.date !== dateStr) return false;
-        return startMin < timeToMinutes(occ.endTime) && endMin > timeToMinutes(occ.startTime);
-      });
-
-      if (blockedConflict) {
+      if (hitBlock) {
         banner.classList.remove("hidden");
-        banner.textContent = blockedConflict.fullDay
-          ? `⚠️ ${dateStr} 為店家休息／禁約日，請改選其他日期！`
-          : `⚠️ ${dateStr} ${blockedConflict.startTime}-${blockedConflict.endTime} 為禁約時段，請改選其他時間！`;
-        submitBtn.disabled = true;
-        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+        banner.textContent = hitBlock.fullDay
+          ? `⚠️ ${dateStr} 全天不開放預約（${hitBlock.reason || "公休"}），請選擇其他日期。`
+          : `⚠️ ${dateStr} ${hitBlock.startTime}-${hitBlock.endTime} 為不開放時段（${hitBlock.reason || "禁約"}），請調整時間。`;
+        btn.disabled = true;
+        btn.classList.add("opacity-50", "cursor-not-allowed");
         return false;
       }
 
-      if (bookingConflict) {
+      const busyList = state.portalData.busyBookings || [];
+      const hitBusy = busyList.find(bk => {
+        if (bk.date !== dateStr) return false;
+        return startMin < timeToMinutes(bk.endTime) && endMin > timeToMinutes(bk.startTime);
+      });
+
+      if (hitBusy) {
         banner.classList.remove("hidden");
-        banner.textContent = `⚠️ ${dateStr} ${bookingConflict.startTime}-${bookingConflict.endTime} 時段已有預約，請調整其他時間！`;
-        submitBtn.disabled = true;
-        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+        banner.textContent = `⚠️ ${dateStr} ${hitBusy.startTime}-${hitBusy.endTime} 已有預約排程，請選擇其他時段。`;
+        btn.disabled = true;
+        btn.classList.add("opacity-50", "cursor-not-allowed");
         return false;
       }
 
       banner.classList.add("hidden");
       banner.textContent = "";
-      submitBtn.disabled = false;
-      submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      btn.disabled = false;
+      btn.classList.remove("opacity-50", "cursor-not-allowed");
       return true;
     }
 
     async function handleCustomerBookingSubmit(e) {
       e.preventDefault();
       if (!validateCustomerSlotAvailability()) {
-        return showToast("您選擇的時段已被預約或為禁約時段，請重新選擇", true);
+        return showToast("該時段已滿或不開放，請更換日期或時間", true);
       }
 
-      const catalogList = (state.portalData && state.portalData.catalog) || [];
-      const selectedItems = catalogList.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
-      if (selectedItems.length === 0) return showToast("請至少加入一項服務或產品", true);
+      const catalogList = state.portalData ? (state.portalData.catalog || []) : [];
+      const selected = catalogList.filter(item => state.selectedCustomerServiceIds.indexOf(String(item.id)) !== -1);
+      if (selected.length === 0) return showToast("請至少加入一個服務或產品項目", true);
+
+      const cust = state.portalData ? state.portalData.customer : null;
+      const cons = state.portalData ? state.portalData.consultation : null;
+      const customerName = (cust && cust.name) || (cons && cons.name) || document.getElementById("cf_name").value.trim() || "線上預約顧客";
 
       try {
         setLoading(true, "送出預約申請中...");
         const res = await apiPost({
           action: "submitCustomerBooking",
           payload: {
-            cid: state.portalCid,
+            cid: (cust && cust.id) || state.portalCid,
             lineUserId: state.portalLineUserId,
             lineDisplayName: state.portalLineDisplayName,
+            customerName,
             date: document.getElementById("cb_date").value,
             startTime: document.getElementById("cb_startTime").value,
-            serviceIds: selectedItems.map(i => i.id),
+            serviceIds: selected.map(s => s.id),
             note: document.getElementById("cb_note").value.trim()
           }
         });
@@ -4448,7 +4508,7 @@
         state.selectedCustomerServiceIds = [];
         document.getElementById("cb_note").value = "";
         await reloadCustomerPortalData();
-        showToast("已送出預約申請！待店家審核確認後將加入排程");
+        showToast("預約申請已送出！請靜候店家審核確認");
       } catch (err) {
         showToast(err.message || "預約申請失敗", true);
       } finally {
@@ -4456,61 +4516,60 @@
       }
     }
 
-    /* ==================== 簽名板與諮詢表送出 ==================== */
-    let sigHasDrawn = false;
+    /* ==================== 簽名板與問卷送出 ==================== */
+    let sigCanvas, sigCtx, isDrawingSig = false, hasSignedNew = false;
 
     function initSignaturePad() {
-      const canvas = document.getElementById("signatureCanvas");
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      ctx.lineWidth = 2.6;
-      ctx.lineCap = "round";
-      ctx.strokeStyle = "#2f2622";
+      sigCanvas = document.getElementById("signatureCanvas");
+      if (!sigCanvas) return;
+      sigCtx = sigCanvas.getContext("2d");
+      sigCtx.lineWidth = 2.6;
+      sigCtx.lineCap = "round";
+      sigCtx.strokeStyle = "#2f2622";
 
-      let drawing = false;
-      const getPos = (evt) => {
-        const rect = canvas.getBoundingClientRect();
-        const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
-        const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+      const getPos = (e) => {
+        const rect = sigCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         return {
-          x: (clientX - rect.left) * (canvas.width / rect.width),
-          y: (clientY - rect.top) * (canvas.height / rect.height)
+          x: (clientX - rect.left) * (sigCanvas.width / rect.width),
+          y: (clientY - rect.top) * (sigCanvas.height / rect.height)
         };
       };
 
       const start = (e) => {
-        drawing = true;
-        sigHasDrawn = true;
+        isDrawingSig = true;
+        hasSignedNew = true;
         const p = getPos(e);
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
+        sigCtx.beginPath();
+        sigCtx.moveTo(p.x, p.y);
       };
       const move = (e) => {
-        if (!drawing) return;
+        if (!isDrawingSig) return;
         e.preventDefault();
         const p = getPos(e);
-        ctx.lineTo(p.x, p.y);
-        ctx.stroke();
+        sigCtx.lineTo(p.x, p.y);
+        sigCtx.stroke();
       };
-      const end = () => { drawing = false; };
+      const end = () => { isDrawingSig = false; };
 
-      canvas.addEventListener("mousedown", start);
-      canvas.addEventListener("mousemove", move);
+      sigCanvas.addEventListener("mousedown", start);
+      sigCanvas.addEventListener("mousemove", move);
       window.addEventListener("mouseup", end);
-      canvas.addEventListener("touchstart", start, { passive: false });
-      canvas.addEventListener("touchmove", move, { passive: false });
-      canvas.addEventListener("touchend", end);
+      sigCanvas.addEventListener("touchstart", start, { passive: false });
+      sigCanvas.addEventListener("touchmove", move, { passive: false });
+      sigCanvas.addEventListener("touchend", end);
     }
 
     function clearSignature() {
-      const canvas = document.getElementById("signatureCanvas");
-      const ctx = canvas.getContext("2d");
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      sigHasDrawn = false;
+      if (!sigCtx) return;
+      sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+      hasSignedNew = false;
     }
 
     async function handleConsultationSubmit(e) {
       e.preventDefault();
+
       if (state.qAnswers.pastHairRemoval.length === 0) return showToast("請勾選「過往毛髮處理方式」", true);
       if (!state.qAnswers.firstTimeWaxing) return showToast("請選擇「本次是否為首次施作熱蠟除毛」", true);
       if (state.qAnswers.sensitiveTypes.length === 0) return showToast("請勾選「是否為敏感體質」", true);
@@ -4519,62 +4578,62 @@
       if (!state.qAnswers.isMenstruating) return showToast("請選擇「目前是否為生理期間」", true);
       if (!state.qAnswers.isOilyOrAcneArea) return showToast("請選擇「除毛部位是否常出油或長痘痘／毛囊炎」", true);
 
-      const existingSig = document.getElementById("existingSignatureImg").getAttribute("src") || "";
-      const canvas = document.getElementById("signatureCanvas");
-      const sigDataUrl = sigHasDrawn ? canvas.toDataURL("image/png") : existingSig;
-
-      if (!sigDataUrl) {
-        return showToast("請於簽名框內親筆簽名後再送出", true);
+      const existingCons = state.portalData ? state.portalData.consultation : null;
+      let signatureDataUrl = "";
+      if (hasSignedNew) {
+        signatureDataUrl = sigCanvas.toDataURL("image/png");
+      } else if (existingCons && existingCons.signatureDataUrl) {
+        signatureDataUrl = existingCons.signatureDataUrl;
+      } else {
+        return showToast("請於簽名欄完成本人親筆簽名", true);
       }
+
+      const payload = {
+        cid: state.portalCid,
+        lineUserId: state.portalLineUserId,
+        lineDisplayName: state.portalLineDisplayName,
+        forceRebind: state.portalForceRebind,
+        name: document.getElementById("cf_name").value.trim(),
+        nickname: document.getElementById("cf_nickname").value.trim(),
+        birthday: document.getElementById("cf_birthday").value,
+        phone: document.getElementById("cf_phone").value.trim(),
+        address: document.getElementById("cf_address").value.trim(),
+        pastHairRemoval: state.qAnswers.pastHairRemoval,
+        firstTimeWaxing: state.qAnswers.firstTimeWaxing,
+        sensitiveTypes: state.qAnswers.sensitiveTypes,
+        isPregnant: state.qAnswers.isPregnant,
+        isSickOrLowImmunity: state.qAnswers.isSickOrLowImmunity,
+        isMenstruating: state.qAnswers.isMenstruating,
+        isOilyOrAcneArea: state.qAnswers.isOilyOrAcneArea,
+        signatureDataUrl
+      };
 
       try {
         setLoading(true, "儲存問卷與同意書中...");
-        const res = await apiPost({
-          action: "submitCustomerConsultation",
-          payload: {
-            cid: state.portalCid,
-            lineUserId: state.portalLineUserId,
-            lineDisplayName: state.portalLineDisplayName,
-            forceRebind: state.portalForceRebind,
-            name: document.getElementById("cf_name").value.trim(),
-            nickname: document.getElementById("cf_nickname").value.trim(),
-            phone: document.getElementById("cf_phone").value.trim(),
-            birthday: document.getElementById("cf_birthday").value,
-            address: document.getElementById("cf_address").value.trim(),
-            pastHairRemoval: state.qAnswers.pastHairRemoval.join("、"),
-            firstTimeWaxing: state.qAnswers.firstTimeWaxing,
-            sensitiveTypes: state.qAnswers.sensitiveTypes.join("、"),
-            isPregnant: state.qAnswers.isPregnant,
-            isSickOrLowImmunity: state.qAnswers.isSickOrLowImmunity,
-            isMenstruating: state.qAnswers.isMenstruating,
-            isOilyOrAcneArea: state.qAnswers.isOilyOrAcneArea,
-            signatureDataUrl: sigDataUrl
-          }
-        });
+        const res = await apiPost({ action: "submitConsultation", payload });
         state.portalCid = res.cid || state.portalCid;
         state.portalForceRebind = false;
         state.isEditingConsultation = false;
+        hasSignedNew = false;
         await reloadCustomerPortalData();
-        showToast("已完成問卷與除毛諮詢同意書！現在可以進行線上預約了");
+        showToast(res.isNewCustomer ? "問卷已完成！已為您自動發送新客見面禮優惠券" : "問卷與同意書已更新儲存");
       } catch (err) {
-        showToast(err.message || "送出失敗", true);
+        showToast(err.message || "儲存失敗", true);
       } finally {
         setLoading(false);
       }
     }
 
-    /* ==================== XSS 防護工具 ==================== */
     function esc(str) {
-      return String(str === null || str === undefined ? "" : str)
+      return String(str == null ? "" : str)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;");
+        .replace(/"/g, "&quot;");
     }
 
     function escJs(str) {
-      return String(str === null || str === undefined ? "" : str)
+      return String(str == null ? "" : str)
         .replace(/\\/g, "\\\\")
         .replace(/'/g, "\\'")
         .replace(/"/g, '\\"');
