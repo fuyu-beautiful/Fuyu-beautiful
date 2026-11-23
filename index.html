@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>馥語美學 | Beautiful every day</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Cormorant+Garamond:wght@600;700&display=swap');
     body {
@@ -42,6 +43,7 @@
   <script>
     const GAS_API_URL = "https://script.google.com/macros/s/AKfycbzvobWMdW_reX803Sn0lldJZF0VfSVkr0tWI1oDAr8urJK3hZ0964mAcxqaq1W27VA-Jg/exec";
     const GITHUB_PAGES_URL = "https://fuyu-beautiful.github.io/Fuyu-beautiful/";
+    const LIFF_ID = ""; // 未來接 LINE LIFF 時填入你的 LIFF ID（例如 "200xxxxxx-xxxxxxxx"）
     const BUFFER_MINUTES = 10;
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -70,10 +72,10 @@
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-[#3D352E] text-white px-5 py-2.5 rounded-full text-sm shadow-lg z-50 hidden transition-opacity"></div>
 
   <!-- ========================================================= -->
-  <!-- 視角 A：客人專屬查詢與多項服務預約申請頁 (?cid=xxx)         -->
+  <!-- 視角 A：客人專屬查詢、諮詢表與預約申請頁 (?cid=xxx 或 LIFF) -->
   <!-- ========================================================= -->
   <div id="customerPortalView" class="hidden max-w-md mx-auto px-4 pt-6">
-    <div class="text-center mb-6">
+    <div class="text-center mb-5">
       <div class="inline-flex items-center justify-center gap-2 mb-1">
         <span class="brand-serif text-3xl font-bold tracking-wider text-[#8C735B]">Fy</span>
         <div class="text-left border-l border-[#D5C8B8] pl-2">
@@ -89,6 +91,109 @@
 
     <div id="portalErrorBox" class="hidden card-warm rounded-2xl p-6 text-center text-red-600 text-sm"></div>
 
+    <!-- 顧客諮詢表與施作同意書表單（首次填寫必填；之後可隨時檢視／更新並留存修改紀錄） -->
+    <div id="consultationFormCard" class="hidden card-warm rounded-2xl p-5 mb-5 space-y-4 text-sm">
+      <div class="flex justify-between items-start gap-2 border-b border-[#F3EFEA] pb-3">
+        <div>
+          <span class="inline-block px-2 py-0.5 rounded bg-amber-100 text-amber-900 text-[11px] font-bold mb-1" id="consModeBadge">首次建檔只需填寫一次</span>
+          <h2 class="font-bold text-lg text-[#3D352E]">顧客諮詢表與施作同意書</h2>
+          <p class="text-xs text-[#8C735B] mt-0.5" id="consSubDesc">為確保您的施作安全與舒適度，請如實填寫；後續若有變更可隨時更新，每次修改皆會留存紀錄。</p>
+        </div>
+        <button type="button" id="consCancelBtn" onclick="cancelEditConsultation()" class="hidden px-2.5 py-1 rounded-lg bg-[#FAF7F2] border border-[#EAE2D6] text-xs font-bold text-[#735D48] shrink-0">返回</button>
+      </div>
+
+      <!-- 1. 基本資料 -->
+      <div class="space-y-2.5 bg-[#FAF7F2] p-3.5 rounded-xl border border-[#EAE2D6]">
+        <h3 class="font-bold text-xs text-[#8C735B] tracking-wider">一、 基本資料</h3>
+        <div>
+          <label class="block text-xs text-[#735D48] mb-1">姓名 *</label>
+          <input type="text" id="consName" placeholder="請輸入您的姓名" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-white">
+        </div>
+        <div class="grid grid-cols-2 gap-2.5">
+          <div>
+            <label class="block text-xs text-[#735D48] mb-1">聯絡電話 *</label>
+            <input type="tel" id="consPhone" placeholder="09xx-xxx-xxx" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-white">
+          </div>
+          <div>
+            <label class="block text-xs text-[#735D48] mb-1">生日</label>
+            <input type="date" id="consBirthday" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-white">
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs text-[#735D48] mb-1">地址（選填）</label>
+          <input type="text" id="consAddress" placeholder="請輸入居住區域或地址" class="w-full border border-[#EAE2D6] rounded-xl px-3 py-2 bg-white">
+        </div>
+      </div>
+
+      <!-- 2. 過往毛髮處理與生理狀態 -->
+      <div class="space-y-3 bg-[#FAF7F2] p-3.5 rounded-xl border border-[#EAE2D6]">
+        <h3 class="font-bold text-xs text-[#8C735B] tracking-wider">二、 過往毛髮處理與生理狀態</h3>
+
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="text-xs font-bold text-[#3D352E]">過往毛髮處理（可複選）*</label>
+            <span class="text-[11px] text-[#8C735B]">複選</span>
+          </div>
+          <div id="consPastHairBox" class="grid grid-cols-2 gap-1.5 text-xs"></div>
+        </div>
+
+        <div class="pt-2 border-t border-[#EAE2D6]/70">
+          <label class="block text-xs font-bold text-[#3D352E] mb-1.5">本次是否為首次施作熱蠟除毛？*</label>
+          <div id="consFirstWaxBox" class="grid grid-cols-2 gap-2 text-xs"></div>
+        </div>
+
+        <div class="pt-2 border-t border-[#EAE2D6]/70">
+          <div class="flex justify-between items-center mb-1.5">
+            <label class="text-xs font-bold text-[#3D352E]">是否為敏感體質？（可複選）*</label>
+            <span class="text-[11px] text-[#8C735B]">複選</span>
+          </div>
+          <div id="consSensitiveBox" class="grid grid-cols-2 gap-1.5 text-xs"></div>
+        </div>
+
+        <div class="pt-2 border-t border-[#EAE2D6]/70">
+          <label class="block text-xs font-bold text-[#3D352E] mb-1.5">目前是否為懷孕期間？*</label>
+          <div id="consPregnantBox" class="grid grid-cols-2 gap-2 text-xs"></div>
+        </div>
+
+        <div class="pt-2 border-t border-[#EAE2D6]/70">
+          <label class="block text-xs font-bold text-[#3D352E] mb-1.5">目前是否為生病或免疫力下降期間？*</label>
+          <div id="consSickBox" class="grid grid-cols-2 gap-2 text-xs"></div>
+        </div>
+
+        <div class="pt-2 border-t border-[#EAE2D6]/70">
+          <label class="block text-xs font-bold text-[#3D352E] mb-1.5">目前是否為生理期間？*</label>
+          <div id="consMenstruatingBox" class="grid grid-cols-2 gap-2 text-xs"></div>
+        </div>
+
+        <div class="pt-2 border-t border-[#EAE2D6]/70">
+          <label class="block text-xs font-bold text-[#3D352E] mb-1.5">本次除毛部位是否為經常出油／長痘痘部位？*</label>
+          <div id="consOilyAcneBox" class="grid grid-cols-2 gap-2 text-xs"></div>
+        </div>
+      </div>
+
+      <!-- 3. 服務確認條款 -->
+      <div class="space-y-2.5 bg-[#FAF7F2] p-3.5 rounded-xl border border-[#EAE2D6]">
+        <div class="flex justify-between items-center">
+          <h3 class="font-bold text-xs text-[#8C735B] tracking-wider">三、 服務確認條款</h3>
+          <button type="button" onclick="confirmAllConsultationTerms()" class="text-[11px] px-2.5 py-1 rounded-lg bg-white border border-[#EAE2D6] text-[#735D48] font-bold hover:bg-[#EFE9DF]">一鍵全數確認</button>
+        </div>
+        <div id="consTermsList" class="space-y-2 text-xs text-[#3D352E] leading-relaxed"></div>
+      </div>
+
+      <!-- 4. 電子簽名 -->
+      <div class="space-y-2 bg-[#FAF7F2] p-3.5 rounded-xl border border-[#EAE2D6]">
+        <div class="flex justify-between items-center">
+          <label class="text-xs font-bold text-[#3D352E]">四、 本人簽名 *</label>
+          <button type="button" onclick="clearSignatureCanvas()" class="text-[11px] px-2.5 py-1 rounded-lg bg-white border border-[#EAE2D6] text-red-600 font-bold hover:bg-red-50">清除重簽</button>
+        </div>
+        <canvas id="consSignatureCanvas" width="340" height="140" class="w-full h-36 bg-white border border-[#EAE2D6] rounded-xl touch-none"></canvas>
+        <p class="text-[11px] text-[#8C735B]">請以手指或觸控筆於上方框內簽名，送出後將連同時間紀錄留存。</p>
+      </div>
+
+      <button type="button" onclick="submitConsultationForm()" class="w-full btn-primary font-bold py-3 rounded-xl">確認送出諮詢表與同意書</button>
+    </div>
+
+    <!-- 會員卡與預約主畫面 -->
     <div id="portalContent" class="hidden space-y-5">
       <div class="rounded-2xl p-6 text-white shadow-md relative overflow-hidden" style="background: linear-gradient(135deg, #8C735B 0%, #634F3C 100%);">
         <div class="flex justify-between items-start mb-4">
@@ -101,12 +206,12 @@
             <div class="text-[11px] text-[#EAE2D6]">累計來店 <strong id="pCustVisits">0</strong> 次</div>
           </div>
         </div>
-        <div class="mt-4 pt-4 border-t border-white/15 flex justify-between items-end">
+        <div class="mt-4 pt-4 border-t border-white/15 flex justify-between items-end gap-2">
           <div>
             <p class="text-xs text-[#EAE2D6]">儲值金剩餘餘額</p>
             <p class="text-3xl font-bold tracking-tight mt-0.5">$ <span id="pCustBalance">0</span></p>
           </div>
-          <span class="text-[11px] text-[#EAE2D6]">僅限本人查詢使用</span>
+          <button type="button" onclick="openEditConsultationForm()" class="px-3 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold backdrop-blur-xs shrink-0">📝 檢視／更新諮詢表</button>
         </div>
       </div>
 
@@ -240,10 +345,7 @@
         </div>
 
         <div id="dayBlockedBanner" class="hidden mb-2.5 px-3.5 py-2 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 font-bold"></div>
-
-        <!-- 當日排程時段重疊醒目警示區 -->
         <div id="dayOverlapBanner" class="hidden mb-3 px-3.5 py-2.5 rounded-xl bg-red-50 border-2 border-red-300 text-xs text-red-800 space-y-1"></div>
-
         <div id="dayBookingsList" class="space-y-3 max-h-[620px] overflow-y-auto pr-1"></div>
       </div>
     </div>
@@ -274,7 +376,6 @@
         </div>
       </div>
 
-      <!-- 當月現金流與儲值金概覽 -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div class="card-warm rounded-2xl p-4">
           <p class="text-xs text-[#735D48]" id="statIncomeLabel">本月現金實收</p>
@@ -294,7 +395,6 @@
         </div>
       </div>
 
-      <!-- 整年總計列（依上方選擇年份） -->
       <div class="card-warm rounded-2xl px-4 py-3 bg-[#FDFBF7] flex flex-wrap justify-between items-center gap-3">
         <div class="text-xs sm:text-sm font-bold text-[#3D352E]" id="yearTotalTitle">📅 2026 年全年總計</div>
         <div class="flex flex-wrap items-center gap-4 text-xs sm:text-sm">
@@ -304,7 +404,6 @@
         </div>
       </div>
 
-      <!-- 子分頁 3-1：登記營運支出 + 月度圓餅圖 -->
       <div id="finSub-register" class="grid grid-cols-1 lg:grid-cols-12 gap-5">
         <div class="lg:col-span-5 card-warm rounded-2xl p-5 h-fit">
           <h3 class="font-bold text-base mb-3 expense-green">+ 登記營運支出</h3>
@@ -344,7 +443,6 @@
         </div>
       </div>
 
-      <!-- 子分頁 3-2：收支明細（含收入＋支出＋年/月篩選） -->
       <div id="finSub-details" class="hidden space-y-4">
         <div class="card-warm rounded-2xl p-5">
           <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
@@ -363,7 +461,6 @@
         </div>
       </div>
 
-      <!-- 子分頁 3-3：⚖️ 收支比較（自選區間＋每月來客數＋實收／支出／淨流） -->
       <div id="finSub-compare" class="hidden card-warm rounded-2xl p-4 sm:p-5 space-y-3">
         <div class="flex flex-wrap justify-between items-start gap-3 border-b border-[#F3EFEA] pb-3">
           <div>
@@ -399,7 +496,6 @@
         <div id="catalogManageList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
       </div>
 
-      <!-- 客人不可預約日期／時段設定區 -->
       <div class="card-warm rounded-2xl p-4 sm:p-5 space-y-3">
         <div class="flex flex-wrap justify-between items-center gap-2 border-b border-[#F3EFEA] pb-2.5">
           <div>
@@ -456,7 +552,6 @@
           <select id="bkCustomer" onchange="onBookingCustomerOrPaymentChange()" class="w-full border border-[#EAE2D6] rounded-lg px-3 py-2 bg-white text-sm font-medium"></select>
           <div id="bkCustomerCard" class="bg-white border border-[#EAE2D6] rounded-lg px-3 py-2 text-xs text-[#735D48] space-y-1"></div>
 
-          <!-- 客戶三堂套票剩餘堂數專區 -->
           <div id="bkPackageBanner" class="hidden bg-amber-50 border border-amber-300 rounded-lg p-2.5 text-xs text-amber-950 space-y-1.5">
             <div class="flex justify-between items-center">
               <span class="font-bold text-amber-900">🎟️ 此客戶擁有的三堂套票</span>
@@ -481,7 +576,6 @@
           </div>
         </div>
 
-        <!-- 自動推算結束時間（項目總分鐘數 + 10 分鐘緩衝），負責人可點開手動微調 -->
         <div class="bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl px-3 py-2 text-xs flex flex-wrap justify-between items-center gap-2">
           <div>
             <span class="text-[#735D48]">預估結束（含10分緩衝）：</span>
@@ -495,10 +589,7 @@
           <select id="bkEndTime" onchange="onManualEndTimeChange()" class="border border-[#EAE2D6] rounded-lg px-2.5 py-1.5 bg-white font-bold"></select>
         </div>
 
-        <!-- 彈窗內不可預約阻擋提示 -->
         <div id="bkBlockedAlert" class="hidden px-3.5 py-2.5 rounded-xl bg-red-100 border-2 border-red-400 text-xs text-red-900 font-bold"></div>
-
-        <!-- 彈窗內時段重疊醒目警示 -->
         <div id="bkOverlapAlert" class="hidden px-3.5 py-2.5 rounded-xl bg-red-50 border-2 border-red-300 text-xs text-red-800 font-bold"></div>
 
         <div class="bg-[#FAF7F2] border border-[#EAE2D6] rounded-xl p-3 space-y-2.5">
@@ -695,7 +786,7 @@
     </div>
   </div>
 
-  <!-- 彈窗 5：客戶完整資料、消費歷史、三堂套票（多選／刪除）與儲值明細 -->
+  <!-- 彈窗 5：客戶完整資料、諮詢表、修改歷程、三堂套票與儲值明細 -->
   <div id="customerDetailModal" class="fixed inset-0 bg-black/40 z-40 hidden items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 max-h-[92vh] overflow-y-auto space-y-4">
       <div class="flex justify-between items-start gap-2 border-b border-[#F3EFEA] pb-3">
@@ -724,7 +815,17 @@
         </div>
       </div>
 
-      <!-- 三堂套票管理區塊（支援多品項選擇＋刪除＋同步試算表） -->
+      <!-- 顧客諮詢表與修改紀錄專區 -->
+      <div class="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] space-y-2.5 text-xs">
+        <div class="flex justify-between items-center">
+          <h4 class="font-bold text-[#3D352E]">📋 顧客諮詢表與修改紀錄</h4>
+          <span class="text-[11px] text-[#8C735B]" id="cdConsultationUpdatedTag"></span>
+        </div>
+        <div id="cdConsultationBox" class="bg-white rounded-xl p-3 border border-[#EAE2D6] space-y-1.5"></div>
+        <div id="cdConsultationLogsBox" class="space-y-1.5"></div>
+      </div>
+
+      <!-- 三堂套票管理區塊 -->
       <div class="p-3.5 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] space-y-2.5">
         <div class="flex justify-between items-center gap-2">
           <h4 class="font-bold text-xs text-[#3D352E]">🎟️ 三堂優惠套票堂數</h4>
@@ -784,10 +885,15 @@
     expenses: [],
     packages: [],
     deletedPackageSourceIds: [],
-    blockedSlots: []
+    blockedSlots: [],
+    consultations: [],
+    consultationLogs: []
   };
   let portalCatalog = [];
   let portalBlockedSlots = [];
+  let portalCustomerId = PORTAL_CID;
+  let portalLineUserId = "";
+  let portalConsultationData = null;
   let adminCart = [];
   let portalCart = [];
   let manualPriceOverride = false;
@@ -800,6 +906,29 @@
   let financeMonth = new Date().getMonth();
   let selectedDateStr = formatDateLocal(new Date());
 
+  const PAST_HAIR_OPTIONS = ["無", "刀片刮毛", "拔毛夾", "除毛膏", "熱蠟除毛", "日式除毛", "雷射除毛", "電動美體刀"];
+  const SENSITIVE_OPTIONS = ["光敏感", "有服用A酸", "熱敏感", "食物敏感", "彩妝品敏感", "酒精敏感", "無"];
+  const YES_NO_OPTIONS = ["是", "否"];
+  const CONSULTATION_TERMS = [
+    "本人確認接受熱蠟除毛部位之皮膚並無以下異常狀況，如：尚未復原或剛復原之傷口疤痕、曬傷、靜脈炎、傳染性皮膚疾病、其他皮膚病變",
+    "本人確認接受除毛部位之皮膚並無在一週內接受下列處置：皮下微整形注射、醫美煥膚，以及使用皮膚科面皰治療藥物，如有上述皮膚狀況於除毛前未如實告知美容師，本人願自行承擔相關風險",
+    "本人明白因為體質的不同，接受除毛後的皮膚，可能會出現暫時性的發紅、毛囊水腫、小紅疹、瘀青、或是輕微脫皮狀況，同時本人願意遵照除毛師叮嚀之相關護理程序，以避免皮膚發炎之狀況產生",
+    "本人已詳閱上述條款，並願意遵守注意事項"
+  ];
+
+  let consState = {
+    pastHairRemoval: ["無"],
+    firstTimeWaxing: "否",
+    sensitiveTypes: ["無"],
+    isPregnant: "否",
+    isSickOrLowImmunity: "否",
+    isMenstruating: "否",
+    isOilyOrAcneArea: "否",
+    termsChecked: [false, false, false, false]
+  };
+  let sigHasDrawn = false;
+  let sigDrawing = false;
+
   const EXPENSE_COLOR_MAP = {
     "RICA蠟豆與耗材": "#D97706",
     "房租與水電": "#2563EB",
@@ -808,15 +937,38 @@
     "其他雜支": "#0D9488"
   };
 
-  window.onload = function() {
+  window.onload = async function() {
     initTimeSelects();
     initFinanceYearMonthSelects();
     initCompareRangeSelects();
+    initConsultationFormUI();
+
+    if (LIFF_ID && LIFF_ID.trim() !== "" && window.liff) {
+      document.getElementById("customerPortalView").classList.remove("hidden");
+      document.getElementById("reqDate").value = selectedDateStr;
+      try {
+        showLoading("正在連接 LINE 會員系統...");
+        await liff.init({ liffId: LIFF_ID.trim() });
+        if (!liff.isLoggedIn()) {
+          hideLoading();
+          liff.login();
+          return;
+        }
+        const profile = await liff.getProfile();
+        portalLineUserId = profile.userId || "";
+        hideLoading();
+        await loadCustomerPortal(PORTAL_CID, portalLineUserId, profile.displayName || "");
+        return;
+      } catch (liffErr) {
+        hideLoading();
+        showToast("LIFF 初始化提醒：" + liffErr.message);
+      }
+    }
 
     if (PORTAL_CID && PORTAL_CID.trim() !== "") {
       document.getElementById("customerPortalView").classList.remove("hidden");
       document.getElementById("reqDate").value = selectedDateStr;
-      loadCustomerPortal(PORTAL_CID);
+      loadCustomerPortal(PORTAL_CID, "");
     } else {
       document.getElementById("adminLoginView").classList.remove("hidden");
       document.getElementById("expDate").value = selectedDateStr;
@@ -824,6 +976,418 @@
       toggleBlockedTimeInputs();
     }
   };
+
+  function initConsultationFormUI() {
+    renderMultiSelectGroup("consPastHairBox", PAST_HAIR_OPTIONS, "pastHairRemoval", "無");
+    renderMultiSelectGroup("consSensitiveBox", SENSITIVE_OPTIONS, "sensitiveTypes", "無");
+    renderSingleChoiceGroup("consFirstWaxBox", YES_NO_OPTIONS, "firstTimeWaxing");
+    renderSingleChoiceGroup("consPregnantBox", YES_NO_OPTIONS, "isPregnant");
+    renderSingleChoiceGroup("consSickBox", YES_NO_OPTIONS, "isSickOrLowImmunity");
+    renderSingleChoiceGroup("consMenstruatingBox", YES_NO_OPTIONS, "isMenstruating");
+    renderSingleChoiceGroup("consOilyAcneBox", YES_NO_OPTIONS, "isOilyOrAcneArea");
+    renderConsultationTermsUI();
+    initSignatureCanvas();
+  }
+
+  function renderMultiSelectGroup(containerId, options, stateKey, exclusiveNoneOption) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const selected = consState[stateKey] || [];
+    el.innerHTML = options.map(opt => {
+      const isChecked = selected.includes(opt);
+      return `
+        <label class="flex items-center gap-2 px-2.5 py-2 rounded-lg border cursor-pointer transition ${isChecked ? 'bg-[#8C735B] text-white border-[#8C735B] font-bold' : 'bg-white text-[#3D352E] border-[#EAE2D6] hover:bg-[#FDFBF7]'}">
+          <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="onToggleMultiChoice('${stateKey}', '${opt}', '${exclusiveNoneOption}')" class="hidden">
+          <span>${isChecked ? '☑' : '☐'} ${opt}</span>
+        </label>
+      `;
+    }).join("");
+  }
+
+  function onToggleMultiChoice(stateKey, opt, noneOpt) {
+    let arr = [...(consState[stateKey] || [])];
+    const idx = arr.indexOf(opt);
+    if (idx >= 0) {
+      arr.splice(idx, 1);
+    } else {
+      if (opt === noneOpt) {
+        arr = [noneOpt];
+      } else {
+        arr = arr.filter(x => x !== noneOpt);
+        arr.push(opt);
+      }
+    }
+    if (arr.length === 0 && noneOpt) {
+      arr = [noneOpt];
+    }
+    consState[stateKey] = arr;
+    if (stateKey === "pastHairRemoval") renderMultiSelectGroup("consPastHairBox", PAST_HAIR_OPTIONS, "pastHairRemoval", "無");
+    if (stateKey === "sensitiveTypes") renderMultiSelectGroup("consSensitiveBox", SENSITIVE_OPTIONS, "sensitiveTypes", "無");
+  }
+
+  function renderSingleChoiceGroup(containerId, options, stateKey) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const cur = consState[stateKey];
+    el.innerHTML = options.map(opt => {
+      const active = cur === opt;
+      return `
+        <button type="button" onclick="onSelectSingleChoice('${stateKey}', '${opt}')" class="py-2 px-3 rounded-lg border text-center transition ${active ? 'bg-[#8C735B] text-white border-[#8C735B] font-bold' : 'bg-white text-[#3D352E] border-[#EAE2D6] hover:bg-[#FDFBF7]'}">
+          ${active ? '● ' : '○ '}${opt}
+        </button>
+      `;
+    }).join("");
+  }
+
+  function onSelectSingleChoice(stateKey, opt) {
+    consState[stateKey] = opt;
+    const map = {
+      firstTimeWaxing: ["consFirstWaxBox", YES_NO_OPTIONS],
+      isPregnant: ["consPregnantBox", YES_NO_OPTIONS],
+      isSickOrLowImmunity: ["consSickBox", YES_NO_OPTIONS],
+      isMenstruating: ["consMenstruatingBox", YES_NO_OPTIONS],
+      isOilyOrAcneArea: ["consOilyAcneBox", YES_NO_OPTIONS]
+    };
+    if (map[stateKey]) {
+      renderSingleChoiceGroup(map[stateKey][0], map[stateKey][1], stateKey);
+    }
+  }
+
+  function renderConsultationTermsUI() {
+    const el = document.getElementById("consTermsList");
+    if (!el) return;
+    el.innerHTML = CONSULTATION_TERMS.map((txt, idx) => {
+      const checked = !!consState.termsChecked[idx];
+      return `
+        <label class="flex items-start gap-2.5 p-2.5 rounded-lg border cursor-pointer ${checked ? 'bg-emerald-50/60 border-emerald-300' : 'bg-white border-[#EAE2D6]'}">
+          <input type="checkbox" ${checked ? 'checked' : ''} onchange="onToggleTerm(${idx})" class="mt-0.5 rounded text-[#8C735B]">
+          <span><strong class="text-[#8C735B]">[必填]</strong> ${txt}</span>
+        </label>
+      `;
+    }).join("");
+  }
+
+  function onToggleTerm(idx) {
+    consState.termsChecked[idx] = !consState.termsChecked[idx];
+    renderConsultationTermsUI();
+  }
+
+  function confirmAllConsultationTerms() {
+    consState.termsChecked = CONSULTATION_TERMS.map(() => true);
+    renderConsultationTermsUI();
+    showToast("已全數勾選確認條款");
+  }
+
+  function initSignatureCanvas() {
+    const canvas = document.getElementById("consSignatureCanvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.strokeStyle = "#3D352E";
+    ctx.lineWidth = 2.6;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    const getPos = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.touches && e.touches[0] ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches && e.touches[0] ? e.touches[0].clientY : e.clientY;
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+      };
+    };
+
+    const startDraw = (e) => {
+      e.preventDefault();
+      sigDrawing = true;
+      sigHasDrawn = true;
+      const p = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+    };
+
+    const moveDraw = (e) => {
+      if (!sigDrawing) return;
+      e.preventDefault();
+      const p = getPos(e);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+    };
+
+    const endDraw = () => {
+      if (!sigDrawing) return;
+      sigDrawing = false;
+      ctx.closePath();
+    };
+
+    canvas.addEventListener("mousedown", startDraw);
+    canvas.addEventListener("mousemove", moveDraw);
+    window.addEventListener("mouseup", endDraw);
+
+    canvas.addEventListener("touchstart", startDraw, { passive: false });
+    canvas.addEventListener("touchmove", moveDraw, { passive: false });
+    window.addEventListener("touchend", endDraw);
+  }
+
+  function clearSignatureCanvas() {
+    const canvas = document.getElementById("consSignatureCanvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    sigHasDrawn = false;
+  }
+
+  function drawSignatureToCanvas(dataUrl) {
+    const canvas = document.getElementById("consSignatureCanvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    sigHasDrawn = false;
+    if (!dataUrl || !dataUrl.startsWith("data:image/")) return;
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      sigHasDrawn = true;
+    };
+    img.src = dataUrl;
+  }
+
+  function populateConsultationForm(existingCons, fallbackCustomer, isEditingExisting) {
+    const c = existingCons || {};
+    document.getElementById("consModeBadge").textContent = isEditingExisting
+      ? "修改資料將自動留存歷程紀錄"
+      : "首次建檔只需填寫一次";
+    document.getElementById("consCancelBtn").classList.toggle("hidden", !isEditingExisting);
+
+    document.getElementById("consName").value = c.name || (fallbackCustomer ? fallbackCustomer.name : "") || "";
+    document.getElementById("consPhone").value = c.phone || (fallbackCustomer ? fallbackCustomer.contact : "") || "";
+    document.getElementById("consBirthday").value = c.birthday || (fallbackCustomer ? fallbackCustomer.birthday : "") || "";
+    document.getElementById("consAddress").value = c.address || (fallbackCustomer ? fallbackCustomer.address : "") || "";
+
+    const splitList = (str, def) => {
+      const parts = String(str || "").split(/[、,，+]+/).map(s => s.trim()).filter(Boolean);
+      return parts.length > 0 ? parts : def;
+    };
+
+    consState.pastHairRemoval = splitList(c.pastHairRemoval, ["無"]);
+    consState.sensitiveTypes = splitList(c.sensitiveTypes, ["無"]);
+    consState.firstTimeWaxing = c.firstTimeWaxing || "否";
+    consState.isPregnant = c.isPregnant || "否";
+    consState.isSickOrLowImmunity = c.isSickOrLowImmunity || "否";
+    consState.isMenstruating = c.isMenstruating || "否";
+    consState.isOilyOrAcneArea = c.isOilyOrAcneArea || "否";
+    consState.termsChecked = isEditingExisting
+      ? CONSULTATION_TERMS.map(() => true)
+      : CONSULTATION_TERMS.map(() => false);
+
+    initConsultationFormUI();
+    if (c.signatureDataUrl) {
+      drawSignatureToCanvas(c.signatureDataUrl);
+    } else {
+      clearSignatureCanvas();
+    }
+  }
+
+  function openEditConsultationForm() {
+    document.getElementById("portalContent").classList.add("hidden");
+    document.getElementById("consultationFormCard").classList.remove("hidden");
+    populateConsultationForm(portalConsultationData, { name: document.getElementById("pCustName").textContent }, true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function cancelEditConsultation() {
+    document.getElementById("consultationFormCard").classList.add("hidden");
+    document.getElementById("portalContent").classList.remove("hidden");
+  }
+
+  async function submitConsultationForm() {
+    const name = (document.getElementById("consName").value || "").trim();
+    const phone = (document.getElementById("consPhone").value || "").trim();
+    const birthday = document.getElementById("consBirthday").value || "";
+    const address = (document.getElementById("consAddress").value || "").trim();
+
+    if (!name) return showToast("請填寫姓名");
+    if (!phone) return showToast("請填寫聯絡電話");
+    if (!consState.termsChecked.every(Boolean)) {
+      return showToast("請先勾選確認所有服務與術後護理條款");
+    }
+    if (!sigHasDrawn) {
+      return showToast("請於下方簽名框完成簽名");
+    }
+
+    const canvas = document.getElementById("consSignatureCanvas");
+    const signatureDataUrl = canvas.toDataURL("image/png");
+
+    const payload = {
+      cid: portalCustomerId,
+      lineUserId: portalLineUserId,
+      name,
+      phone,
+      birthday,
+      address,
+      pastHairRemoval: (consState.pastHairRemoval || ["無"]).join("、"),
+      firstTimeWaxing: consState.firstTimeWaxing,
+      sensitiveTypes: (consState.sensitiveTypes || ["無"]).join("、"),
+      isPregnant: consState.isPregnant,
+      isSickOrLowImmunity: consState.isSickOrLowImmunity,
+      isMenstruating: consState.isMenstruating,
+      isOilyOrAcneArea: consState.isOilyOrAcneArea,
+      signatureDataUrl
+    };
+
+    showLoading("儲存諮詢表與簽名紀錄中...");
+    try {
+      const res = await callGasApi({ action: "submitCustomerConsultation", payload });
+      hideLoading();
+      if (res && res.cid) {
+        portalCustomerId = res.cid;
+      }
+      showToast("已儲存顧客諮詢表並留存紀錄！");
+      await loadCustomerPortal(portalCustomerId, portalLineUserId);
+    } catch (err) {
+      hideLoading();
+      showToast("儲存失敗：" + err.message);
+    }
+  }
+
+  async function loadCustomerPortal(cid, lineUserId = "", liffDisplayName = "") {
+    showLoading("正在讀取您的專屬會員資料...");
+    try {
+      const res = await callGasApi({ action: "getCustomerPortalData", cid, lineUserId });
+      hideLoading();
+
+      portalConsultationData = res.consultation || null;
+      if (res.customer && res.customer.id) {
+        portalCustomerId = res.customer.id;
+      }
+
+      portalCatalog = res.catalog || [];
+      portalBlockedSlots = res.blockedSlots || [];
+      initCategorySelectsFromCatalog("reqCategory", "reqService", portalCatalog);
+      renderPortalCart();
+      renderPortalDateBlockedHint();
+
+      // 若為新客人（尚未填寫諮詢表）
+      if (res.isNewLiffCustomer || !res.consultation) {
+        document.getElementById("portalContent").classList.add("hidden");
+        document.getElementById("consultationFormCard").classList.remove("hidden");
+        populateConsultationForm(
+          res.consultation,
+          res.customer || { name: liffDisplayName, contact: "" },
+          false
+        );
+        return;
+      }
+
+      document.getElementById("consultationFormCard").classList.add("hidden");
+      document.getElementById("portalContent").classList.remove("hidden");
+      document.getElementById("pCustName").textContent = res.customer.name;
+      document.getElementById("pCustPromo").textContent = res.customer.promoTitle || "一般會員";
+      document.getElementById("pCustVisits").textContent = res.customer.visitCount || 0;
+      document.getElementById("pCustBalance").textContent = res.customer.balance.toLocaleString();
+
+      const bList = document.getElementById("pBookingsList");
+      if (res.bookings.length === 0) {
+        bList.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-3">尚無預約紀錄，可直接使用上方表單預約 ✨</p>`;
+      } else {
+        bList.innerHTML = res.bookings.map(b => {
+          const badgeColor = (b.status === "已報到" || b.status === "已完成") ? "bg-emerald-50 text-emerald-700" :
+                             b.status === "待審核" ? "bg-amber-50 text-amber-700" :
+                             b.status === "爽約" ? "bg-red-50 text-red-600" : "bg-[#F5EFE6] text-[#735D48]";
+          return `
+            <div class="p-3 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] flex justify-between items-center">
+              <div>
+                <p class="font-bold text-[#3D352E]">${b.date} ${b.startTime}-${b.endTime}</p>
+                <p class="text-xs text-[#735D48] mt-0.5">${b.service} ($${b.finalPrice.toLocaleString()})</p>
+              </div>
+              <span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeColor}">${b.status}</span>
+            </div>
+          `;
+        }).join("");
+      }
+
+      const tList = document.getElementById("pTxList");
+      if (res.transactions.length === 0) {
+        tList.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-3">尚無儲值或扣點明細</p>`;
+      } else {
+        tList.innerHTML = res.transactions.map(t => {
+          const isPlus = t.pointsChange >= 0;
+          return `
+            <div class="py-2.5 border-b border-[#F3EFEA] last:border-0 flex justify-between items-center">
+              <div>
+                <p class="font-medium text-[#3D352E]">${t.type} <span class="text-xs text-[#8C735B]">(${t.note})</span></p>
+                <p class="text-[11px] text-[#8C735B]">${t.time}</p>
+              </div>
+              <div class="text-right">
+                <p class="font-bold ${isPlus ? 'income-red' : 'text-[#3D352E]'}">${isPlus ? '+' : ''}${t.pointsChange.toLocaleString()}</p>
+                <p class="text-[11px] text-[#8C735B]">餘額 $${t.balanceAfter.toLocaleString()}</p>
+              </div>
+            </div>
+          `;
+        }).join("");
+      }
+    } catch (err) {
+      hideLoading();
+      const errBox = document.getElementById("portalErrorBox");
+      errBox.textContent = err.message;
+      errBox.classList.remove("hidden");
+    }
+  }
+
+  function renderCustomerConsultationSectionInModal(custId) {
+    const consBox = document.getElementById("cdConsultationBox");
+    const logsBox = document.getElementById("cdConsultationLogsBox");
+    const updTag = document.getElementById("cdConsultationUpdatedTag");
+    if (!consBox || !logsBox) return;
+
+    const latest = (appData.consultations || []).find(x => String(x.customerId) === String(custId)) || null;
+    const logs = (appData.consultationLogs || []).filter(x => String(x.customerId) === String(custId));
+
+    if (!latest) {
+      updTag.textContent = "尚未填寫";
+      consBox.innerHTML = `<p class="text-[#8C735B]">此客戶尚未填寫顧客諮詢表與同意書</p>`;
+      logsBox.innerHTML = "";
+      return;
+    }
+
+    updTag.textContent = `最近更新：${latest.updatedAt || '--'}`;
+    const sigHtml = latest.signatureDataUrl && latest.signatureDataUrl.startsWith("data:image/")
+      ? `<div class="pt-1.5 border-t border-[#F3EFEA]"><p class="text-[11px] text-[#8C735B] mb-1">最新簽名：</p><img src="${latest.signatureDataUrl}" alt="簽名" class="h-20 border border-[#EAE2D6] rounded-lg bg-[#FAF7F2] object-contain"></div>`
+      : "";
+
+    consBox.innerHTML = `
+      <div class="grid grid-cols-2 gap-1.5 text-[#3D352E]">
+        <div><span class="text-[#8C735B]">姓名：</span><strong>${latest.name || '--'}</strong></div>
+        <div><span class="text-[#8C735B]">電話：</span><strong>${latest.phone || '--'}</strong></div>
+        <div><span class="text-[#8C735B]">生日：</span>${latest.birthday || '未填'}</div>
+        <div><span class="text-[#8C735B]">首蠟：</span>${latest.firstTimeWaxing || '否'}</div>
+      </div>
+      ${latest.address ? `<div class="text-[#3D352E]"><span class="text-[#8C735B]">地址：</span>${latest.address}</div>` : ""}
+      <div class="text-[#3D352E]"><span class="text-[#8C735B]">過往除毛：</span>${latest.pastHairRemoval || '無'}</div>
+      <div class="text-[#3D352E]"><span class="text-[#8C735B]">敏感體質：</span>${latest.sensitiveTypes || '無'}</div>
+      <div class="text-[#3D352E]"><span class="text-[#8C735B]">狀態確認：</span>懷孕「${latest.isPregnant || '否'}」／生病免疫力「${latest.isSickOrLowImmunity || '否'}」／生理期「${latest.isMenstruating || '否'}」／出油痘痘「${latest.isOilyOrAcneArea || '否'}」</div>
+      ${sigHtml}
+    `;
+
+    if (logs.length === 0) {
+      logsBox.innerHTML = "";
+    } else {
+      logsBox.innerHTML = `
+        <div class="text-[11px] font-bold text-[#735D48] pt-1">歷次填寫／修改紀錄（共 ${logs.length} 筆）</div>
+        ${logs.map(l => `
+          <div class="bg-white rounded-lg p-2.5 border border-[#EAE2D6] space-y-1">
+            <div class="flex justify-between items-center">
+              <span class="font-bold text-[#8C735B]">${l.actionType || '紀錄'}</span>
+              <span class="text-[11px] text-[#8C735B]">${l.createdAt || ''}</span>
+            </div>
+            <p class="text-[#3D352E] leading-relaxed">${l.changedSummary || ''}</p>
+          </div>
+        `).join("")}
+      `;
+    }
+  }
 
   function initFinanceYearMonthSelects() {
     const ySel = document.getElementById("financeYearSelect");
@@ -1254,71 +1818,6 @@
     }
   }
 
-  async function loadCustomerPortal(cid) {
-    showLoading("正在讀取您的專屬會員資料...");
-    try {
-      const res = await callGasApi({ action: "getCustomerPortalData", cid });
-      hideLoading();
-      document.getElementById("portalContent").classList.remove("hidden");
-      document.getElementById("pCustName").textContent = res.customer.name;
-      document.getElementById("pCustPromo").textContent = res.customer.promoTitle || "一般會員";
-      document.getElementById("pCustVisits").textContent = res.customer.visitCount || 0;
-      document.getElementById("pCustBalance").textContent = res.customer.balance.toLocaleString();
-
-      portalCatalog = res.catalog || [];
-      portalBlockedSlots = res.blockedSlots || [];
-      initCategorySelectsFromCatalog("reqCategory", "reqService", portalCatalog);
-      renderPortalCart();
-      renderPortalDateBlockedHint();
-
-      const bList = document.getElementById("pBookingsList");
-      if (res.bookings.length === 0) {
-        bList.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-3">尚無預約紀錄，可直接使用上方表單預約 ✨</p>`;
-      } else {
-        bList.innerHTML = res.bookings.map(b => {
-          const badgeColor = (b.status === "已報到" || b.status === "已完成") ? "bg-emerald-50 text-emerald-700" :
-                             b.status === "待審核" ? "bg-amber-50 text-amber-700" :
-                             b.status === "爽約" ? "bg-red-50 text-red-600" : "bg-[#F5EFE6] text-[#735D48]";
-          return `
-            <div class="p-3 rounded-xl bg-[#FAF7F2] border border-[#EAE2D6] flex justify-between items-center">
-              <div>
-                <p class="font-bold text-[#3D352E]">${b.date} ${b.startTime}-${b.endTime}</p>
-                <p class="text-xs text-[#735D48] mt-0.5">${b.service} ($${b.finalPrice.toLocaleString()})</p>
-              </div>
-              <span class="px-2.5 py-1 rounded-full text-xs font-bold ${badgeColor}">${b.status}</span>
-            </div>
-          `;
-        }).join("");
-      }
-
-      const tList = document.getElementById("pTxList");
-      if (res.transactions.length === 0) {
-        tList.innerHTML = `<p class="text-xs text-[#8C735B] text-center py-3">尚無儲值或扣點明細</p>`;
-      } else {
-        tList.innerHTML = res.transactions.map(t => {
-          const isPlus = t.pointsChange >= 0;
-          return `
-            <div class="py-2.5 border-b border-[#F3EFEA] last:border-0 flex justify-between items-center">
-              <div>
-                <p class="font-medium text-[#3D352E]">${t.type} <span class="text-xs text-[#8C735B]">(${t.note})</span></p>
-                <p class="text-[11px] text-[#8C735B]">${t.time}</p>
-              </div>
-              <div class="text-right">
-                <p class="font-bold ${isPlus ? 'income-red' : 'text-[#3D352E]'}">${isPlus ? '+' : ''}${t.pointsChange.toLocaleString()}</p>
-                <p class="text-[11px] text-[#8C735B]">餘額 $${t.balanceAfter.toLocaleString()}</p>
-              </div>
-            </div>
-          `;
-        }).join("");
-      }
-    } catch (err) {
-      hideLoading();
-      const errBox = document.getElementById("portalErrorBox");
-      errBox.textContent = err.message;
-      errBox.classList.remove("hidden");
-    }
-  }
-
   function addPortalCartItem() {
     const srvSel = document.getElementById("reqService");
     if (!srvSel.value) return;
@@ -1379,14 +1878,14 @@
     try {
       await callGasApi({
         action: "submitCustomerBookingRequest",
-        payload: { cid: PORTAL_CID, date, startTime, servicesText, totalPrice, totalDuration, note }
+        payload: { cid: portalCustomerId, date, startTime, servicesText, totalPrice, totalDuration, note }
       });
       hideLoading();
       portalCart = [];
       renderPortalCart();
       document.getElementById("reqNote").value = "";
       showToast("已送出預約申請！闆娘確認後會通知您");
-      loadCustomerPortal(PORTAL_CID);
+      loadCustomerPortal(portalCustomerId, portalLineUserId);
     } catch (err) {
       hideLoading();
       showToast("送出失敗：" + err.message);
@@ -2024,6 +2523,7 @@
 
     grid.innerHTML = filtered.map(c => {
       const pkgText = getCustomerRemainingSessionsText(c.id);
+      const hasCons = (appData.consultations || []).some(x => String(x.customerId) === String(c.id));
       return `
         <div class="card-warm rounded-2xl p-5 flex flex-col justify-between space-y-3">
           <div>
@@ -2032,6 +2532,7 @@
                 <h4 class="font-bold text-base text-[#3D352E] group-hover:text-[#8C735B] transition truncate">
                   ${c.name}
                   <span class="text-xs font-normal text-[#8C735B] ml-1">${c.visitCount || 0}次</span>
+                  ${hasCons ? '<span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium">已填諮詢表</span>' : ''}
                 </h4>
                 <p class="text-xs text-[#8C735B] truncate">${c.contact || '未填聯絡方式'}</p>
               </div>
@@ -2044,7 +2545,7 @@
             ${c.privateNote ? `<p class="text-xs text-[#735D48] mt-2 bg-stone-50 p-2 rounded-lg">🔒 ${c.privateNote}</p>` : ''}
           </div>
           <div class="pt-2 border-t border-[#F3EFEA] flex flex-col gap-1.5">
-            <button onclick="openCustomerDetailModal('${c.id}')" class="w-full bg-[#F5EFE6] hover:bg-[#EAE2D6] text-[#3D352E] text-xs font-bold py-2 rounded-lg">📂 查看客戶資料與消費歷史</button>
+            <button onclick="openCustomerDetailModal('${c.id}')" class="w-full bg-[#F5EFE6] hover:bg-[#EAE2D6] text-[#3D352E] text-xs font-bold py-2 rounded-lg">📂 查看客戶資料、諮詢表與消費歷史</button>
             <div class="grid grid-cols-2 gap-1.5">
               <button onclick="openTopUpModal('${c.id}')" class="btn-primary text-xs font-bold py-1.5 rounded-lg">+ 儲值</button>
               <button onclick="openBookingForCustomer('${c.id}')" class="bg-white hover:bg-[#FAF7F2] border border-[#8C735B] text-[#8C735B] text-xs font-bold py-1.5 rounded-lg">+ 新增預約</button>
@@ -2081,10 +2582,12 @@
 
     document.getElementById("cdName").textContent = c.name;
     document.getElementById("cdPromo").textContent = c.promoTitle || "一般原價";
-    document.getElementById("cdContact").textContent = `聯絡方式：${c.contact || '未填寫'}`;
+    document.getElementById("cdContact").textContent = `聯絡方式：${c.contact || '未填寫'}${c.lineUserId ? '｜已綁定 LINE' : ''}`;
     document.getElementById("cdBalance").textContent = `$${c.balance.toLocaleString()}`;
     document.getElementById("cdVisits").textContent = `${c.visitCount || 0} 次`;
     document.getElementById("cdTotalSpent").textContent = `$${totalSpent.toLocaleString()}`;
+
+    renderCustomerConsultationSectionInModal(c.id);
 
     toggleCustomerPackageBuilder(false);
     document.getElementById("cdConfirmAddPkgBtn").onclick = () => createMultiItemThreeSessionPackage(c.id);
