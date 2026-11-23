@@ -50,6 +50,16 @@
       color: #5c4638;
       border-color: #e3d5c7;
     }
+    .srv-chip-selected {
+      background-color: #8c5e43;
+      color: #ffffff;
+      border-color: #8c5e43;
+    }
+    .srv-chip-unselected {
+      background-color: #ffffff;
+      color: #3a2a22;
+      border-color: #e2d3c4;
+    }
     .modal-backdrop {
       background: rgba(34, 24, 19, 0.52);
       backdrop-filter: blur(2px);
@@ -71,7 +81,7 @@
           馥語
         </div>
         <div>
-          <h1 class="font-bold text-base sm:text-lg text-[#3a2a22] leading-tight">馥語美學｜營運管理系統</h1>
+          <h1 class="font-bold text-base sm:text-lg text-[#3a2a22] leading-tight">馥語美學｜預約與會員系統</h1>
           <p id="modeSubtitle" class="text-xs text-[#8b7365]">載入中...</p>
         </div>
       </div>
@@ -100,20 +110,31 @@
     </div>
   </div>
 
-  <!-- ==================== 客戶端視圖 ==================== -->
-  <main id="customerView" class="max-w-2xl mx-auto px-4 pt-5 hidden">
-    <div id="customerLoginBanner" class="glass-card rounded-2xl p-4 mb-4 hidden">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <p class="text-sm font-bold text-[#3a2a22]">客戶專屬專區</p>
-          <p class="text-xs text-[#7c6557]">請由專屬連結進入，或切換至店家管理後台</p>
+  <!-- ==================== 獨立店家登入頁面（非彈窗） ==================== -->
+  <main id="adminLoginPage" class="max-w-md mx-auto px-4 pt-12 hidden">
+    <div class="glass-card rounded-3xl p-6 sm:p-8">
+      <div class="flex flex-col items-center text-center mb-6">
+        <div class="w-14 h-14 rounded-full bg-[#8c5e43] text-white flex items-center justify-center font-bold text-lg mb-3 shadow">
+          馥語
         </div>
-        <button onclick="showAdminLoginModal()" class="px-3.5 py-2 rounded-xl text-xs font-semibold btn-primary self-start sm:self-auto">
-          店家管理登入
-        </button>
+        <h2 class="text-xl font-extrabold text-[#33241d]">馥語美學｜管理後台登入</h2>
+        <p class="text-xs text-[#8b7365] mt-1">請輸入管理密碼以進入排程、會員與帳務系統</p>
       </div>
-    </div>
 
+      <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-[#4a382f] mb-1.5">管理密碼</label>
+          <input type="password" id="adminPasswordInput" required placeholder="請輸入管理密碼" class="w-full px-4 py-3 rounded-2xl border border-[#decbb9] text-sm bg-white focus:outline-none focus:border-[#8c5e43]" />
+        </div>
+        <button type="submit" class="w-full py-3 rounded-2xl text-sm font-bold btn-primary shadow">
+          登入管理系統
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <!-- ==================== 客戶端視圖（無店家登入按鈕） ==================== -->
+  <main id="customerView" class="max-w-2xl mx-auto px-4 pt-5 hidden">
     <div id="customerProfileCard" class="glass-card rounded-2xl p-5 mb-4 hidden">
       <div class="flex items-start justify-between gap-2">
         <div>
@@ -144,33 +165,36 @@
       </button>
     </div>
 
-    <!-- 諮詢表與同意書區塊 -->
+    <!-- 諮詢表與同意書區塊（原模式 + 必填防呆 + 管理員隱藏控制） -->
     <section id="customerConsultSection" class="glass-card rounded-2xl p-5 mb-5 hidden">
-      <div id="customerConsultSummaryBox" class="hidden space-y-4"></div>
+      <div id="customerConsultHiddenNotice" class="hidden p-4 rounded-xl bg-[#faf6f2] border border-[#e7d8c8] text-xs text-[#6a4f3f] text-center space-y-1">
+        <div class="font-bold text-sm text-[#33241d]">📋 您的諮詢表與同意書已歸檔保存</div>
+        <p>目前由店家設定為不公開顯示內容，如需異動請洽詢美學師。</p>
+      </div>
 
       <div id="customerConsultFormBox">
-        <div class="flex items-center justify-between gap-2 mb-1">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
           <h3 class="text-base font-bold text-[#33241d]">顧客基本資料與除毛諮詢同意書</h3>
-          <button type="button" id="cancelConsultEditBtn" onclick="cancelConsultationEdit()" class="text-xs text-[#8b7365] underline hidden">取消修改</button>
+          <span id="customerConsultStatusBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-[#fdf1e7] text-[#8c522b] font-bold hidden"></span>
         </div>
-        <p class="text-xs text-[#8b7365] mb-4">為確保您的施作安全與術後照護品質，請據實填寫並完成簽名。送出後如需調整，可隨時點選修改並留下修改紀錄。</p>
+        <p class="text-xs text-[#8b7365] mb-4">標示 <span class="text-red-600 font-bold">*</span> 為必填項目（僅聯絡電話與居住地址為選填），請據實填寫並簽名。</p>
 
         <form id="consultationForm" onsubmit="handleConsultationSubmit(event)" class="space-y-4">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-[#4a382f] mb-1">姓名 *</label>
+              <label class="block text-xs font-bold text-[#4a382f] mb-1">姓名 <span class="text-red-600">*</span></label>
               <input type="text" id="cf_name" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="請輸入真實姓名" />
             </div>
             <div>
-              <label class="block text-xs font-bold text-[#4a382f] mb-1">暱稱／稱呼</label>
-              <input type="text" id="cf_nickname" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="例如：小美、Ruby" />
+              <label class="block text-xs font-bold text-[#4a382f] mb-1">暱稱／稱呼 <span class="text-red-600">*</span></label>
+              <input type="text" id="cf_nickname" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="例如：小美、Ruby" />
             </div>
             <div>
-              <label class="block text-xs font-bold text-[#4a382f] mb-1">聯絡電話 *</label>
-              <input type="tel" id="cf_phone" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="09xx-xxx-xxx" />
+              <label class="block text-xs font-bold text-[#4a382f] mb-1">聯絡電話（選填）</label>
+              <input type="tel" id="cf_phone" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="09xx-xxx-xxx" />
             </div>
             <div>
-              <label class="block text-xs font-bold text-[#4a382f] mb-1">生日 *</label>
+              <label class="block text-xs font-bold text-[#4a382f] mb-1">生日 <span class="text-red-600">*</span></label>
               <input type="date" id="cf_birthday" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" />
             </div>
           </div>
@@ -182,8 +206,9 @@
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-[#4a382f] mb-1">過往毛髮處理方式</label>
-              <select id="cf_pastHairRemoval" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white">
+              <label class="block text-xs font-bold text-[#4a382f] mb-1">過往毛髮處理方式 <span class="text-red-600">*</span></label>
+              <select id="cf_pastHairRemoval" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white">
+                <option value="">-- 請選擇 --</option>
                 <option value="無">無</option>
                 <option value="刮毛刀／除毛膏">刮毛刀／除毛膏</option>
                 <option value="熱蠟除毛">熱蠟除毛</option>
@@ -192,8 +217,9 @@
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-[#4a382f] mb-1">是否為首次施作熱蠟除毛？</label>
-              <select id="cf_firstTimeWaxing" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white">
+              <label class="block text-xs font-bold text-[#4a382f] mb-1">是否為首次施作熱蠟除毛？ <span class="text-red-600">*</span></label>
+              <select id="cf_firstTimeWaxing" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white">
+                <option value="">-- 請選擇 --</option>
                 <option value="否">否</option>
                 <option value="是">是</option>
               </select>
@@ -201,35 +227,39 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-[#4a382f] mb-1">敏感體質或過敏狀況</label>
-            <input type="text" id="cf_sensitiveTypes" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="無，或填寫對乳膠、精油、酒精、特定成分過敏" />
+            <label class="block text-xs font-bold text-[#4a382f] mb-1">敏感體質或過敏狀況 <span class="text-red-600">*</span></label>
+            <input type="text" id="cf_sensitiveTypes" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="請填寫「無」，或說明對乳膠、精油、酒精等過敏" />
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label class="block text-xs font-bold text-[#4a382f] mb-1">目前是否處於懷孕期間？</label>
-              <select id="cf_isPregnant" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white">
+              <label class="block text-xs font-bold text-[#4a382f] mb-1">目前是否處於懷孕期間？ <span class="text-red-600">*</span></label>
+              <select id="cf_isPregnant" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white">
+                <option value="">-- 請選擇 --</option>
                 <option value="否">否</option>
                 <option value="是">是</option>
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-[#4a382f] mb-1">近期是否生病、熬夜或免疫力下降？</label>
-              <select id="cf_isSickOrLowImmunity" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white">
+              <label class="block text-xs font-bold text-[#4a382f] mb-1">近期是否生病、熬夜或免疫力下降？ <span class="text-red-600">*</span></label>
+              <select id="cf_isSickOrLowImmunity" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white">
+                <option value="">-- 請選擇 --</option>
                 <option value="否">否</option>
                 <option value="是">是</option>
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-[#4a382f] mb-1">目前是否處於生理期間？</label>
-              <select id="cf_isMenstruating" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white">
+              <label class="block text-xs font-bold text-[#4a382f] mb-1">目前是否處於生理期間？ <span class="text-red-600">*</span></label>
+              <select id="cf_isMenstruating" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white">
+                <option value="">-- 請選擇 --</option>
                 <option value="否">否</option>
                 <option value="是">是</option>
               </select>
             </div>
             <div>
-              <label class="block text-xs font-bold text-[#4a382f] mb-1">除毛部位是否常出油或長痘痘／毛囊炎？</label>
-              <select id="cf_isOilyOrAcneArea" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white">
+              <label class="block text-xs font-bold text-[#4a382f] mb-1">除毛部位是否常出油或長痘痘／毛囊炎？ <span class="text-red-600">*</span></label>
+              <select id="cf_isOilyOrAcneArea" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white">
+                <option value="">-- 請選擇 --</option>
                 <option value="否">否</option>
                 <option value="是">是</option>
               </select>
@@ -243,9 +273,14 @@
             <p>3. 預約如需改期或取消，請儘早提前通知，以便為您保留或調整時段。</p>
           </div>
 
+          <div id="existingSignaturePreview" class="hidden">
+            <div class="text-xs font-bold text-[#4a382f] mb-1">目前已留存簽名（如需重簽請於下方框內簽名）</div>
+            <img id="existingSignatureImg" src="" alt="已簽名" class="max-h-24 rounded-xl border border-[#decbb9] bg-white p-1" />
+          </div>
+
           <div>
             <div class="flex items-center justify-between mb-1">
-              <label class="text-xs font-bold text-[#4a382f]">本人簽名（請於下方框內簽名）*</label>
+              <label class="text-xs font-bold text-[#4a382f]">本人簽名（請於下方框內簽名）<span class="text-red-600">*</span></label>
               <button type="button" onclick="clearSignature()" class="text-xs text-[#8c5e43] underline font-medium">清除重簽</button>
             </div>
             <canvas id="signatureCanvas" width="520" height="160" class="w-full h-40 rounded-xl sig-canvas"></canvas>
@@ -258,39 +293,46 @@
       </div>
     </section>
 
-    <!-- 客戶線上預約申請 -->
+    <!-- 客戶線上預約申請（卡片點選服務 + 衝突與禁約即時防呆） -->
     <section id="customerBookSection" class="glass-card rounded-2xl p-5 mb-5 hidden">
       <h3 class="text-base font-bold text-[#33241d] mb-1">線上預約申請</h3>
-      <p class="text-xs text-[#8b7365] mb-4">送出後狀態為「待審核」，由馥語美學為您確認時段並排入行程。</p>
+      <p class="text-xs text-[#8b7365] mb-4">送出後將進入「待審核」，由美學師審核通過後正式排入行事曆。</p>
 
       <form id="customerBookingForm" onsubmit="handleCustomerBookingSubmit(event)" class="space-y-4">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-bold text-[#4a382f] mb-1">預約日期 *</label>
-            <input type="date" id="cb_date" required class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" />
+            <input type="date" id="cb_date" required onchange="validateCustomerSlotAvailability()" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" />
           </div>
           <div>
             <label class="block text-xs font-bold text-[#4a382f] mb-1">期望開始時間 *</label>
-            <input type="time" id="cb_startTime" required value="11:00" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" />
+            <input type="time" id="cb_startTime" required value="11:00" onchange="validateCustomerSlotAvailability()" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" />
           </div>
         </div>
 
+        <!-- 時段衝突／禁止預約提示框 -->
+        <div id="cb_slotConflictBanner" class="hidden p-3 rounded-xl bg-red-50 border border-red-300 text-xs font-bold text-red-800"></div>
+
+        <!-- 分類點選卡片（無長串下拉） -->
         <div>
-          <label class="block text-xs font-bold text-[#4a382f] mb-1.5">選擇服務／可選項目（可複選）*</label>
-          <div id="cb_servicesContainer" class="space-y-2 max-h-60 overflow-y-auto p-3 rounded-xl border border-[#eadfd4] bg-[#fcfaf8]"></div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold text-[#4a382f]">點選預約項目（可複選）*</label>
+            <span id="cb_selectedCountBadge" class="text-[11px] font-bold text-[#8c5e43]">已選 0 項</span>
+          </div>
+          <div id="cb_servicesContainer" class="space-y-3"></div>
         </div>
 
-        <div class="p-3 rounded-xl bg-[#f8f1ea] flex items-center justify-between text-xs">
-          <span class="text-[#6d5648]">預估總時長：<strong id="cb_totalDurationText" class="text-[#3a2a22]">0 分鐘</strong>（含10分緩衝）</span>
+        <div class="p-3.5 rounded-xl bg-[#f8f1ea] flex items-center justify-between text-xs">
+          <span class="text-[#6d5648]">預估總時長：<strong id="cb_totalDurationText" class="text-[#3a2a22]">0 分鐘</strong></span>
           <span class="text-[#6d5648]">預估金額：<strong id="cb_totalPriceText" class="text-sm text-[#8c5e43]">$0</strong></span>
         </div>
 
         <div>
-          <label class="block text-xs font-bold text-[#4a382f] mb-1">備註說明</label>
-          <input type="text" id="cb_note" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="例如：生理期剛結束、希望使用生日券等" />
+          <label class="block text-xs font-bold text-[#4a382f] mb-1">備註說明（選填）</label>
+          <input type="text" id="cb_note" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm bg-white" placeholder="例如：希望使用生日券、生理期剛結束等" />
         </div>
 
-        <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm btn-primary shadow">
+        <button type="submit" id="cb_submitBtn" class="w-full py-3 rounded-xl font-bold text-sm btn-primary shadow">
           送出預約申請（待審核）
         </button>
       </form>
@@ -319,7 +361,6 @@
 
     <!-- ---------- 分頁 1：首頁排程 ---------- -->
     <section id="tab-home" class="space-y-4">
-      <!-- 獨立數量提醒按鈕列 -->
       <div class="flex flex-wrap items-center justify-between gap-2.5 glass-card rounded-2xl p-3.5">
         <div class="flex flex-wrap items-center gap-2.5">
           <button type="button" onclick="openReminderModal('birthday')" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-extrabold bg-[#fdf1e7] text-[#9c5733] border border-[#f2d7c0] hover:bg-[#fae5d4] transition">
@@ -338,7 +379,7 @@
         </button>
       </div>
 
-      <!-- 預約月曆 + 當日明細 -->
+      <!-- 預約月曆（僅顯示已審核排入的預約，且「單」改為「筆」） + 當日明細 -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div class="lg:col-span-7 glass-card rounded-2xl p-3 sm:p-4">
           <div class="flex items-center justify-between mb-3">
@@ -351,7 +392,6 @@
           </div>
           <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-1.5 text-xs"></div>
 
-          <!-- 項目顏色與禁約圖例 -->
           <div class="mt-3 pt-2.5 border-t border-[#f2e8df] flex flex-wrap items-center gap-3 text-[11px] text-[#6d5648]">
             <span class="inline-flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-sm bg-[#e11d48]"></i>熱蠟</span>
             <span class="inline-flex items-center gap-1"><i class="w-2.5 h-2.5 rounded-sm bg-[#0284c7]"></i>冰肌／日式</span>
@@ -363,7 +403,7 @@
         <div class="lg:col-span-5 glass-card rounded-2xl p-4">
           <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
             <div>
-              <h3 id="selectedDateTitle" class="font-bold text-base text-[#33241d]">當日預約排程</h3>
+              <h3 id="selectedDateTitle" class="font-bold text-base text-[#33241d]">當日已排入預約</h3>
               <p id="selectedDateBlockedHint" class="text-xs font-bold text-[#b91c1c] mt-0.5"></p>
             </div>
           </div>
@@ -477,15 +517,15 @@
       </div>
     </section>
 
-    <!-- ---------- 分頁 5：管理（上方抓取各個大分類標籤 + 新增服務 / 新增產品按鈕） ---------- -->
+    <!-- ---------- 分頁 5：管理（乾淨卡片分區與大分類快速標籤） ---------- -->
     <section id="tab-management" class="space-y-4 hidden">
-      <div class="glass-card rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="glass-card rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2.5">
         <div class="flex items-center gap-2">
           <button id="subtab-catalog-btn" onclick="switchManagementSubTab('catalog')" class="px-4 py-2 rounded-xl text-xs font-bold subtab-active">
             💆‍♀️ 服務與產品價目
           </button>
           <button id="subtab-blocked-btn" onclick="switchManagementSubTab('blocked')" class="px-4 py-2 rounded-xl text-xs font-bold subtab-inactive">
-            🚫 禁約時段
+            🚫 禁約時段設定
           </button>
         </div>
 
@@ -502,18 +542,21 @@
         </div>
       </div>
 
-      <!-- 子分頁 A：上方抓取所有大分類標籤列 + 服務與產品清單 -->
+      <!-- 子分頁 A：大分類標籤列 + 分區清單 -->
       <div id="subtab-catalog" class="space-y-3">
-        <div class="glass-card rounded-2xl p-3">
-          <div class="text-[11px] font-bold text-[#8b7365] mb-2">📂 價目大分類（點選篩選或管理該分類）</div>
+        <div class="glass-card rounded-2xl p-3.5">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-bold text-[#5c4638]">📂 價目大分類</span>
+            <span class="text-[11px] text-[#8b7365]">點選分類可快速篩選，或點右側「+ 新增至此分類」</span>
+          </div>
           <div id="catalogCategoryBar" class="flex flex-wrap items-center gap-2"></div>
         </div>
 
-        <div id="catalogGroupedContainer" class="space-y-4"></div>
+        <div id="catalogGroupedContainer" class="space-y-3"></div>
       </div>
 
       <!-- 子分頁 B：禁約時段清單 -->
-      <div id="subtab-blocked" class="space-y-3 hidden">
+      <div id="subtab-blocked" class="space-y-2.5 hidden">
         <div id="blockedSlotsListContainer" class="space-y-2"></div>
       </div>
     </section>
@@ -524,39 +567,23 @@
     <div id="reminderModalContent" class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl max-h-[85vh] overflow-y-auto"></div>
   </div>
 
-  <!-- ==================== 彈窗 1：管理員登入 ==================== -->
-  <div id="adminLoginModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 hidden">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl">
-      <h3 class="text-base font-bold text-[#33241d] mb-1">店家後台登入</h3>
-      <p class="text-xs text-[#8b7365] mb-3">請輸入管理密碼進入排程與會員系統</p>
-      <form onsubmit="handleAdminLogin(event)" class="space-y-3">
-        <input type="password" id="adminPasswordInput" required placeholder="請輸入管理密碼" class="w-full px-3.5 py-2.5 rounded-xl border border-[#decbb9] text-sm" />
-        <div class="flex justify-end gap-2">
-          <button type="button" onclick="closeAdminLoginModal()" class="px-3.5 py-2 rounded-xl text-xs bg-[#f3ece5] text-[#6b5344] font-bold">取消</button>
-          <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold btn-primary">登入</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ==================== 彈窗 2：新增／編輯／審批預約 ==================== -->
+  <!-- ==================== 彈窗 2：簡化版新增／編輯／審批預約（無成本／原價冗余欄位） ==================== -->
   <div id="bookingModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 overflow-y-auto hidden">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-5 shadow-xl my-8">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl my-8">
       <div class="flex items-center justify-between mb-3">
         <h3 id="bookingModalTitle" class="text-base font-bold text-[#33241d]">新增／編輯預約</h3>
         <button onclick="closeBookingModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
       </div>
 
-      <!-- 禁約時段即時警告區 -->
       <div id="bk_blockedConflictAlert" class="hidden mb-3 p-2.5 rounded-xl bg-red-50 border border-red-300 text-xs font-bold text-red-800"></div>
 
       <form onsubmit="handleSaveBooking(event)" class="space-y-3 text-xs">
         <input type="hidden" id="bk_id" />
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">選擇會員</label>
+            <label class="block font-bold text-[#4a382f] mb-1">會員</label>
             <select id="bk_customerId" onchange="onBookingCustomerChange()" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
-              <option value="">-- 非會員／散客 --</option>
+              <option value="">-- 散客／非會員 --</option>
             </select>
           </div>
           <div>
@@ -571,8 +598,21 @@
             <input type="date" id="bk_date" required onchange="recalcBookingEndTime()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
           </div>
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">開始時間 *</label>
+            <label class="block font-bold text-[#4a382f] mb-1">開始 *</label>
             <input type="time" id="bk_startTime" required onchange="recalcBookingEndTime()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
+          </div>
+          <div>
+            <label class="block font-bold text-[#4a382f] mb-1">結束</label>
+            <input type="time" id="bk_endTime" onchange="checkBookingBlockedConflict()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-[#faf7f4]" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div class="col-span-2">
+            <label class="block font-bold text-[#4a382f] mb-1">快速帶入項目</label>
+            <select id="bk_catalogPreset" onchange="applyCatalogPresetToBooking()" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
+              <option value="">-- 選擇項目自動帶入 --</option>
+            </select>
           </div>
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">時長 (分)</label>
@@ -580,40 +620,19 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2.5">
-          <div>
-            <label class="block font-bold text-[#4a382f] mb-1">快速帶入價目項目</label>
-            <select id="bk_catalogPreset" onchange="applyCatalogPresetToBooking()" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
-              <option value="">-- 選擇價目帶入 --</option>
-            </select>
-          </div>
-          <div>
-            <label class="block font-bold text-[#4a382f] mb-1">結束時間（含10分緩衝）</label>
-            <input type="time" id="bk_endTime" onchange="checkBookingBlockedConflict()" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-[#faf7f4]" />
-          </div>
-        </div>
-
         <div>
-          <label class="block font-bold text-[#4a382f] mb-1">服務／購買內容 *</label>
-          <input type="text" id="bk_service" required placeholder="例如：日式無痛淨毛（單堂）、私密處熱蠟" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+          <label class="block font-bold text-[#4a382f] mb-1">服務／項目內容 *</label>
+          <input type="text" id="bk_service" required placeholder="例如：私密處熱蠟除毛" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">原價 ($)</label>
-            <input type="number" id="bk_originalPrice" value="0" min="0" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
-          </div>
-          <div>
-            <label class="block font-bold text-[#4a382f] mb-1">成本 ($)</label>
-            <input type="number" id="bk_costAmount" value="0" min="0" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
-          </div>
-          <div>
-            <label class="block font-bold text-[#4a382f] mb-1">實收金額 ($)</label>
-            <input type="number" id="bk_finalPrice" value="0" min="0" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
+            <label class="block font-bold text-[#4a382f] mb-1">金額 ($)</label>
+            <input type="number" id="bk_finalPrice" value="0" min="0" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
           </div>
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">付款方式</label>
-            <select id="bk_payMethod" class="w-full px-2 py-2 rounded-xl border border-[#decbb9] bg-white">
+            <select id="bk_payMethod" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
               <option value="現金">現金</option>
               <option value="轉帳">轉帳</option>
               <option value="扣儲值金">扣儲值金</option>
@@ -623,33 +642,33 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2.5">
+        <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">預約狀態</label>
+            <label class="block font-bold text-[#4a382f] mb-1">狀態</label>
             <select id="bk_status" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
+              <option value="尚未到來">尚未到來（排入月曆）</option>
               <option value="待審核">待審核</option>
-              <option value="尚未到來">尚未到來（已確認）</option>
               <option value="已報到">已報到</option>
               <option value="已完成">已完成</option>
               <option value="取消">取消</option>
             </select>
           </div>
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">折抵優惠券（選填）</label>
+            <label class="block font-bold text-[#4a382f] mb-1">優惠券折抵</label>
             <select id="bk_usedCouponId" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
-              <option value="">不使用優惠券</option>
+              <option value="">不使用</option>
             </select>
           </div>
         </div>
 
         <div>
           <label class="block font-bold text-[#4a382f] mb-1">備註</label>
-          <input type="text" id="bk_note" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+          <input type="text" id="bk_note" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" placeholder="選填" />
         </div>
 
         <div class="flex items-center justify-between pt-2">
           <button type="button" id="bk_deleteBtn" onclick="handleDeleteCurrentBooking()" class="px-3 py-2 rounded-xl bg-[#fdf2f2] text-[#b42318] font-bold hidden">
-            刪除預約
+            刪除
           </button>
           <div class="flex gap-2 ml-auto">
             <button type="button" onclick="closeBookingModal()" class="px-3.5 py-2 rounded-xl bg-[#f3ece5] text-[#6b5344] font-bold">取消</button>
@@ -709,7 +728,7 @@
     </div>
   </div>
 
-  <!-- ==================== 彈窗 4：會員詳情 ==================== -->
+  <!-- ==================== 彈窗 4：會員詳情（含諮詢表隱藏／顯示切換） ==================== -->
   <div id="customerDetailModal" class="fixed inset-0 z-40 modal-backdrop flex items-center justify-center p-4 overflow-y-auto hidden">
     <div id="customerDetailContent" class="bg-white rounded-2xl max-w-2xl w-full p-5 shadow-xl my-8 max-h-[90vh] overflow-y-auto"></div>
   </div>
@@ -915,7 +934,7 @@
       portalLineUserId: "",
       portalLineDisplayName: "",
       portalData: null,
-      forceEditConsultation: false
+      selectedCustomerServiceIds: []
     };
 
     function formatTodayStr() {
@@ -938,7 +957,7 @@
       inner.className = `px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white ${isError ? "bg-[#b42318]" : "bg-[#2f2622]"}`;
       box.classList.remove("hidden");
       clearTimeout(showToast._timer);
-      showToast._timer = setTimeout(() => box.classList.add("hidden"), 3200);
+      showToast._timer = setTimeout(() => box.classList.add("hidden"), 3400);
     }
 
     function setLoading(show, text = "資料處理中...") {
@@ -981,7 +1000,7 @@
       if (savedPass && !cidParam) {
         try {
           setLoading(true, "載入後台資料中...");
-          await loginWithPassword(savedPass, true);
+          await loginWithPassword(savedPass);
           return;
         } catch (_) {
           sessionStorage.removeItem("fuyu_admin_pass");
@@ -994,17 +1013,17 @@
         state.portalCid = cidParam;
         await initCustomerPortal();
       } else {
-        showAdminLoginModal();
+        showAdminLoginPage();
       }
     });
 
-    function showAdminLoginModal() {
-      document.getElementById("adminLoginModal").classList.remove("hidden");
+    function showAdminLoginPage() {
+      document.getElementById("adminView").classList.add("hidden");
+      document.getElementById("customerView").classList.add("hidden");
+      document.getElementById("adminHeaderActions").classList.add("hidden");
+      document.getElementById("adminLoginPage").classList.remove("hidden");
+      document.getElementById("modeSubtitle").textContent = "管理員登入";
       setTimeout(() => document.getElementById("adminPasswordInput").focus(), 50);
-    }
-
-    function closeAdminLoginModal() {
-      document.getElementById("adminLoginModal").classList.add("hidden");
     }
 
     async function handleAdminLogin(e) {
@@ -1013,8 +1032,7 @@
       if (!pass) return;
       try {
         setLoading(true, "驗證管理密碼並載入資料...");
-        await loginWithPassword(pass, false);
-        closeAdminLoginModal();
+        await loginWithPassword(pass);
         showToast("已登入馥語美學後台");
       } catch (err) {
         showToast(err.message || "登入失敗", true);
@@ -1023,13 +1041,14 @@
       }
     }
 
-    async function loginWithPassword(pass, silent) {
+    async function loginWithPassword(pass) {
       const snap = await apiPost({ action: "verifyAdminAndLoadAll", password: pass });
       state.isAdmin = true;
       state.adminPassword = pass;
       sessionStorage.setItem("fuyu_admin_pass", pass);
       applyAdminSnapshot(snap);
 
+      document.getElementById("adminLoginPage").classList.add("hidden");
       document.getElementById("customerView").classList.add("hidden");
       document.getElementById("adminView").classList.remove("hidden");
       document.getElementById("adminHeaderActions").classList.remove("hidden");
@@ -1041,10 +1060,8 @@
       state.isAdmin = false;
       state.adminPassword = "";
       sessionStorage.removeItem("fuyu_admin_pass");
-      document.getElementById("adminView").classList.add("hidden");
-      document.getElementById("adminHeaderActions").classList.add("hidden");
-      document.getElementById("modeSubtitle").textContent = "已登出";
-      showAdminLoginModal();
+      document.getElementById("adminPasswordInput").value = "";
+      showAdminLoginPage();
     }
 
     function applyAdminSnapshot(snap) {
@@ -1088,7 +1105,11 @@
       document.getElementById("btnOpenBlockedModal").classList.toggle("hidden", isCatalog);
     }
 
-    /* ==================== 首頁：獨立提醒按鈕＋清晰時間月曆＋清晰禁約 ==================== */
+    /* ==================== 首頁（待審核不進月曆；「單」改為「筆」） ==================== */
+    function isApprovedCalendarStatus(status) {
+      return status === "尚未到來" || status === "已報到" || status === "已完成";
+    }
+
     function getBirthdayCustomersThisMonth() {
       const curMonth = new Date().getMonth() + 1;
       return state.customers.filter(c => {
@@ -1172,7 +1193,7 @@
                   </div>
                   <div class="flex items-center gap-1.5 shrink-0">
                     <button type="button" onclick="quickApproveBooking('${escJs(b.id)}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700">
-                      ✓ 核准
+                      ✓ 核准排入月曆
                     </button>
                     <button type="button" onclick="closeReminderModal(); openBookingModalById('${escJs(b.id)}')" class="px-2.5 py-1.5 rounded-lg bg-white border border-[#d97706] text-[#92400e] font-bold">
                       修改
@@ -1206,21 +1227,12 @@
 
       const text = `${matchedCat} ${srv}`;
       if (text.indexOf("熱蠟") !== -1) {
-        return {
-          pillClass: "bg-rose-100 text-rose-800 border border-rose-200",
-          label: "熱蠟"
-        };
+        return { pillClass: "bg-rose-100 text-rose-800 border border-rose-200", label: "熱蠟" };
       }
       if (text.indexOf("冰肌") !== -1 || text.indexOf("日式") !== -1 || text.indexOf("淨毛") !== -1) {
-        return {
-          pillClass: "bg-sky-100 text-sky-800 border border-sky-200",
-          label: matchedCat || "冰肌"
-        };
+        return { pillClass: "bg-sky-100 text-sky-800 border border-sky-200", label: matchedCat || "冰肌" };
       }
-      return {
-        pillClass: "bg-[#f2e8de] text-[#6a4832] border border-[#e3d1c0]",
-        label: matchedCat || "其他"
-      };
+      return { pillClass: "bg-[#f2e8de] text-[#6a4832] border border-[#e3d1c0]", label: matchedCat || "其他" };
     }
 
     function changeCalendarMonth(delta) {
@@ -1239,7 +1251,8 @@
       const daysInMonth = new Date(y, m + 1, 0).getDate();
       const grid = document.getElementById("calendarGrid");
 
-      const activeBookings = state.bookings.filter(b => b.status !== "取消");
+      // 只把已核准排入的預約放進月曆（「待審核」不進月曆）
+      const approvedBookings = state.bookings.filter(b => isApprovedCalendarStatus(b.status));
       const cells = [];
 
       for (let i = 0; i < firstDay; i++) {
@@ -1248,7 +1261,7 @@
 
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${y}-${String(m + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-        const dayBks = activeBookings
+        const dayBks = approvedBookings
           .filter(b => b.date === dateStr)
           .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
         const dayBlocks = state.blockedSlots.filter(blk => blk.date === dateStr);
@@ -1256,15 +1269,13 @@
         const isFullBlocked = dayBlocks.some(blk => blk.fullDay);
         const hasPartialBlock = dayBlocks.some(blk => !blk.fullDay);
 
-        // 確保時間數字絕對優先顯示，不被姓名擠掉
         const itemsHtml = dayBks.slice(0, 3).map(b => {
           const st = getServiceColorStyle(b);
-          const pendingMark = b.status === "待審核" ? "⏳" : "";
           const timeText = esc(b.startTime || "--:--");
           const nameText = esc(b.customerName || "");
           return `
             <div class="w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight ${st.pillClass}" title="${timeText} ${nameText} (${esc(b.service || "")})">
-              <span class="font-extrabold shrink-0 tabular-nums">${pendingMark}${timeText}</span>
+              <span class="font-extrabold shrink-0 tabular-nums">${timeText}</span>
               <span class="truncate font-semibold">${nameText}</span>
             </div>
           `;
@@ -1292,7 +1303,7 @@
           }">
             <div class="w-full flex items-center justify-between mb-1">
               <span class="text-xs font-extrabold ${isSelected ? "text-[#8c5e43]" : (isFullBlocked ? "text-red-700" : "text-[#3a2a22]")}">${day}</span>
-              ${dayBks.length > 0 ? `<span class="text-[10px] font-bold text-[#8b7365]">${dayBks.length}單</span>` : ""}
+              ${dayBks.length > 0 ? `<span class="text-[10px] font-bold text-[#8b7365]">${dayBks.length}筆</span>` : ""}
             </div>
             <div class="w-full space-y-1">
               ${blockBanner}
@@ -1314,7 +1325,7 @@
 
     function renderDayBookings() {
       const dateStr = state.selectedDate;
-      document.getElementById("selectedDateTitle").textContent = `${dateStr} 預約排程`;
+      document.getElementById("selectedDateTitle").textContent = `${dateStr} 已排入預約`;
 
       const dayBlocks = state.blockedSlots.filter(blk => blk.date === dateStr);
       const hintEl = document.getElementById("selectedDateBlockedHint");
@@ -1327,12 +1338,12 @@
       }
 
       const list = state.bookings
-        .filter(b => b.date === dateStr && b.status !== "取消")
+        .filter(b => b.date === dateStr && isApprovedCalendarStatus(b.status))
         .sort((a, b) => String(a.startTime).localeCompare(String(b.startTime)));
 
       const container = document.getElementById("dayBookingsList");
       if (list.length === 0) {
-        container.innerHTML = `<div class="text-center py-8 text-xs text-[#8b7365] bg-[#fcfaf8] rounded-xl border border-dashed border-[#e5d8ca]">這天目前沒有預約排程</div>`;
+        container.innerHTML = `<div class="text-center py-8 text-xs text-[#8b7365] bg-[#fcfaf8] rounded-xl border border-dashed border-[#e5d8ca]">這天目前沒有已核准排入的預約</div>`;
         return;
       }
 
@@ -1340,36 +1351,27 @@
         const cust = state.customers.find(c => String(c.id) === String(b.customerId));
         const visits = cust ? safeNumber(cust.visitCount, 0) : 0;
         const rev = safeNumber(b.finalPrice, 0);
-        const cost = safeNumber(b.costAmount, 0);
         const colorStyle = getServiceColorStyle(b);
         const statusColor =
-          b.status === "待審核" ? "bg-amber-100 text-amber-900" :
           (b.status === "已完成" || b.status === "已報到") ? "bg-emerald-100 text-emerald-800" :
           "bg-[#f1e7dd] text-[#6a4f3f]";
 
         return `
           <div class="p-3.5 rounded-xl border border-[#eee3d8] bg-[#fcfaf8] flex flex-col gap-2.5">
-            <div class="flex items-start justify-between gap-2">
-              <div class="space-y-1">
-                <div class="flex flex-wrap items-center gap-1.5">
-                  <span class="font-extrabold text-sm text-[#3a2a22] tabular-nums">${esc(b.startTime)} - ${esc(b.endTime)}</span>
-                  <span class="font-bold text-sm text-[#8c5e43]">${esc(b.customerName)}</span>
-                  <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${colorStyle.pillClass}">${esc(colorStyle.label)}</span>
-                  <span class="text-[11px] px-2 py-0.5 rounded-full font-bold ${statusColor}">${esc(b.status)}</span>
-                </div>
-                <div class="text-xs text-[#4a382f]">${esc(b.service || "未填項目")} · <span class="font-semibold">$${rev.toLocaleString()}</span>${cost > 0 ? ` <span class="text-[#8b7365]">(成本 $${cost.toLocaleString()})</span>` : ""}（${esc(b.payMethod)}）</div>
-                <div class="text-[11px] text-[#8b7365]">
-                  累計來店 ${visits} 次${cust && cust.lineDisplayName ? ` · LINE：${esc(cust.lineDisplayName)}` : ""}${b.note ? ` · 備註：${esc(b.note)}` : ""}
-                </div>
+            <div class="space-y-1">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span class="font-extrabold text-sm text-[#3a2a22] tabular-nums">${esc(b.startTime)} - ${esc(b.endTime)}</span>
+                <span class="font-bold text-sm text-[#8c5e43]">${esc(b.customerName)}</span>
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${colorStyle.pillClass}">${esc(colorStyle.label)}</span>
+                <span class="text-[11px] px-2 py-0.5 rounded-full font-bold ${statusColor}">${esc(b.status)}</span>
+              </div>
+              <div class="text-xs text-[#4a382f]">${esc(b.service || "未填項目")} · <span class="font-semibold">$${rev.toLocaleString()}</span>（${esc(b.payMethod)}）</div>
+              <div class="text-[11px] text-[#8b7365]">
+                累計來店 ${visits} 次${cust && cust.lineDisplayName ? ` · LINE：${esc(cust.lineDisplayName)}` : ""}${b.note ? ` · 備註：${esc(b.note)}` : ""}
               </div>
             </div>
             <div class="flex flex-wrap items-center justify-end gap-1.5 pt-1 border-t border-[#f2e8dd]">
-              ${b.status === "待審核" ? `
-                <button onclick="quickApproveBooking('${escJs(b.id)}')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700">
-                  核准
-                </button>
-              ` : ""}
-              ${(b.status === "尚未到來" || b.status === "待審核") ? `
+              ${b.status === "尚未到來" ? `
                 <button onclick="quickSettleBooking('${escJs(b.id)}')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#8c5e43] text-white">
                   完成結算
                 </button>
@@ -1385,7 +1387,7 @@
 
     async function quickApproveBooking(bookingId) {
       try {
-        setLoading(true, "核准預約中...");
+        setLoading(true, "核准並排入月曆中...");
         const snap = await apiPost({
           action: "quickUpdateBookingStatus",
           password: state.adminPassword,
@@ -1393,7 +1395,10 @@
           newStatus: "尚未到來"
         });
         applyAdminSnapshot(snap);
-        showToast("已核准並排入預約行程");
+        if (!document.getElementById("reminderModal").classList.contains("hidden")) {
+          openReminderModal("pending");
+        }
+        showToast("已核准並添加進月曆");
       } catch (err) {
         showToast(err.message || "核准失敗", true);
       } finally {
@@ -1419,6 +1424,7 @@
       }
     }
 
+    /* ==================== 簡化版新增／編輯預約彈窗 ==================== */
     function openBookingModal(prefillDate = null) {
       document.getElementById("bk_id").value = "";
       document.getElementById("bookingModalTitle").textContent = "新增預約";
@@ -1429,8 +1435,6 @@
       document.getElementById("bk_startTime").value = "10:00";
       document.getElementById("bk_duration").value = 60;
       document.getElementById("bk_service").value = "";
-      document.getElementById("bk_originalPrice").value = 0;
-      document.getElementById("bk_costAmount").value = 0;
       document.getElementById("bk_finalPrice").value = 0;
       document.getElementById("bk_payMethod").value = "現金";
       document.getElementById("bk_status").value = "尚未到來";
@@ -1454,8 +1458,6 @@
       document.getElementById("bk_duration").value = safeNumber(b.duration, 60);
       document.getElementById("bk_endTime").value = b.endTime || "";
       document.getElementById("bk_service").value = b.service || "";
-      document.getElementById("bk_originalPrice").value = safeNumber(b.originalPrice, 0);
-      document.getElementById("bk_costAmount").value = safeNumber(b.costAmount, 0);
       document.getElementById("bk_finalPrice").value = safeNumber(b.finalPrice, 0);
       document.getElementById("bk_payMethod").value = b.payMethod || "現金";
       document.getElementById("bk_status").value = b.status || "尚未到來";
@@ -1472,13 +1474,13 @@
 
     function populateBookingModalSelects(selectedCustId, selectedCouponId) {
       const custSel = document.getElementById("bk_customerId");
-      custSel.innerHTML = `<option value="">-- 非會員／散客 --</option>` + state.customers.map(c =>
-        `<option value="${esc(c.id)}" ${String(c.id) === String(selectedCustId) ? "selected" : ""}>${esc(c.name)}${c.lineDisplayName ? `（${esc(c.lineDisplayName)}）` : ""} - ${esc(c.contact)}</option>`
+      custSel.innerHTML = `<option value="">-- 散客／非會員 --</option>` + state.customers.map(c =>
+        `<option value="${esc(c.id)}" ${String(c.id) === String(selectedCustId) ? "selected" : ""}>${esc(c.name)}${c.lineDisplayName ? `（${esc(c.lineDisplayName)}）` : ""}</option>`
       ).join("");
 
       const catSel = document.getElementById("bk_catalogPreset");
-      catSel.innerHTML = `<option value="">-- 選擇價目帶入 --</option>` + state.catalog.filter(x => x.active).map(x =>
-        `<option value="${esc(x.id)}">[${esc(x.category)}] ${esc(x.name)} ($${safeNumber(x.price, 0)} / 成本$${safeNumber(x.cost, 0)})</option>`
+      catSel.innerHTML = `<option value="">-- 選擇項目自動帶入 --</option>` + state.catalog.filter(x => x.active).map(x =>
+        `<option value="${esc(x.id)}">[${esc(x.category)}] ${esc(x.name)} ($${safeNumber(x.price, 0)})</option>`
       ).join("");
 
       refreshBookingCouponSelect(selectedCustId, selectedCouponId);
@@ -1487,8 +1489,8 @@
     function refreshBookingCouponSelect(custId, selectedCouponId = "") {
       const coupSel = document.getElementById("bk_usedCouponId");
       const avail = state.coupons.filter(cp => cp.status === "可使用" && (!custId || String(cp.customerId) === String(custId)));
-      coupSel.innerHTML = `<option value="">不使用優惠券</option>` + avail.map(cp =>
-        `<option value="${esc(cp.couponId)}" ${String(cp.couponId) === String(selectedCouponId) ? "selected" : ""}>${esc(cp.customerName)} - ${esc(cp.title)} (-$${safeNumber(cp.discountAmount, 0)})</option>`
+      coupSel.innerHTML = `<option value="">不使用</option>` + avail.map(cp =>
+        `<option value="${esc(cp.couponId)}" ${String(cp.couponId) === String(selectedCouponId) ? "selected" : ""}>${esc(cp.title)} (-$${safeNumber(cp.discountAmount, 0)})</option>`
       ).join("");
     }
 
@@ -1507,8 +1509,6 @@
       if (!item) return;
       document.getElementById("bk_service").value = item.name;
       document.getElementById("bk_duration").value = safeNumber(item.duration, 60);
-      document.getElementById("bk_originalPrice").value = safeNumber(item.price, 0);
-      document.getElementById("bk_costAmount").value = safeNumber(item.cost, 0);
       document.getElementById("bk_finalPrice").value = safeNumber(item.price, 0);
       recalcBookingEndTime();
     }
@@ -1556,6 +1556,7 @@
       e.preventDefault();
       const serviceText = document.getElementById("bk_service").value.trim();
       const matchedCat = state.catalog.find(item => serviceText.indexOf(item.name) !== -1);
+      const finalPrice = safeNumber(document.getElementById("bk_finalPrice").value, 0);
 
       const payload = {
         id: document.getElementById("bk_id").value || "",
@@ -1568,9 +1569,8 @@
         duration: safeNumber(document.getElementById("bk_duration").value, 60),
         category: matchedCat ? String(matchedCat.category || "") : "",
         service: serviceText,
-        originalPrice: safeNumber(document.getElementById("bk_originalPrice").value, 0),
-        costAmount: safeNumber(document.getElementById("bk_costAmount").value, 0),
-        finalPrice: safeNumber(document.getElementById("bk_finalPrice").value, 0),
+        originalPrice: finalPrice,
+        finalPrice: finalPrice,
         payMethod: document.getElementById("bk_payMethod").value,
         status: document.getElementById("bk_status").value,
         note: document.getElementById("bk_note").value.trim(),
@@ -1605,7 +1605,7 @@
       }
     }
 
-    /* ==================== 分頁 2：會員資料 ==================== */
+    /* ==================== 分頁 2：會員資料（含諮詢表隱藏／顯示切換） ==================== */
     function renderCustomersTab() {
       const q = (document.getElementById("customerSearchInput").value || "").trim().toLowerCase();
       const filter = document.getElementById("customerFilterSelect").value;
@@ -1628,7 +1628,7 @@
       container.innerHTML = filtered.map(c => {
         const bal = safeNumber(c.balance, 0);
         const visits = safeNumber(c.visitCount, 0);
-        const hasConsult = state.consultations.some(cn => String(cn.customerId) === String(c.id));
+        const cons = state.consultations.find(cn => String(cn.customerId) === String(c.id));
         const lineNameText = c.lineDisplayName ? c.lineDisplayName : (c.lineUserId ? "已串連（待同步名稱）" : "未串連");
 
         return `
@@ -1640,8 +1640,8 @@
                   ${c.nickname ? `<span class="text-xs text-[#8b7365]">（${esc(c.nickname)}）</span>` : ""}
                   <div class="text-xs text-[#7c6557] mt-0.5">${esc(c.contact || "無電話")}${c.birthday ? ` · 🎂 ${esc(c.birthday)}` : ""}</div>
                 </div>
-                <span class="text-[11px] px-2 py-0.5 rounded-full font-bold ${hasConsult ? "bg-emerald-100 text-emerald-800" : "bg-amber-50 text-amber-800"}">
-                  ${hasConsult ? "📋 已簽諮詢表" : "未填諮詢表"}
+                <span class="text-[11px] px-2 py-0.5 rounded-full font-bold ${cons ? "bg-emerald-100 text-emerald-800" : "bg-amber-50 text-amber-800"}">
+                  ${cons ? (cons.hiddenFromCustomer ? "📋 已簽（已對客隱藏）" : "📋 已簽諮詢表") : "未填諮詢表"}
                 </span>
               </div>
 
@@ -1735,10 +1735,19 @@
       const logs = state.consultationLogs.filter(lg => String(lg.customerId) === String(c.id));
 
       const consultHtml = cons ? `
-        <div class="p-3.5 rounded-xl bg-[#fcf9f5] border border-[#e7d8c8] space-y-2 text-xs">
+        <div class="p-3.5 rounded-xl bg-[#fcf9f5] border border-[#e7d8c8] space-y-2.5 text-xs">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <span class="font-extrabold text-sm text-[#33241d]">📋 諮詢表與同意書（已修改 ${safeNumber(cons.editCount, 1)} 次）</span>
-            <span class="text-[11px] text-[#8b7365]">最後更新：${esc(cons.updatedAt || "-")}</span>
+            <div>
+              <span class="font-extrabold text-sm text-[#33241d]">📋 諮詢表與同意書（已修改 ${safeNumber(cons.editCount, 1)} 次）</span>
+              <div class="text-[11px] text-[#8b7365]">最後更新：${esc(cons.updatedAt || "-")}</div>
+            </div>
+            <button type="button" onclick="toggleConsultationVisibility('${escJs(c.id)}', ${!cons.hiddenFromCustomer})" class="px-3 py-1.5 rounded-xl font-bold ${
+              cons.hiddenFromCustomer
+                ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                : "bg-stone-700 text-white hover:bg-stone-800"
+            }">
+              ${cons.hiddenFromCustomer ? "👁️ 目前已對客戶隱藏（點此改為顯示）" : "🙈 點此對客戶隱藏內容"}
+            </button>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-[#4a382f]">
             <div><strong>除毛方式：</strong>${esc(cons.pastHairRemoval)}</div>
@@ -1828,6 +1837,25 @@
 
     function closeCustomerDetailModal() {
       document.getElementById("customerDetailModal").classList.add("hidden");
+    }
+
+    async function toggleConsultationVisibility(customerId, hidden) {
+      try {
+        setLoading(true, hidden ? "設定對客戶隱藏中..." : "設定對客戶顯示中...");
+        const snap = await apiPost({
+          action: "toggleConsultationVisibilityAdmin",
+          password: state.adminPassword,
+          customerId,
+          hidden
+        });
+        applyAdminSnapshot(snap);
+        openCustomerDetailModal(customerId);
+        showToast(hidden ? "已設定為不讓客戶看見諮詢表內容" : "已開放客戶看見諮詢表內容");
+      } catch (err) {
+        showToast(err.message || "設定失敗", true);
+      } finally {
+        setLoading(false);
+      }
     }
 
     async function resetCustomerLineId(customerId) {
@@ -2300,7 +2328,7 @@
       }
     }
 
-    /* ==================== 分頁 5：管理（大分類標籤列抓上來 + 新增服務 / 新增產品） ==================== */
+    /* ==================== 分頁 5：管理（乾淨卡片化結構） ==================== */
     function selectCatalogCategoryFilter(cat) {
       state.selectedCatalogCategory = cat;
       renderCatalogTab();
@@ -2315,7 +2343,6 @@
         .map(c => `<option value="${esc(c)}"></option>`)
         .join("");
 
-      // 統計每個實際存在的分類數量
       const grouped = {};
       state.catalog.forEach(item => {
         const cat = String(item.category || "其他").trim();
@@ -2336,12 +2363,11 @@
         state.selectedCatalogCategory = "ALL";
       }
 
-      // 渲染頂部大分類標籤列
       const barEl = document.getElementById("catalogCategoryBar");
       const pills = [
         `<button type="button" onclick="selectCatalogCategoryFilter('ALL')" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
           state.selectedCatalogCategory === "ALL" ? "cat-pill-active" : "cat-pill-inactive"
-        }">全部分類 (${state.catalog.length})</button>`
+        }">全部 (${state.catalog.length})</button>`
       ];
 
       activeCatKeys.forEach(cat => {
@@ -2374,14 +2400,14 @@
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#f0e5da] pb-2">
               <div class="flex items-center gap-2">
                 <span class="px-3 py-1 rounded-full ${isProductCat ? "bg-[#3a2a22]" : "bg-[#8c5e43]"} text-white text-xs font-extrabold">${esc(cat)}</span>
-                <span class="text-xs font-bold text-[#6a4f3f]">共 ${items.length} 個項目</span>
+                <span class="text-xs font-bold text-[#6a4f3f]">${items.length} 項</span>
               </div>
               <button type="button" onclick="openCatalogModal('', '${escJs(cat)}', '${isProductCat ? "產品" : "服務"}')" class="px-3 py-1 rounded-lg bg-[#f5eee7] text-[#6a4f3f] text-xs font-bold hover:bg-[#ebe0d5]">
                 + 新增至此分類
               </button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            <div class="divide-y divide-[#f3eae1]">
               ${items.map(item => {
                 const price = safeNumber(item.price, 0);
                 const cost = safeNumber(item.cost, 0);
@@ -2389,27 +2415,23 @@
                 const visibleBadge = item.customerVisible
                   ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">客戶可見</span>`
                   : `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-stone-200 text-stone-700">客戶隱藏</span>`;
-                const typeBadge = item.itemType === "產品"
-                  ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900">產品</span>`
-                  : ``;
 
                 return `
-                  <div class="p-3.5 rounded-xl bg-[#fcfaf8] border border-[#ece0d4] flex items-start justify-between gap-2 text-xs">
-                    <div class="space-y-1">
+                  <div class="py-2.5 flex items-center justify-between gap-3 text-xs">
+                    <div class="min-w-0 flex-1 space-y-0.5">
                       <div class="flex flex-wrap items-center gap-1.5">
                         <span class="font-bold text-sm text-[#33241d]">${esc(item.name)}</span>
-                        ${typeBadge}
                         ${visibleBadge}
                         ${!item.active ? `<span class="px-2 py-0.5 rounded-full text-[11px] bg-red-100 text-red-800 font-bold">已停用</span>` : ""}
                       </div>
-                      <div class="text-[#4a382f]">
+                      <div class="text-[#5c4638]">
                         售價 <strong class="text-[#8c5e43]">$${price.toLocaleString()}</strong>
                         · 成本 <strong class="text-[#9c5733]">$${cost.toLocaleString()}</strong>
-                        · 毛利 <strong class="text-emerald-700">$${margin.toLocaleString()}</strong>
+                        · 淨利 <strong class="text-emerald-700">$${margin.toLocaleString()}</strong>
+                        ${safeNumber(item.duration, 0) > 0 ? ` · ${safeNumber(item.duration, 0)}分` : ""}
                       </div>
-                      <div class="text-[11px] text-[#8b7365]">類型：${esc(item.itemType || "服務")}${safeNumber(item.duration, 0) > 0 ? ` · 時長：${safeNumber(item.duration, 0)} 分鐘` : ""}</div>
                     </div>
-                    <button type="button" onclick="openCatalogModal('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl bg-white border border-[#decbb9] text-[#5c4638] font-bold hover:bg-[#f5eee7] whitespace-nowrap">
+                    <button type="button" onclick="openCatalogModal('${escJs(item.id)}')" class="px-3 py-1.5 rounded-xl bg-[#faf6f2] border border-[#decbb9] text-[#5c4638] font-bold hover:bg-[#f0e6dc] shrink-0">
                       編輯
                     </button>
                   </div>
@@ -2587,10 +2609,11 @@
 
     /* ==================== 客戶端 ==================== */
     async function initCustomerPortal() {
+      document.getElementById("adminLoginPage").classList.add("hidden");
       document.getElementById("adminView").classList.add("hidden");
+      document.getElementById("adminHeaderActions").classList.add("hidden");
       document.getElementById("customerView").classList.remove("hidden");
-      document.getElementById("customerLoginBanner").classList.remove("hidden");
-      document.getElementById("modeSubtitle").textContent = "客戶服務專區";
+      document.getElementById("modeSubtitle").textContent = "VIP 會員專屬服務區";
 
       try {
         setLoading(true, "載入會員資料中...");
@@ -2609,6 +2632,19 @@
       } finally {
         setLoading(false);
       }
+    }
+
+    function getCustomerBookingDisplayBadge(status) {
+      if (status === "已完成") {
+        return { text: "已完成", cls: "bg-emerald-100 text-emerald-800" };
+      }
+      if (status === "尚未到來" || status === "已報到") {
+        return { text: "預約成功", cls: "bg-sky-100 text-sky-800" };
+      }
+      if (status === "待審核") {
+        return { text: "待審核中", cls: "bg-amber-100 text-amber-900" };
+      }
+      return { text: "已取消", cls: "bg-stone-200 text-stone-600" };
     }
 
     function renderCustomerPortal(data) {
@@ -2638,12 +2674,21 @@
 
         const bks = data.bookings || [];
         document.getElementById("custPortalBookings").innerHTML = `
-          <div class="text-xs font-bold text-[#4a382f] mb-1.5">我的預約（${bks.length}）</div>
+          <div class="text-xs font-bold text-[#4a382f] mb-2">我的預約及過去預約（${bks.length}）</div>
           ${bks.length === 0
-            ? `<div class="text-xs text-[#8b7365]">目前無預約紀錄</div>`
-            : `<div class="space-y-1">${bks.map(b =>
-              `<div class="text-xs text-[#5c4638] flex justify-between"><span>${esc(b.date)} ${esc(b.startTime)} · ${esc(b.service)}</span><span class="font-semibold">${esc(b.status)}</span></div>`
-            ).join("")}</div>`
+            ? `<div class="text-xs text-[#8b7365]">目前尚無預約紀錄</div>`
+            : `<div class="space-y-1.5 max-h-48 overflow-y-auto pr-1">${bks.map(b => {
+                const badge = getCustomerBookingDisplayBadge(b.status);
+                return `
+                  <div class="p-2.5 rounded-xl bg-[#fcfaf8] border border-[#efe5da] flex items-center justify-between gap-2 text-xs">
+                    <div class="min-w-0">
+                      <div class="font-bold text-[#33241d] tabular-nums">${esc(b.date)} ${esc(b.startTime)}</div>
+                      <div class="text-[#5c4638] truncate">${esc(b.service || "美學課程")}</div>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-[11px] font-extrabold shrink-0 ${badge.cls}">${badge.text}</span>
+                  </div>
+                `;
+              }).join("")}</div>`
           }
         `;
 
@@ -2658,102 +2703,51 @@
       }
 
       const cons = data.consultation;
-      const logs = data.consultationLogs || [];
-      const summaryBox = document.getElementById("customerConsultSummaryBox");
+      const isHidden = !!data.consultationHidden;
+      const hiddenNotice = document.getElementById("customerConsultHiddenNotice");
       const formBox = document.getElementById("customerConsultFormBox");
-      const cancelEditBtn = document.getElementById("cancelConsultEditBtn");
+      const statusBadge = document.getElementById("customerConsultStatusBadge");
+      const sigPreview = document.getElementById("existingSignaturePreview");
 
-      if (cons) {
-        document.getElementById("cf_name").value = cons.name || (c ? c.name : "");
-        document.getElementById("cf_nickname").value = cons.nickname || (c ? c.nickname : "");
-        document.getElementById("cf_phone").value = cons.phone || (c ? c.contact : "");
-        document.getElementById("cf_birthday").value = cons.birthday || (c ? c.birthday : "");
-        document.getElementById("cf_address").value = cons.address || (c ? c.address : "");
-        document.getElementById("cf_pastHairRemoval").value = cons.pastHairRemoval || "無";
-        document.getElementById("cf_firstTimeWaxing").value = cons.firstTimeWaxing || "否";
-        document.getElementById("cf_sensitiveTypes").value = cons.sensitiveTypes || "";
-        document.getElementById("cf_isPregnant").value = cons.isPregnant || "否";
-        document.getElementById("cf_isSickOrLowImmunity").value = cons.isSickOrLowImmunity || "否";
-        document.getElementById("cf_isMenstruating").value = cons.isMenstruating || "否";
-        document.getElementById("cf_isOilyOrAcneArea").value = cons.isOilyOrAcneArea || "否";
-
-        if (state.forceEditConsultation) {
-          summaryBox.classList.add("hidden");
-          formBox.classList.remove("hidden");
-          cancelEditBtn.classList.remove("hidden");
-        } else {
-          summaryBox.classList.remove("hidden");
-          formBox.classList.add("hidden");
-          cancelEditBtn.classList.add("hidden");
-
-          summaryBox.innerHTML = `
-            <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#efe5da]">
-              <div>
-                <h3 class="text-base font-bold text-[#33241d]">📋 您的諮詢表與同意書已完成填寫</h3>
-                <p class="text-xs text-[#8b7365]">最後更新：${esc(cons.updatedAt || "-")} · 已修改 ${safeNumber(cons.editCount, 1)} 次</p>
-              </div>
-              <button type="button" onclick="startConsultationEdit()" class="px-3.5 py-2 rounded-xl text-xs font-bold btn-primary">
-                ✏️ 修改諮詢表
-              </button>
-            </div>
-
-            <div class="grid grid-cols-2 gap-2.5 text-xs text-[#4a382f] bg-[#fcf9f5] p-3.5 rounded-xl border border-[#ece0d4]">
-              <div><strong>姓名：</strong>${esc(cons.name)}</div>
-              <div><strong>電話：</strong>${esc(cons.phone)}</div>
-              <div><strong>生日：</strong>${esc(cons.birthday)}</div>
-              <div><strong>過往除毛：</strong>${esc(cons.pastHairRemoval)}</div>
-              <div><strong>首次熱蠟：</strong>${esc(cons.firstTimeWaxing)}</div>
-              <div><strong>過敏狀況：</strong>${esc(cons.sensitiveTypes)}</div>
-              <div><strong>懷孕：</strong>${esc(cons.isPregnant)}</div>
-              <div><strong>免疫力/生病：</strong>${esc(cons.isSickOrLowImmunity)}</div>
-              <div><strong>生理期：</strong>${esc(cons.isMenstruating)}</div>
-              <div><strong>出油/痘痘：</strong>${esc(cons.isOilyOrAcneArea)}</div>
-            </div>
-
-            ${cons.signatureDataUrl ? `
-              <div>
-                <div class="text-xs font-bold text-[#4a382f] mb-1">已留存簽名</div>
-                <img src="${esc(cons.signatureDataUrl)}" alt="已簽名" class="max-h-28 rounded-xl border border-[#decbb9] bg-white p-1.5" />
-              </div>
-            ` : ""}
-
-            <div class="pt-2 border-t border-[#efe5da]">
-              <div class="text-xs font-bold text-[#4a382f] mb-1.5">修改歷程紀錄（${logs.length} 筆）</div>
-              ${logs.length === 0
-                ? `<div class="text-xs text-[#8b7365]">目前尚無修改紀錄</div>`
-                : `<div class="space-y-1.5 max-h-36 overflow-y-auto">${logs.map(lg => `
-                  <div class="p-2 rounded-lg bg-[#faf7f4] border border-[#ece0d4] text-xs">
-                    <span class="font-bold text-[#8c5e43]">[${esc(lg.actionType)}]</span>
-                    <span class="text-[#8b7365] ml-1">${esc(lg.editedAt)}</span>
-                    <div class="text-[#3a2a22] mt-0.5">${esc(lg.summary)}</div>
-                  </div>
-                `).join("")}</div>`
-              }
-            </div>
-          `;
-        }
+      if (cons && isHidden) {
+        hiddenNotice.classList.remove("hidden");
+        formBox.classList.add("hidden");
       } else {
-        summaryBox.classList.add("hidden");
+        hiddenNotice.classList.add("hidden");
         formBox.classList.remove("hidden");
-        cancelEditBtn.classList.add("hidden");
+
+        if (cons) {
+          statusBadge.classList.remove("hidden");
+          statusBadge.textContent = `已填寫（更新：${cons.updatedAt || "-"}）`;
+
+          document.getElementById("cf_name").value = cons.name || (c ? c.name : "");
+          document.getElementById("cf_nickname").value = cons.nickname || (c ? c.nickname : "");
+          document.getElementById("cf_phone").value = cons.phone || (c ? c.contact : "");
+          document.getElementById("cf_birthday").value = cons.birthday || (c ? c.birthday : "");
+          document.getElementById("cf_address").value = cons.address || (c ? c.address : "");
+          document.getElementById("cf_pastHairRemoval").value = cons.pastHairRemoval || "";
+          document.getElementById("cf_firstTimeWaxing").value = cons.firstTimeWaxing || "";
+          document.getElementById("cf_sensitiveTypes").value = cons.sensitiveTypes || "";
+          document.getElementById("cf_isPregnant").value = cons.isPregnant || "";
+          document.getElementById("cf_isSickOrLowImmunity").value = cons.isSickOrLowImmunity || "";
+          document.getElementById("cf_isMenstruating").value = cons.isMenstruating || "";
+          document.getElementById("cf_isOilyOrAcneArea").value = cons.isOilyOrAcneArea || "";
+
+          if (cons.signatureDataUrl) {
+            sigPreview.classList.remove("hidden");
+            document.getElementById("existingSignatureImg").src = cons.signatureDataUrl;
+          } else {
+            sigPreview.classList.add("hidden");
+          }
+        } else {
+          statusBadge.classList.add("hidden");
+          sigPreview.classList.add("hidden");
+        }
       }
 
       renderCustomerCatalogChoices(data.catalog || []);
+      validateCustomerSlotAvailability();
       switchCustomerTab("consult");
-    }
-
-    function startConsultationEdit() {
-      state.forceEditConsultation = true;
-      document.getElementById("customerConsultSummaryBox").classList.add("hidden");
-      document.getElementById("customerConsultFormBox").classList.remove("hidden");
-      document.getElementById("cancelConsultEditBtn").classList.remove("hidden");
-    }
-
-    function cancelConsultationEdit() {
-      state.forceEditConsultation = false;
-      if (state.portalData) {
-        renderCustomerPortal(state.portalData);
-      }
     }
 
     function switchCustomerTab(tab) {
@@ -2770,43 +2764,149 @@
         box.innerHTML = `<div class="text-xs text-[#8b7365]">目前無可選服務項目</div>`;
         return;
       }
-      box.innerHTML = catalog.map(item => `
-        <label class="flex items-center justify-between gap-2 p-2 rounded-lg bg-white border border-[#efe5da] text-xs cursor-pointer">
-          <div class="flex items-center gap-2">
-            <input type="checkbox" class="cb-srv-check" data-name="${esc(item.name)}" data-price="${safeNumber(item.price, 0)}" data-duration="${safeNumber(item.duration, 0)}" onchange="recalcCustomerBookingEstimate()" />
-            <span class="font-bold text-[#33241d]">[${esc(item.category)}] ${esc(item.name)}</span>
+
+      const grouped = {};
+      catalog.forEach(item => {
+        const cat = String(item.category || "其他").trim();
+        if (!grouped[cat]) grouped[cat] = [];
+        grouped[cat].push(item);
+      });
+
+      box.innerHTML = Object.keys(grouped).map(cat => {
+        const items = grouped[cat];
+        return `
+          <div class="p-3 rounded-xl bg-[#fcfaf8] border border-[#efe5da] space-y-2">
+            <div class="text-xs font-extrabold text-[#8c5e43]">${esc(cat)}</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              ${items.map(item => {
+                const isSelected = state.selectedCustomerServiceIds.indexOf(String(item.id)) !== -1;
+                const dur = safeNumber(item.duration, 0);
+                return `
+                  <button type="button" onclick="toggleCustomerServiceChip('${escJs(item.id)}')" class="p-2.5 rounded-xl border text-left transition flex items-center justify-between gap-2 ${
+                    isSelected ? "srv-chip-selected shadow-sm" : "srv-chip-unselected hover:bg-[#f7f1eb]"
+                  }">
+                    <div class="min-w-0">
+                      <div class="text-xs font-bold truncate">${isSelected ? "✓ " : ""}${esc(item.name)}</div>
+                      ${dur > 0 ? `<div class="text-[10px] ${isSelected ? "text-white/85" : "text-[#8b7365]"}">${dur} 分鐘</div>` : ""}
+                    </div>
+                    <div class="text-xs font-extrabold shrink-0">$${safeNumber(item.price, 0).toLocaleString()}</div>
+                  </button>
+                `;
+              }).join("")}
+            </div>
           </div>
-          <span class="text-[#8c5e43] font-semibold">$${safeNumber(item.price, 0).toLocaleString()}${safeNumber(item.duration, 0) > 0 ? ` · ${safeNumber(item.duration, 0)}分` : ""}</span>
-        </label>
-      `).join("");
+        `;
+      }).join("");
+
       recalcCustomerBookingEstimate();
     }
 
+    function toggleCustomerServiceChip(itemId) {
+      const idStr = String(itemId);
+      const idx = state.selectedCustomerServiceIds.indexOf(idStr);
+      if (idx === -1) {
+        state.selectedCustomerServiceIds.push(idStr);
+      } else {
+        state.selectedCustomerServiceIds.splice(idx, 1);
+      }
+      renderCustomerCatalogChoices((state.portalData && state.portalData.catalog) || []);
+      validateCustomerSlotAvailability();
+    }
+
     function recalcCustomerBookingEstimate() {
+      const catalog = (state.portalData && state.portalData.catalog) || [];
+      const selectedItems = catalog.filter(x => state.selectedCustomerServiceIds.indexOf(String(x.id)) !== -1);
       let totalPrice = 0;
       let totalDuration = 0;
-      document.querySelectorAll(".cb-srv-check:checked").forEach(chk => {
-        totalPrice += safeNumber(chk.getAttribute("data-price"), 0);
-        totalDuration += safeNumber(chk.getAttribute("data-duration"), 0);
+      selectedItems.forEach(item => {
+        totalPrice += safeNumber(item.price, 0);
+        totalDuration += safeNumber(item.duration, 0);
       });
+
+      document.getElementById("cb_selectedCountBadge").textContent = `已選 ${selectedItems.length} 項`;
       document.getElementById("cb_totalDurationText").textContent = totalDuration > 0 ? `${totalDuration + 10} 分鐘` : "0 分鐘";
       document.getElementById("cb_totalPriceText").textContent = `$${totalPrice.toLocaleString()}`;
-      return { totalPrice, totalDuration };
+      return { selectedItems, totalPrice, totalDuration };
+    }
+
+    function validateCustomerSlotAvailability() {
+      const banner = document.getElementById("cb_slotConflictBanner");
+      const submitBtn = document.getElementById("cb_submitBtn");
+      if (!banner || !submitBtn) return true;
+
+      const dateStr = document.getElementById("cb_date").value;
+      const startStr = document.getElementById("cb_startTime").value;
+      if (!dateStr || !startStr || !state.portalData) {
+        banner.classList.add("hidden");
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+        return true;
+      }
+
+      const { totalDuration } = recalcCustomerBookingEstimate();
+      const dur = totalDuration > 0 ? totalDuration : 60;
+      const startMin = timeToMinutes(startStr);
+      const endMin = Math.min(22 * 60, startMin + dur + 10);
+
+      const blockedList = state.portalData.blockedSlots || [];
+      for (let i = 0; i < blockedList.length; i++) {
+        const blk = blockedList[i];
+        if (blk.date !== dateStr) continue;
+        if (blk.fullDay) {
+          banner.classList.remove("hidden");
+          banner.textContent = `🚫 ${dateStr} 整天不開放預約（${blk.reason || "公休"}），請改選其他日期。`;
+          submitBtn.disabled = true;
+          submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+          return false;
+        }
+        const bStart = timeToMinutes(blk.startTime);
+        const bEnd = timeToMinutes(blk.endTime);
+        if (startMin < bEnd && endMin > bStart) {
+          banner.classList.remove("hidden");
+          banner.textContent = `🚫 ${dateStr} ${blk.startTime}-${blk.endTime} 不開放預約（${blk.reason || "時段保留"}），請改選其他時間。`;
+          submitBtn.disabled = true;
+          submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+          return false;
+        }
+      }
+
+      const occupiedList = state.portalData.occupiedSlots || [];
+      for (let i = 0; i < occupiedList.length; i++) {
+        const occ = occupiedList[i];
+        if (occ.date !== dateStr) continue;
+        const oStart = timeToMinutes(occ.startTime);
+        const oEnd = timeToMinutes(occ.endTime);
+        if (startMin < oEnd && endMin > oStart) {
+          banner.classList.remove("hidden");
+          banner.textContent = `⚠️ ${dateStr} ${occ.startTime}-${occ.endTime} 該時段已被預約，請選擇其他時間。`;
+          submitBtn.disabled = true;
+          submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+          return false;
+        }
+      }
+
+      banner.classList.add("hidden");
+      submitBtn.disabled = false;
+      submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+      return true;
     }
 
     async function handleCustomerBookingSubmit(e) {
       e.preventDefault();
       if (!state.portalCid) {
-        showToast("請先完成會員資料或由專屬連結進入", true);
+        showToast("請先完成諮詢表資料或由專屬連結進入", true);
         return;
       }
-      const selected = Array.from(document.querySelectorAll(".cb-srv-check:checked"));
-      if (selected.length === 0) {
-        showToast("請至少勾選一項服務", true);
+      if (!validateCustomerSlotAvailability()) {
+        showToast("所選日期或時段無法預約，請更換時間", true);
         return;
       }
-      const servicesText = selected.map(el => el.getAttribute("data-name")).join("＋");
-      const { totalPrice, totalDuration } = recalcCustomerBookingEstimate();
+      const { selectedItems, totalPrice, totalDuration } = recalcCustomerBookingEstimate();
+      if (selectedItems.length === 0) {
+        showToast("請至少點選一項預約項目", true);
+        return;
+      }
+      const servicesText = selectedItems.map(el => el.name).join("＋");
 
       try {
         setLoading(true, "送出預約申請中...");
@@ -2822,8 +2922,11 @@
             note: document.getElementById("cb_note").value.trim()
           }
         });
+        state.selectedCustomerServiceIds = [];
+        document.getElementById("cb_note").value = "";
         await initCustomerPortal();
-        showToast("已送出預約申請（待審核）");
+        switchCustomerTab("book");
+        showToast("已送出預約申請，待美學師審核後將顯示預約成功！");
       } catch (err) {
         showToast(err.message || "預約申請失敗", true);
       } finally {
@@ -2831,7 +2934,7 @@
       }
     }
 
-    /* ==================== 簽名板與諮詢表送出 ==================== */
+    /* ==================== 簽名板與諮詢表防呆送出 ==================== */
     let sigHasDrawn = false;
     function initSignaturePad() {
       const canvas = document.getElementById("signatureCanvas");
@@ -2887,44 +2990,62 @@
 
     async function handleConsultationSubmit(e) {
       e.preventDefault();
-      const hasExistingSig = !!(state.portalData && state.portalData.consultation && state.portalData.consultation.signatureDataUrl);
-      if (!sigHasDrawn && !hasExistingSig) {
-        showToast("請先在簽名框完成簽名", true);
+
+      const name = document.getElementById("cf_name").value.trim();
+      const nickname = document.getElementById("cf_nickname").value.trim();
+      const birthday = document.getElementById("cf_birthday").value;
+      const pastHairRemoval = document.getElementById("cf_pastHairRemoval").value;
+      const firstTimeWaxing = document.getElementById("cf_firstTimeWaxing").value;
+      const sensitiveTypes = document.getElementById("cf_sensitiveTypes").value.trim();
+      const isPregnant = document.getElementById("cf_isPregnant").value;
+      const isSickOrLowImmunity = document.getElementById("cf_isSickOrLowImmunity").value;
+      const isMenstruating = document.getElementById("cf_isMenstruating").value;
+      const isOilyOrAcneArea = document.getElementById("cf_isOilyOrAcneArea").value;
+
+      if (!name || !nickname || !birthday || !pastHairRemoval || !firstTimeWaxing ||
+          !sensitiveTypes || !isPregnant || !isSickOrLowImmunity || !isMenstruating || !isOilyOrAcneArea) {
+        showToast("請填寫所有必填欄位（僅聯絡電話與居住地址為選填）", true);
         return;
       }
+
+      const hasExistingSig = !!(state.portalData && state.portalData.consultation && state.portalData.consultation.signatureDataUrl);
+      if (!sigHasDrawn && !hasExistingSig) {
+        showToast("請先在簽名框完成本人簽名", true);
+        return;
+      }
+
       const canvas = document.getElementById("signatureCanvas");
       const signatureDataUrl = sigHasDrawn
         ? canvas.toDataURL("image/png")
         : state.portalData.consultation.signatureDataUrl;
 
       try {
-        setLoading(true, "送出諮詢表與修改紀錄中...");
+        setLoading(true, "送出諮詢表與簽名中...");
         const res = await apiPost({
           action: "submitCustomerConsultation",
           payload: {
             cid: state.portalCid,
             lineUserId: state.portalLineUserId,
             lineDisplayName: state.portalLineDisplayName,
-            name: document.getElementById("cf_name").value.trim(),
-            nickname: document.getElementById("cf_nickname").value.trim(),
+            name,
+            nickname,
             phone: document.getElementById("cf_phone").value.trim(),
-            birthday: document.getElementById("cf_birthday").value,
+            birthday,
             address: document.getElementById("cf_address").value.trim(),
-            pastHairRemoval: document.getElementById("cf_pastHairRemoval").value,
-            firstTimeWaxing: document.getElementById("cf_firstTimeWaxing").value,
-            sensitiveTypes: document.getElementById("cf_sensitiveTypes").value.trim() || "無",
-            isPregnant: document.getElementById("cf_isPregnant").value,
-            isSickOrLowImmunity: document.getElementById("cf_isSickOrLowImmunity").value,
-            isMenstruating: document.getElementById("cf_isMenstruating").value,
-            isOilyOrAcneArea: document.getElementById("cf_isOilyOrAcneArea").value,
+            pastHairRemoval,
+            firstTimeWaxing,
+            sensitiveTypes,
+            isPregnant,
+            isSickOrLowImmunity,
+            isMenstruating,
+            isOilyOrAcneArea,
             signatureDataUrl
           }
         });
         if (res && res.cid) state.portalCid = res.cid;
-        state.forceEditConsultation = false;
         clearSignature();
         await initCustomerPortal();
-        showToast("已儲存諮詢表與歷程紀錄");
+        showToast("已完成諮詢表與簽名送出！");
       } catch (err) {
         showToast(err.message || "送出失敗", true);
       } finally {
