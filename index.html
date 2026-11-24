@@ -2653,6 +2653,26 @@
       const privateNote = String(c.privateNote || "").trim();
       const lineClean = sanitizeLineDisplayName(c.lineDisplayName);
 
+      // 彈窗開啟後按需非同步載入單一顧客簽名圖，不阻塞主列表讀取
+      if (cons && cons.hasSignature && !cons.signatureDataUrl) {
+        apiPost({
+          action: "getSignatureDataAdmin",
+          password: state.adminPassword,
+          customerId: c.id
+        }).then(res => {
+          if (res && res.signatureDataUrl) {
+            cons.signatureDataUrl = res.signatureDataUrl;
+            const imgEl = document.getElementById("custDetailSigImg_" + c.id);
+            const loadEl = document.getElementById("custDetailSigLoading_" + c.id);
+            if (imgEl) {
+              imgEl.src = res.signatureDataUrl;
+              imgEl.classList.remove("hidden");
+            }
+            if (loadEl) loadEl.remove();
+          }
+        }).catch(() => {});
+      }
+
       const visitHistoryHtml = `
         <div class="p-3.5 rounded-xl bg-[#fcf9f5] border border-[#e7d8c8] space-y-2 text-xs mb-4">
           <div class="flex items-center justify-between">
@@ -2699,10 +2719,11 @@
             <div><strong>生理期：</strong>${esc(cons.isMenstruating)}</div>
             <div><strong>出油/痘痘：</strong>${esc(cons.isOilyOrAcneArea)}</div>
           </div>
-          ${cons.signatureDataUrl ? `
+          ${(cons.signatureDataUrl || cons.hasSignature) ? `
             <div class="pt-2">
               <div class="text-[11px] font-bold text-[#6a4f3f] mb-1">客戶簽名檔：</div>
-              <img src="${esc(cons.signatureDataUrl)}" alt="客戶簽名" class="max-h-28 rounded-lg border border-[#decbb9] bg-white p-1" />
+              ${cons.signatureDataUrl ? "" : `<div id="custDetailSigLoading_${esc(c.id)}" class="text-[11px] text-[#8b7365] py-1">載入簽名檔中...</div>`}
+              <img id="custDetailSigImg_${esc(c.id)}" src="${esc(cons.signatureDataUrl || "")}" alt="客戶簽名" class="max-h-28 rounded-lg border border-[#decbb9] bg-white p-1 ${cons.signatureDataUrl ? "" : "hidden"}" />
             </div>
           ` : ""}
           <div class="pt-2 border-t border-[#efe4d8]">
@@ -4385,16 +4406,16 @@
 
     // 簽名圖檔若太大（試算表單一儲存格上限 50,000 字元）就自動縮小
     function exportSignatureDataUrl(canvas) {
-      let url = canvas.toDataURL("image/png");
-      if (url.length <= 45000) return url;
       const c2 = document.createElement("canvas");
-      c2.width = Math.round(canvas.width / 2);
-      c2.height = Math.round(canvas.height / 2);
+      c2.width = Math.min(420, canvas.width);
+      c2.height = Math.round(canvas.height * (c2.width / canvas.width));
       const x2 = c2.getContext("2d");
       x2.fillStyle = "#ffffff";
       x2.fillRect(0, 0, c2.width, c2.height);
       x2.drawImage(canvas, 0, 0, c2.width, c2.height);
-      return c2.toDataURL("image/jpeg", 0.6);
+      let url = c2.toDataURL("image/jpeg", 0.72);
+      if (url.length <= 45000) return url;
+      return c2.toDataURL("image/jpeg", 0.5);
     }
 
     function clearSignature() {
