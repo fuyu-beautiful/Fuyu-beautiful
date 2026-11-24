@@ -918,11 +918,11 @@
         <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">預約日期 *</label>
-            <input type="date" id="bk_date" required onchange="recalcAdminBookingFromSelectedItems()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
+            <input type="date" id="bk_date" required onchange="recalcAdminBookingFromSelectedItems(false)" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
           </div>
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">開始時間 *</label>
-            <input type="time" id="bk_startTime" required onchange="recalcAdminBookingFromSelectedItems()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
+            <input type="time" id="bk_startTime" required onchange="recalcAdminBookingFromSelectedItems(false)" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
           </div>
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">結束時間</label>
@@ -1388,12 +1388,33 @@
     }
 
     async function apiPost(payload) {
-      const res = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "text/plain;charset=utf-8" },
-        body: JSON.stringify(payload)
-      });
-      const data = await res.json();
+      const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(() => ctrl.abort(), 60000) : null;
+      let res;
+      try {
+        res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload),
+          signal: ctrl ? ctrl.signal : undefined
+        });
+      } catch (netErr) {
+        const e2 = new Error(netErr && netErr.name === "AbortError"
+          ? "連線逾時，請先重新整理確認是否已完成，再決定是否重送"
+          : "網路連線失敗，請檢查網路後再試");
+        e2.code = "NETWORK_ERROR";
+        throw e2;
+      } finally {
+        if (timer) clearTimeout(timer);
+      }
+      let data;
+      try {
+        data = await res.json();
+      } catch (_) {
+        const e3 = new Error("伺服器回應異常，請稍後再試");
+        e3.code = "BAD_RESPONSE";
+        throw e3;
+      }
       if (data && (data.ok === false || data.error)) {
         const err = new Error(data.error || "操作失敗");
         err.code = data.code || "API_ERROR";
@@ -1417,6 +1438,7 @@
       document.getElementById("exp_date").value = formatTodayStr();
       document.getElementById("blk_date").value = formatTodayStr();
       document.getElementById("cb_date").value = formatTodayStr();
+      document.getElementById("cb_date").min = formatTodayStr();
       document.getElementById("financeMonthPicker").value = formatTodayStr().slice(0, 7);
       initSignaturePad();
       renderConsultationQuestionnaire();
@@ -1493,7 +1515,7 @@
       if (!state.adminPassword) return;
       try {
         setLoading(true, "即時同步最新客戶與預約資料中...");
-        const snap = await apiPost({ action: "verifyAdminAndLoadAll", password: state.adminPassword });
+        const snap = await apiPost({ action: "verifyAdminAndLoadAll", password: state.adminPassword, forceRefresh: true });
         applyAdminSnapshot(snap);
         showToast("已刷新為最新資料");
       } catch (err) {
@@ -1963,32 +1985,9 @@
       }
     }
 
-    async function syncCustomerVisitRecordAfterCompletion(customerId, customerName, serviceSummary, dateStr, finalPrice) {
-      if (!customerId) return;
-      const cust = state.customers.find(c => String(c.id) === String(customerId));
-      if (!cust) return;
-      const updatedVisits = getCustomerEffectiveVisitCount(cust);
-      const visitStamp = `${dateStr} 完成「${serviceSummary}」($${safeNumber(finalPrice, 0).toLocaleString()})`;
-      try {
-        const snap = await apiPost({
-          action: "saveCustomerAdmin",
-          password: state.adminPassword,
-          data: {
-            id: cust.id,
-            name: cust.name,
-            lineDisplayName: sanitizeLineDisplayName(cust.lineDisplayName),
-            nickname: cust.nickname || "",
-            contact: cust.contact || "",
-            birthday: cust.birthday || "",
-            address: cust.address || "",
-            privateNote: cust.privateNote || "",
-            visitCount: updatedVisits,
-            lastVisitDate: dateStr,
-            lastVisitSummary: visitStamp
-          }
-        });
-        applyAdminSnapshot(snap);
-      } catch (_) {}
+    // 後端 settleBookingAdmin / saveBookingAdmin 已自動同步會員來客數，這裡不需要再多打一次 API
+    async function syncCustomerVisitRecordAfterCompletion() {
+      return;
     }
 
     /* ==================== 完成結算彈窗 ==================== */
@@ -2340,7 +2339,7 @@
       const start = document.getElementById("bk_startTime").value || "11:00";
       const dur = safeNumber(document.getElementById("bk_duration").value, 60);
       const [h, m] = start.split(":").map(Number);
-      const total = Math.min(22 * 60, (h || 11) * 60 + (m || 0) + dur + 10);
+      const total = Math.min(24 * 60 - 1, (h || 11) * 60 + (m || 0) + dur + 10);
       document.getElementById("bk_endTime").value = `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
       checkBookingBlockedConflict();
     }
@@ -4020,7 +4019,7 @@
           }
         });
         state.portalCid = res.cid || state.portalCid;
-        state.portalForceRebind = true;
+        state.portalForceRebind = false;
         await reloadCustomerPortalData();
         document.getElementById("selfRebindForm").classList.add("hidden");
         showToast("已成功重新串連您的會員資料！");
@@ -4068,6 +4067,10 @@
         forceRebind: state.portalForceRebind
       });
       state.portalData = data;
+      // 已成功綁定目前的 LINE 帳號後，就不必再停留在「重新綁定」狀態
+      if (state.portalForceRebind && data.customer && state.portalLineUserId && data.customer.lineUserId === state.portalLineUserId) {
+        state.portalForceRebind = false;
+      }
       renderCustomerPortal(data);
     }
 
@@ -4365,18 +4368,33 @@
 
       canvas.addEventListener("pointerdown", (e) => {
         isDrawingSig = true;
-        hasSigned = true;
+        try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
         const p = getPos(e);
         sigCtx.beginPath();
         sigCtx.moveTo(p.x, p.y);
       });
       canvas.addEventListener("pointermove", (e) => {
         if (!isDrawingSig) return;
+        hasSigned = true; // 真的有劃線才算簽名（只點一下不算）
         const p = getPos(e);
         sigCtx.lineTo(p.x, p.y);
         sigCtx.stroke();
       });
       window.addEventListener("pointerup", () => { isDrawingSig = false; });
+    }
+
+    // 簽名圖檔若太大（試算表單一儲存格上限 50,000 字元）就自動縮小
+    function exportSignatureDataUrl(canvas) {
+      let url = canvas.toDataURL("image/png");
+      if (url.length <= 45000) return url;
+      const c2 = document.createElement("canvas");
+      c2.width = Math.round(canvas.width / 2);
+      c2.height = Math.round(canvas.height / 2);
+      const x2 = c2.getContext("2d");
+      x2.fillStyle = "#ffffff";
+      x2.fillRect(0, 0, c2.width, c2.height);
+      x2.drawImage(canvas, 0, 0, c2.width, c2.height);
+      return c2.toDataURL("image/jpeg", 0.6);
     }
 
     function clearSignature() {
@@ -4401,7 +4419,7 @@
       if (!hasSigned && !existingImgSrc) {
         return showToast("請於簽名框內完成親筆簽名", true);
       }
-      const signatureDataUrl = hasSigned ? canvas.toDataURL("image/png") : existingImgSrc;
+      const signatureDataUrl = hasSigned ? exportSignatureDataUrl(canvas) : existingImgSrc;
 
       try {
         setLoading(true, "送出問卷與同意書中...");
@@ -4421,10 +4439,11 @@
           isSickOrLowImmunity: state.qAnswers.isSickOrLowImmunity,
           isMenstruating: state.qAnswers.isMenstruating,
           isOilyOrAcneArea: state.qAnswers.isOilyOrAcneArea,
-          signatureDataUrl
+          signatureDataUrl,
+          signatureUpdated: hasSigned
         };
 
-        const res = await apiPost({ action: "submitConsultationAndRegister", payload });
+        const res = await apiPost({ action: "submitCustomerConsultation", payload });
         state.portalCid = res.cid || state.portalCid;
         state.isEditingConsultation = false;
         hasSigned = false;
@@ -4575,7 +4594,25 @@
       const dur = overrideDur !== null ? overrideDur : (selected.reduce((s, x) => s + safeNumber(x.duration, 0), 0) || 60);
 
       const startMin = timeToMinutes(startStr);
-      const endMin = startMin + dur;
+      const endMin = startMin + dur + 10; // 與後端相同：服務時間 + 10 分鐘整理緩衝
+
+      const showSlotError = (msg) => {
+        banner.textContent = `⚠️ 此日期／時段無法預約：${msg}，請更換其他日期或時間。`;
+        banner.classList.remove("hidden");
+        submitBtn.disabled = true;
+        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+        return false;
+      };
+      const todayStr = formatTodayStr();
+      if (dateStr < todayStr) return showSlotError("不可預約過去的日期");
+      if (dateStr === todayStr) {
+        const nowD = new Date();
+        if (startMin <= nowD.getHours() * 60 + nowD.getMinutes()) return showSlotError("該時段已過");
+      }
+      if (endMin > 23 * 60) return showSlotError("預約結束時間不可超過 23:00");
+      const busyList = (state.portalData && (state.portalData.busyBookings || state.portalData.occupiedSlots)) || [];
+      const busyHit = busyList.find(b => b.date === dateStr && startMin < timeToMinutes(b.endTime) && endMin > timeToMinutes(b.startTime));
+      if (busyHit) return showSlotError(`${dateStr} ${busyHit.startTime}-${busyHit.endTime} 已有其他預約`);
 
       const matched = blocks.filter(blk => {
         if (blk.date !== dateStr) return false;
@@ -4627,6 +4664,9 @@
           date: document.getElementById("cb_date").value,
           startTime: document.getElementById("cb_startTime").value,
           category: selected[0] ? String(selected[0].category || "") : "",
+          serviceIds: selected.map(x => String(x.id)),
+          primaryCategory: selected[0] ? String(selected[0].category || "") : "",
+          servicesText: selected.map(x => x.name).join(" + "),
           serviceNames: selected.map(x => x.name).join(" + "),
           totalDuration: selected.reduce((s, x) => s + safeNumber(x.duration, 0), 0) || 60,
           totalPrice: selected.reduce((s, x) => s + safeNumber(x.price, 0), 0),
@@ -4649,14 +4689,16 @@
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
     }
 
     function escJs(str) {
       return String(str || "")
         .replace(/\\/g, "\\\\")
         .replace(/'/g, "\\'")
-        .replace(/"/g, "&quot;");
+        .replace(/"/g, "&quot;")
+        .replace(/\r?\n/g, " ");
     }
   </script>
 </body>
