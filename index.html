@@ -638,6 +638,7 @@
             <option value="highRisk">⚠️ 諮詢表紅旗警示</option>
             <option value="hasPackage">🎫 持有有效套票</option>
             <option value="hasNote">有店家內部備註</option>
+            <option value="hasTags">有內部標籤</option>
             <option value="hasBalance">有儲值金餘額</option>
             <option value="lineBound">已綁定 LINE</option>
             <option value="lineUnbound">未綁定 LINE</option>
@@ -842,6 +843,9 @@
           <button id="subtab-settings-btn" onclick="switchManagementSubTab('settings')" class="px-4 py-2 rounded-xl text-xs font-bold subtab-inactive">
             ⚙️ 前台設定
           </button>
+          <button id="subtab-reports-btn" onclick="switchManagementSubTab('reports')" class="px-4 py-2 rounded-xl text-xs font-bold subtab-inactive">
+            📊 報表與備份
+          </button>
         </div>
 
         <div id="managementActionButtons" class="flex flex-wrap items-center gap-2">
@@ -922,7 +926,40 @@
         </div>
       </div>
 
-      <div id="subtab-settings" class="space-y-4 hidden">
+      
+      <div id="subtab-reports" class="space-y-4 hidden">
+        <div class="glass-card rounded-3xl p-5 space-y-4">
+          <div class="pb-3 border-b border-[#efe5da]">
+            <h3 class="text-base font-extrabold text-[#33241d]">📊 簡易報表匯出與資料備份</h3>
+            <p class="text-[11px] text-[#8b7365] mt-0.5">匯出 CSV 可用 Excel 開啟；完整備份為 JSON（含儲值金、套票、預約、異動）。</p>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-3 text-xs">
+            <button type="button" onclick="exportAdminCsv('customers')" class="p-3.5 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] text-left hover:border-[#c9a888]">
+              <div class="font-extrabold text-[#33241d]">會員與儲值金 CSV</div>
+              <div class="text-[11px] text-[#8b7365] mt-0.5">姓名、電話、餘額、標籤、來客數</div>
+            </button>
+            <button type="button" onclick="exportAdminCsv('packages')" class="p-3.5 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] text-left hover:border-[#c9a888]">
+              <div class="font-extrabold text-[#33241d]">客戶套票 CSV</div>
+              <div class="text-[11px] text-[#8b7365] mt-0.5">剩餘堂數、總堂數、到期日、售價</div>
+            </button>
+            <button type="button" onclick="exportAdminCsv('transactions')" class="p-3.5 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] text-left hover:border-[#c9a888]">
+              <div class="font-extrabold text-[#33241d]">儲值／異動 CSV</div>
+              <div class="text-[11px] text-[#8b7365] mt-0.5">入帳、扣抵、套票相關異動</div>
+            </button>
+            <button type="button" onclick="exportAdminCsv('bookings')" class="p-3.5 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] text-left hover:border-[#c9a888]">
+              <div class="font-extrabold text-[#33241d]">預約紀錄 CSV</div>
+              <div class="text-[11px] text-[#8b7365] mt-0.5">日期、項目、金額、付款、狀態</div>
+            </button>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 space-y-2">
+            <div class="font-extrabold text-indigo-950 text-sm">完整資料備份（JSON）</div>
+            <p class="text-[11px] text-indigo-900">一次下載會員、套票、儲值異動、預約、優惠券、價目等重要資料，建議每月備份一次。</p>
+            <button type="button" onclick="exportAdminFullBackup()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-extrabold shadow">下載完整備份 JSON</button>
+          </div>
+        </div>
+      </div>
+
+<div id="subtab-settings" class="space-y-4 hidden">
         <div class="glass-card rounded-3xl p-5 space-y-5">
           <div class="flex items-start justify-between gap-3 pb-3 border-b border-[#efe5da]">
             <div>
@@ -1113,14 +1150,16 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-2">
-          <div class="col-span-2">
+        <div class="space-y-2">
+          <div>
             <label class="block font-bold text-[#4a382f] mb-1">預約項目摘要 *</label>
-            <input type="text" id="bk_service" required placeholder="從上方挑選自動帶入，或直接輸入" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+            <div id="bk_serviceChips" class="min-h-[40px] p-2.5 rounded-xl border border-[#decbb9] bg-[#fcfaf8] flex flex-wrap gap-1.5 content-start"></div>
+            <input type="text" id="bk_service" required placeholder="可手動補充或微調項目文字" class="mt-1.5 w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white text-xs" oninput="syncBookingServiceChipsFromInput()" />
+            <p class="text-[10px] text-[#8b7365] mt-1">上方色塊為已選項目；多項目分開顯示。</p>
           </div>
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">總金額 ($)</label>
-            <input type="number" id="bk_finalPrice" value="0" min="0" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold text-[#8c5e43]" />
+            <input type="number" id="bk_finalPrice" value="0" min="0" class="w-full max-w-[160px] px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold text-[#8c5e43]" />
           </div>
         </div>
 
@@ -1216,6 +1255,16 @@
         <div>
           <label class="block font-bold text-[#4a382f] mb-1">地址</label>
           <input type="text" id="ce_address" class="w-full px-3 py-2 rounded-xl border border-[#decbb9]" />
+        </div>
+        <div>
+          <label class="block font-bold text-[#4a382f] mb-1">🏷️ 內部標籤（僅店家可見）</label>
+          <input type="hidden" id="ce_tags" value="" />
+          <div id="ce_tagsPills" class="flex flex-wrap gap-1.5 mb-1.5"></div>
+          <div class="flex gap-1.5">
+            <input type="text" id="ce_tagCustom" placeholder="自訂標籤後按加入" class="flex-1 px-3 py-2 rounded-xl border border-[#decbb9]" />
+            <button type="button" onclick="addCustomCustomerTag()" class="px-3 py-2 rounded-xl bg-[#f3ece5] font-bold text-[#6a4f3f]">加入</button>
+          </div>
+          <p class="text-[10px] text-[#8b7365] mt-1">點選快速標籤切換；客戶端不會看到這些標籤。</p>
         </div>
         <div>
           <label class="block font-bold text-[#4a382f] mb-1">📌 店家內部備註（會直接顯示在會員卡片上）</label>
@@ -2167,29 +2216,92 @@
       });
     }
 
+        function downloadTextFile(filename, text, mime) {
+      const blob = new Blob([text], { type: mime || "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+
+    function toCsvValue(v) {
+      const s = String(v == null ? "" : v);
+      if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    }
+
+    function exportAdminCsv(kind) {
+      const stamp = new Date().toISOString().slice(0, 10);
+      let headers = [];
+      let rows = [];
+      if (kind === "customers") {
+        headers = ["id", "name", "nickname", "contact", "birthday", "balance", "visitCount", "tags", "privateNote", "lineDisplayName"];
+        rows = (state.customers || []).map(c => headers.map(h => c[h]));
+      } else if (kind === "packages") {
+        headers = ["id", "customerId", "customerName", "name", "totalSessions", "usedSessions", "remainingSessions", "price", "expiresDate", "note", "createdAt"];
+        rows = (state.packages || []).map(p => headers.map(h => p[h]));
+      } else if (kind === "transactions") {
+        headers = ["id", "customerId", "customerName", "type", "cashPaid", "pointsChange", "balanceAfter", "note", "time"];
+        rows = (state.transactions || []).map(t => headers.map(h => t[h]));
+      } else if (kind === "bookings") {
+        headers = ["id", "customerId", "customerName", "date", "startTime", "endTime", "service", "finalPrice", "payMethod", "status", "note"];
+        rows = (state.bookings || []).map(b => headers.map(h => b[h]));
+      } else {
+        return showToast("未知的匯出類型", true);
+      }
+      const lines = [headers.join(",")].concat(rows.map(r => r.map(toCsvValue).join(",")));
+      // BOM for Excel
+      downloadTextFile(`fuyu_${kind}_${stamp}.csv`, "\ufeff" + lines.join("\n"), "text/csv;charset=utf-8");
+      showToast("已匯出 " + kind + " CSV");
+    }
+
+    function exportAdminFullBackup() {
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        customers: state.customers || [],
+        packages: state.packages || [],
+        transactions: state.transactions || [],
+        bookings: state.bookings || [],
+        coupons: state.coupons || [],
+        catalog: state.catalog || [],
+        packageCatalog: state.packageCatalog || [],
+        expenses: state.expenses || [],
+        blockedSlots: state.blockedSlots || []
+      };
+      downloadTextFile(`fuyu_backup_${stamp}.json`, JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
+      showToast("已下載完整備份 JSON");
+    }
+
     function switchManagementSubTab(sub) {
       const isCatalog = sub === "catalog";
       const isBlocked = sub === "blocked";
       const isPkgcat = sub === "pkgcat";
       const isSettings = sub === "settings";
+      const isReports = sub === "reports";
       document.getElementById("subtab-catalog").classList.toggle("hidden", !isCatalog);
       document.getElementById("subtab-blocked").classList.toggle("hidden", !isBlocked);
       const pkgcatEl = document.getElementById("subtab-pkgcat");
       if (pkgcatEl) pkgcatEl.classList.toggle("hidden", !isPkgcat);
       const settingsEl = document.getElementById("subtab-settings");
       if (settingsEl) settingsEl.classList.toggle("hidden", !isSettings);
+      const reportsEl = document.getElementById("subtab-reports");
+      if (reportsEl) reportsEl.classList.toggle("hidden", !isReports);
       document.getElementById("subtab-catalog-btn").className = `px-4 py-2 rounded-xl text-xs font-bold ${isCatalog ? "subtab-active" : "subtab-inactive"}`;
       document.getElementById("subtab-blocked-btn").className = `px-4 py-2 rounded-xl text-xs font-bold ${isBlocked ? "subtab-active" : "subtab-inactive"}`;
       const pkgBtn = document.getElementById("subtab-pkgcat-btn");
       if (pkgBtn) pkgBtn.className = `px-4 py-2 rounded-xl text-xs font-bold ${isPkgcat ? "subtab-active" : "subtab-inactive"}`;
       const setBtn = document.getElementById("subtab-settings-btn");
       if (setBtn) setBtn.className = `px-4 py-2 rounded-xl text-xs font-bold ${isSettings ? "subtab-active" : "subtab-inactive"}`;
-      document.getElementById("btnOpenCatalogServiceModal").classList.toggle("hidden", !isCatalog);
-      document.getElementById("btnOpenCatalogProductModal").classList.toggle("hidden", !isCatalog);
-      document.getElementById("btnOpenBlockedModal").classList.toggle("hidden", !isBlocked);
-      if (isBlocked) renderBlockedSlotsTab();
-      if (isPkgcat) renderPackageCatalogAdmin();
-      if (isSettings) loadSiteSettingsToForm();
+      const repBtn = document.getElementById("subtab-reports-btn");
+      if (repBtn) repBtn.className = `px-4 py-2 rounded-xl text-xs font-bold ${isReports ? "subtab-active" : "subtab-inactive"}`;
+      if (isCatalog && typeof renderCatalogAdmin === "function") renderCatalogAdmin();
+      if (isPkgcat && typeof renderPackageCatalogAdmin === "function") renderPackageCatalogAdmin();
+      if (isSettings && typeof fillSettingsForm === "function") fillSettingsForm();
     }
 
     function loadSiteSettingsToForm() {
@@ -2478,6 +2590,43 @@
       return { pillClass: "bg-[#f2e8de] text-[#6a4832] border border-[#e3d1c0]", label: itemLabel };
     }
 
+    function splitServiceItems(service) {
+      return String(service || "")
+        .split(/\s*[+＋]\s*|\s*、\s*/)
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+
+    function renderServiceItemsHtml(service, mode) {
+      const items = splitServiceItems(service);
+      if (!items.length) {
+        return mode === "calendar" ? "" : `<span class="text-[11px] text-[#8b7365]">未填項目</span>`;
+      }
+      if (mode === "calendar") {
+        const maxShow = 3;
+        const shown = items.slice(0, maxShow);
+        const extra = items.length - shown.length;
+        return shown.map(it => `
+          <div class="w-full px-1 py-0.5 rounded text-[9px] leading-tight bg-white/80 border border-[#e8d9cb] text-[#5c4638] font-semibold truncate" title="${esc(it)}">${esc(it)}</div>
+        `).join("") + (extra > 0
+          ? `<div class="text-[9px] font-extrabold text-[#8c5e43] px-1">另 ${extra} 項</div>`
+          : "");
+      }
+      return `<div class="flex flex-wrap gap-1">${items.map(it => `
+        <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-[#f6efe8] border border-[#e6d5c3] text-[11px] font-bold text-[#4a382f]">${esc(it)}</span>
+      `).join("")}</div>`;
+    }
+
+    function syncBookingServiceChipsFromInput() {
+      const el = document.getElementById("bk_service");
+      const box = document.getElementById("bk_serviceChips");
+      if (!el || !box) return;
+      const items = splitServiceItems(el.value);
+      box.innerHTML = items.length
+        ? items.map(it => `<span class="inline-flex items-center px-2.5 py-1 rounded-xl bg-white border border-[#e6d5c3] text-[11px] font-extrabold text-[#33241d]">${esc(it)}</span>`).join("")
+        : `<span class="text-[11px] text-[#8b7365]">尚未選擇項目（從上方加入套票或服務）</span>`;
+    }
+
     function changeCalendarMonth(delta) {
       const d = new Date(state.calYear, state.calMonth + delta, 1);
       state.calYear = d.getFullYear();
@@ -2543,10 +2692,14 @@
           const nameText = esc(b.customerName || "");
           const doneDim = b.status === "已完成" ? "opacity-65" : "";
           const reqMark = (b.status === "改期申請中" || b.status === "取消申請中") ? "⚠️" : "";
+          const itemsHtml = renderServiceItemsHtml(b.service, "calendar");
           return `
-            <div class="w-full flex items-center gap-1 px-1 py-0.5 rounded text-[10px] leading-tight ${st.pillClass} ${doneDim}" title="${timeText} ${nameText} (${esc(b.service || "")})">
-              <span class="font-extrabold shrink-0 tabular-nums">${reqMark}${timeText}</span>
-              <span class="truncate font-semibold">${nameText}</span>
+            <div class="w-full px-1 py-0.5 rounded text-[10px] leading-tight ${st.pillClass} ${doneDim}" title="${timeText} ${nameText} (${esc(b.service || "")})">
+              <div class="flex items-center gap-1">
+                <span class="font-extrabold shrink-0 tabular-nums">${reqMark}${timeText}</span>
+                <span class="truncate font-semibold">${nameText}</span>
+              </div>
+              ${itemsHtml ? `<div class="mt-0.5 space-y-0.5">${itemsHtml}</div>` : ""}
             </div>
           `;
         }).join("");
@@ -2665,7 +2818,8 @@
                 <span class="text-[11px] px-2 py-0.5 rounded-full font-bold ${statusColor}">${esc(b.status)}</span>
               </div>
               ${riskHtml ? `<div class="flex flex-wrap gap-1 pt-0.5">${riskHtml}</div>` : ""}
-              <div class="text-xs text-[#4a382f]">${esc(b.service || "未填項目")} · <span class="font-semibold">$${rev.toLocaleString()}</span>（${esc(b.payMethod)}）</div>
+              <div class="pt-0.5">${renderServiceItemsHtml(b.service, "day")}</div>
+              <div class="text-xs text-[#4a382f]"><span class="font-semibold">$${rev.toLocaleString()}</span>（${esc(b.payMethod || "-")}）</div>
               <div class="text-[11px] text-[#8b7365]">
                 累計來店 ${visits} 次${lineClean ? ` · LINE：${esc(lineClean)}` : ""}${b.note ? ` · 備註：${esc(b.note)}` : ""}
               </div>
@@ -2962,6 +3116,7 @@
       document.getElementById("bk_startTime").value = "11:00";
       document.getElementById("bk_duration").value = 60;
       document.getElementById("bk_service").value = "";
+      if (typeof syncBookingServiceChipsFromInput === "function") syncBookingServiceChipsFromInput();
       document.getElementById("bk_finalPrice").value = 0;
       document.getElementById("bk_payMethod").value = "現金";
       document.getElementById("bk_status").value = "尚未到來";
@@ -2990,6 +3145,7 @@
       document.getElementById("bk_duration").value = safeNumber(b.duration, 60);
       document.getElementById("bk_endTime").value = b.endTime || "";
       document.getElementById("bk_service").value = b.service || "";
+      if (typeof syncBookingServiceChipsFromInput === "function") syncBookingServiceChipsFromInput();
       document.getElementById("bk_finalPrice").value = safeNumber(b.finalPrice, 0);
       document.getElementById("bk_payMethod").value = b.payMethod || "現金";
       document.getElementById("bk_status").value = b.status || "尚未到來";
@@ -3373,6 +3529,7 @@
 
       if (overwriteFields && (selectedItems.length > 0 || pkg)) {
         document.getElementById("bk_service").value = namesParts.join(" + ");
+        if (typeof syncBookingServiceChipsFromInput === "function") syncBookingServiceChipsFromInput();
         document.getElementById("bk_finalPrice").value = totalP;
         document.getElementById("bk_duration").value = totalD;
         const priceEl = document.getElementById("bk_finalPrice");
@@ -3630,7 +3787,43 @@
     }
 
     /* ==================== 分頁 2：會員資料（含紅旗警示 + 套票剩餘堂數） ==================== */
+    const DEFAULT_CUSTOMER_TAGS = ["敏感肌", "孕期注意", "常客", "週六偏好", "怕痛", "VIP", "需低蠟溫"];
+
+    function parseCustomerTags(tags) {
+      return String(tags || "").split(/[,，、]/).map(s => s.trim()).filter(Boolean);
+    }
+
+    function getAllUsedCustomerTags() {
+      const set = new Set(DEFAULT_CUSTOMER_TAGS);
+      (state.customers || []).forEach(c => parseCustomerTags(c.tags).forEach(t => set.add(t)));
+      return Array.from(set);
+    }
+
+    function renderCustomerTagFilterOptions() {
+      const sel = document.getElementById("customerFilterSelect");
+      if (!sel) return;
+      const cur = sel.value;
+      const base = [
+        ["all", "全部會員"],
+        ["highRisk", "諮詢表紅旗警示"],
+        ["hasPackage", "持有有效套票"],
+        ["hasNote", "有店家內部備註"],
+        ["hasTags", "有內部標籤"],
+        ["hasBalance", "有儲值金餘額"],
+        ["lineBound", "已綁定 LINE"],
+        ["lineUnbound", "尚未綁定 LINE"]
+      ];
+      const tags = getAllUsedCustomerTags();
+      let htmlOpts = base.map(([v, l]) => `<option value="${v}">${l}</option>`).join("");
+      if (tags.length) {
+        htmlOpts += `<optgroup label="依標籤篩選">` + tags.map(t => `<option value="tag:${esc(t)}"># ${esc(t)}</option>`).join("") + `</optgroup>`;
+      }
+      sel.innerHTML = htmlOpts;
+      if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+    }
+
     function renderCustomersTab() {
+      renderCustomerTagFilterOptions();
       const q = (document.getElementById("customerSearchInput").value || "").trim().toLowerCase();
       const filter = document.getElementById("customerFilterSelect").value;
 
@@ -3646,11 +3839,16 @@
         const activePkgs = (state.packages || []).filter(p => String(p.customerId) === String(c.id) && safeNumber(p.remainingSessions, 0) > 0);
         const riskText = risks.map(r => r.label).join(" ");
 
-        const hay = `${c.name} ${lineClean} ${c.nickname} ${c.contact} ${c.privateNote || ""} ${riskText}`.toLowerCase();
+        const hay = `${c.name} ${lineClean} ${c.nickname} ${c.contact} ${c.privateNote || ""} ${c.tags || ""} ${riskText}`.toLowerCase();
         if (q && !hay.includes(q)) return false;
         if (filter === "highRisk" && risks.length === 0) return false;
         if (filter === "hasPackage" && activePkgs.length === 0) return false;
         if (filter === "hasNote" && !String(c.privateNote || "").trim()) return false;
+        if (filter === "hasTags" && !String(c.tags || "").trim()) return false;
+        if (String(filter).indexOf("tag:") === 0) {
+          const tag = filter.slice(4);
+          if (("," + String(c.tags || "") + ",").indexOf("," + tag + ",") === -1) return false;
+        }
         if (filter === "hasBalance" && safeNumber(c.balance, 0) <= 0) return false;
         if (filter === "lineBound" && !c.lineUserId && !lineClean) return false;
         if (filter === "lineUnbound" && (c.lineUserId || lineClean)) return false;
@@ -3759,6 +3957,11 @@
                   ` : ""}
                 </div>
 
+                ${parseCustomerTags(c.tags).length ? `
+                  <div class="flex flex-wrap gap-1">
+                    ${parseCustomerTags(c.tags).map(t => `<span class="px-2 py-0.5 rounded-full bg-[#eef2ff] border border-indigo-200 text-[10px] font-extrabold text-indigo-800">#${esc(t)}</span>`).join("")}
+                  </div>
+                ` : ""}
                 ${privateNote ? `
                   <div class="p-2.5 rounded-2xl bg-[#fff8eb] border border-[#f5d8a7] text-xs text-[#7c4a1e] flex items-start gap-2">
                     <span class="shrink-0 font-bold">📌</span>
@@ -3795,6 +3998,37 @@
       }).join("");
     }
 
+    function renderCustomerEditTagPills() {
+      const selected = parseCustomerTags(document.getElementById("ce_tags").value);
+      const all = getAllUsedCustomerTags();
+      const box = document.getElementById("ce_tagsPills");
+      if (!box) return;
+      box.innerHTML = all.map(t => {
+        const on = selected.indexOf(t) !== -1;
+        return `<button type="button" onclick="toggleCustomerEditTag('${escJs(t)}')" class="px-2.5 py-1 rounded-full text-[11px] font-extrabold border ${on ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-indigo-800 border-indigo-200"}">#${esc(t)}</button>`;
+      }).join("");
+    }
+
+    function toggleCustomerEditTag(tag) {
+      let selected = parseCustomerTags(document.getElementById("ce_tags").value);
+      const i = selected.indexOf(tag);
+      if (i === -1) selected.push(tag);
+      else selected.splice(i, 1);
+      document.getElementById("ce_tags").value = selected.join(",");
+      renderCustomerEditTagPills();
+    }
+
+    function addCustomCustomerTag() {
+      const el = document.getElementById("ce_tagCustom");
+      const t = (el.value || "").trim();
+      if (!t) return;
+      let selected = parseCustomerTags(document.getElementById("ce_tags").value);
+      if (selected.indexOf(t) === -1) selected.push(t);
+      document.getElementById("ce_tags").value = selected.join(",");
+      el.value = "";
+      renderCustomerEditTagPills();
+    }
+
     function openCustomerEditModal(customerId = "") {
       const cust = customerId ? state.customers.find(c => String(c.id) === String(customerId)) : null;
       document.getElementById("customerEditTitle").textContent = cust ? "編輯會員資料" : "新增會員";
@@ -3806,6 +4040,8 @@
       document.getElementById("ce_birthday").value = cust ? cust.birthday : "";
       document.getElementById("ce_address").value = cust ? cust.address : "";
       document.getElementById("ce_privateNote").value = cust ? cust.privateNote : "";
+      document.getElementById("ce_tags").value = cust ? (cust.tags || "") : "";
+      renderCustomerEditTagPills();
       document.getElementById("customerEditModal").classList.remove("hidden");
     }
 
@@ -3823,7 +4059,8 @@
         contact: document.getElementById("ce_contact").value.trim(),
         birthday: document.getElementById("ce_birthday").value,
         address: document.getElementById("ce_address").value.trim(),
-        privateNote: document.getElementById("ce_privateNote").value.trim()
+        privateNote: document.getElementById("ce_privateNote").value.trim(),
+        tags: document.getElementById("ce_tags").value.trim()
       };
       const btn = document.getElementById("ce_submitBtn");
       try {
@@ -4278,6 +4515,7 @@
               累計來店：<strong>${visits} 次</strong>
             </p>
             ${riskBadgesHtml ? `<div class="flex flex-wrap gap-1.5 mt-1.5">${riskBadgesHtml}</div>` : ""}
+            ${parseCustomerTags(cust.tags).length ? `<div class="flex flex-wrap gap-1 mt-1">${parseCustomerTags(cust.tags).map(t => `<span class="px-2 py-0.5 rounded-full bg-[#eef2ff] border border-indigo-200 text-[10px] font-extrabold text-indigo-800">#${esc(t)}</span>`).join("")}</div>` : ""}
             ${cust.privateNote ? `<p class="text-xs text-[#9c5733] mt-1 font-semibold">📌 內部備註：${esc(cust.privateNote)}</p>` : ""}
           </div>
           <div class="flex items-center gap-2 shrink-0">
