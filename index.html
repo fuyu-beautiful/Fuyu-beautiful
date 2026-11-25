@@ -1035,6 +1035,7 @@
 
       <form onsubmit="handleSaveBooking(event)" class="space-y-3.5 text-xs">
         <input type="hidden" id="bk_id" />
+        <input type="hidden" id="bk_packageId" />
 
         <div class="p-3 rounded-2xl bg-[#faf6f2] border border-[#eadbc9] space-y-2">
           <div class="flex items-center justify-between">
@@ -1209,37 +1210,62 @@
         </div>
         <button type="button" onclick="closePackageModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
       </div>
-      <form onsubmit="handleSavePackage(event)" class="space-y-3 text-xs">
+      <form onsubmit="handleSavePackage(event)" class="space-y-3.5 text-xs">
         <input type="hidden" id="pkg_id" />
         <input type="hidden" id="pkg_customerId" />
         <input type="hidden" id="pkg_customerName" />
-        <div>
-          <label class="block font-bold text-[#4a382f] mb-1">套票方案名稱 *</label>
-          <input type="text" id="pkg_name" required value="日式無痛淨毛（三堂）" placeholder="例如：日式無痛淨毛（三堂）" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold" />
+
+        <div class="p-3 rounded-2xl bg-gradient-to-r from-[#faf6f1] to-[#f3ebe3] border border-[#e6d5c3]">
+          <div class="text-[11px] font-bold text-[#8c5e43] mb-1">分類</div>
+          <div class="text-sm font-extrabold text-[#33241d]">日式無痛淨毛（三堂）</div>
+          <p class="text-[11px] text-[#8b7365] mt-0.5">套票售出僅記錄堂數與收款註記，不會自動列入帳務收入</p>
         </div>
+
+        <div>
+          <label class="block font-bold text-[#4a382f] mb-1">套票項目 *</label>
+          <select id="pkg_itemPreset" onchange="onPackagePresetChange()" class="w-full px-3 py-2.5 rounded-xl border border-[#decbb9] bg-white font-bold text-[#33241d]">
+            <option value="鬍子|1200">鬍子（三堂 $1,200）</option>
+            <option value="腋下|1200">腋下（三堂 $1,200）</option>
+            <option value="私密處全除（VIO）|4800">私密處全除 VIO（三堂 $4,800）</option>
+            <option value="VIO+腋下|5700">VIO+腋下（三堂 $5,700）</option>
+            <option value="前手|2500">前手（三堂 $2,500）</option>
+            <option value="全手|4050">全手（三堂 $4,050）</option>
+            <option value="腹部|2800">腹部（三堂 $2,800）</option>
+            <option value="小腿|3500">小腿（三堂 $3,500）</option>
+            <option value="全腿|5700">全腿（三堂 $5,700）</option>
+            <option value="__custom__|0">＋ 自訂項目…</option>
+          </select>
+        </div>
+
+        <div id="pkg_customNameWrap" class="hidden">
+          <label class="block font-bold text-[#4a382f] mb-1">自訂項目名稱 *</label>
+          <input type="text" id="pkg_name" placeholder="例如：私密處＋小腿" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold" />
+        </div>
+
         <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">總堂數 *</label>
             <input type="number" id="pkg_totalSessions" required min="1" max="50" value="3" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold" />
           </div>
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">已使用堂數</label>
+            <label class="block font-bold text-[#4a382f] mb-1">已使用</label>
             <input type="number" id="pkg_usedSessions" min="0" max="50" value="0" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
           </div>
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">套票總價 ($)</label>
-            <input type="number" id="pkg_price" min="0" value="0" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold text-[#8c5e43]" />
+            <label class="block font-bold text-[#4a382f] mb-1">套票總價</label>
+            <input type="number" id="pkg_price" min="0" value="1200" oninput="syncPackagePaidFromPrice()" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold text-[#8c5e43]" />
           </div>
         </div>
+
         <div class="p-3 rounded-2xl bg-[#f7f2ec] border border-[#e3d3c3] space-y-2">
           <label class="flex items-center gap-2 font-extrabold text-[#33241d] cursor-pointer">
-            <input type="checkbox" id="pkg_paid" class="w-4 h-4" checked />
-            已收款（客人已付套票費用）
+            <input type="checkbox" id="pkg_paid" class="w-4 h-4" checked onchange="onPackagePaidToggle()" />
+            已收款（只做紀錄，不進帳務收入）
           </label>
           <div class="grid grid-cols-2 gap-2">
             <div>
-              <label class="block font-bold text-[#4a382f] mb-1">實收金額 ($)</label>
-              <input type="number" id="pkg_paidAmount" min="0" value="0" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold" />
+              <label class="block font-bold text-[#4a382f] mb-1">實收金額</label>
+              <input type="number" id="pkg_paidAmount" min="0" value="1200" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold" />
             </div>
             <div>
               <label class="block font-bold text-[#4a382f] mb-1">收款方式</label>
@@ -1253,14 +1279,18 @@
             </div>
           </div>
         </div>
-        <div>
-          <label class="block font-bold text-[#4a382f] mb-1">到期日（選填，留空則不限期）</label>
-          <input type="date" id="pkg_expiresDate" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-[#4a382f] mb-1">到期日（選填）</label>
+            <input type="date" id="pkg_expiresDate" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+          </div>
+          <div>
+            <label class="block font-bold text-[#4a382f] mb-1">備註（選填）</label>
+            <input type="text" id="pkg_note" placeholder="備註" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
+          </div>
         </div>
-        <div>
-          <label class="block font-bold text-[#4a382f] mb-1">備註說明（選填）</label>
-          <input type="text" id="pkg_note" placeholder="例如：腋下三堂／私密處三堂" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
-        </div>
+
         <div class="flex justify-end gap-2 pt-2 border-t border-[#f1e7dc]">
           <button type="button" onclick="closePackageModal()" class="px-4 py-2 rounded-xl bg-[#f3ece5] text-[#6b5344] font-bold">取消</button>
           <button type="submit" id="pkg_submitBtn" class="px-4 py-2 rounded-xl font-bold btn-primary shadow">確認儲存套票</button>
@@ -2126,7 +2156,7 @@
       const todayStrBadge = formatTodayStr();
       const upcomingToday = (state.bookings || []).filter(b => {
         const st = String(b.status || "").trim();
-        return b.date === todayStrBadge && ["尚未到來", "已報到", "待審核", "改期申請中"].indexOf(st) !== -1;
+        return String(b.date || "").trim() === todayStrBadge && (st === "尚未到來" || st === "已報到");
       });
       const upBadge = document.getElementById("upcomingCountBadge");
       if (upBadge) upBadge.textContent = String(upcomingToday.length);
@@ -2138,6 +2168,42 @@
     function openReminderModal(type) {
       const modal = document.getElementById("reminderModal");
       const box = document.getElementById("reminderModalContent");
+
+      if (type === "upcoming") {
+        const todayStr = formatTodayStr();
+        // 只顯示「今天」且狀態為尚未到來／已報到（不含待審核）
+        const list = (state.bookings || []).filter(b => {
+          const st = String(b.status || "").trim();
+          const d = String(b.date || "").trim();
+          return d === todayStr && (st === "尚未到來" || st === "已報到");
+        }).sort((a, b) => String(a.startTime || "").localeCompare(String(b.startTime || "")));
+        box.innerHTML = `
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 class="text-base font-bold text-emerald-900">🔔 今日即將到來（${list.length} 筆）</h3>
+              <p class="text-[11px] text-[#8b7365]">日期：${esc(todayStr)}　僅「尚未到來／已報到」</p>
+            </div>
+            <button type="button" onclick="closeReminderModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
+          </div>
+          ${list.length === 0
+            ? `<div class="text-xs text-[#8b7365] py-8 text-center leading-relaxed">今天沒有「尚未到來」或「已報到」的預約<br><span class="text-[11px]">（待審核請點黃色「待審核／異動申請」）</span></div>`
+            : `<div class="space-y-2 text-xs">${list.map(b => `
+                <div class="p-3 rounded-xl border border-emerald-200 bg-emerald-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <div class="font-extrabold text-sm text-[#3a2a22]">${esc(b.startTime || "--:--")} · ${esc(b.customerName || "貴賓")}</div>
+                    <div class="text-[#5c4638] mt-0.5">${esc(b.service || "")}${b.note ? `（${esc(b.note)}）` : ""}</div>
+                  </div>
+                  <div class="flex items-center gap-1.5 shrink-0">
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${String(b.status)==="已報到" ? "bg-sky-600 text-white" : "bg-emerald-600 text-white"}">${esc(b.status)}</span>
+                    <button type="button" onclick="closeReminderModal(); state.selectedDate='${escJs(b.date)}'; renderCalendar(); renderDayBookings();" class="px-2.5 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-800 font-bold">查看當日</button>
+                  </div>
+                </div>`).join("")}</div>`}
+          <div class="flex justify-end mt-4 pt-3 border-t border-[#f1e7dc]">
+            <button type="button" onclick="closeReminderModal()" class="px-4 py-2 rounded-xl text-xs font-bold btn-primary">關閉</button>
+          </div>`;
+        modal.classList.remove("hidden");
+        return;
+      }
 
       if (type === "birthday") {
         const now = new Date();
@@ -2737,6 +2803,7 @@
     /* ==================== 新增／編輯預約彈窗 ==================== */
     function openBookingModal(prefillDate = null, prefillCustomerId = "") {
       document.getElementById("bk_id").value = "";
+      const _pkgH = document.getElementById("bk_packageId"); if (_pkgH) _pkgH.value = "";
       document.getElementById("bookingModalTitle").textContent = "新增預約";
       document.getElementById("bk_deleteBtn").classList.add("hidden");
       document.getElementById("bk_memberSearch").value = "";
@@ -2894,18 +2961,17 @@
     function addPackageAsBookingItem(packageId) {
       const p = (state.packages || []).find(x => String(x.id) === String(packageId));
       if (!p) return showToast("找不到套票", true);
-      const label = `${p.name}（套票扣堂・剩${safeNumber(p.remainingSessions, 0)}堂）`;
+      if (safeNumber(p.remainingSessions, 0) <= 0) return showToast("此套票已無剩餘堂數", true);
+      // 套票核銷只扣堂數：金額已在購買時收過，預約金額固定 0
+      const label = `日式無痛淨毛・${p.name}（扣1堂）`;
       const serviceEl = document.getElementById("bk_service");
-      const cur = (serviceEl.value || "").trim();
-      serviceEl.value = cur && cur.indexOf(p.name) === -1 ? `${cur} + ${label}` : (cur || label);
+      serviceEl.value = label;
       const payEl = document.getElementById("bk_payMethod");
       if (payEl) payEl.value = "三堂套票";
-      // 金額以套票單堂成本帶入（可再手動改）
-      const unit = safeNumber(p.price, 0) > 0 && safeNumber(p.totalSessions, 0) > 0
-        ? Math.round(safeNumber(p.price, 0) / safeNumber(p.totalSessions, 3))
-        : 0;
-      if (unit > 0) document.getElementById("bk_finalPrice").value = unit;
-      showToast(`已加入套票項目：${p.name}`);
+      document.getElementById("bk_finalPrice").value = 0;
+      const pkgHid = document.getElementById("bk_packageId");
+      if (pkgHid) pkgHid.value = p.id;
+      showToast(`已加入：${p.name}（完成時只扣堂數）`);
     }
 
     function selectAdminBookingCategory(catName) {
@@ -3107,7 +3173,11 @@
       const firstSelectedItem = state.selectedAdminBookingServiceIds.length > 0
         ? state.catalog.find(x => String(x.id) === String(state.selectedAdminBookingServiceIds[0]))
         : state.catalog.find(item => serviceText.indexOf(item.name) !== -1);
-      const finalPrice = safeNumber(document.getElementById("bk_finalPrice").value, 0);
+      const payMethod = document.getElementById("bk_payMethod").value;
+      const pkgIdVal = (document.getElementById("bk_packageId") && document.getElementById("bk_packageId").value) || "";
+      // 套票核銷：金額固定 0（購買時已收款）
+      let finalPrice = safeNumber(document.getElementById("bk_finalPrice").value, 0);
+      if (payMethod === "三堂套票") finalPrice = 0;
 
       const payload = {
         id: bookingId,
@@ -3118,14 +3188,15 @@
         startTime: document.getElementById("bk_startTime").value,
         endTime: document.getElementById("bk_endTime").value,
         duration: safeNumber(document.getElementById("bk_duration").value, 60),
-        category: firstSelectedItem ? String(firstSelectedItem.category || "") : "",
+        category: payMethod === "三堂套票" ? "日式無痛淨毛（三堂）" : (firstSelectedItem ? String(firstSelectedItem.category || "") : ""),
         service: serviceText,
         originalPrice: finalPrice,
         finalPrice: finalPrice,
-        payMethod: document.getElementById("bk_payMethod").value,
+        payMethod,
         status: newStatus,
         note: document.getElementById("bk_note").value.trim(),
-        usedCouponId: document.getElementById("bk_usedCouponId").value || ""
+        usedCouponId: document.getElementById("bk_usedCouponId").value || "",
+        usedPackageId: payMethod === "三堂套票" ? pkgIdVal : ""
       };
       const btn = document.getElementById("bk_submitBtn");
       try {
@@ -3379,6 +3450,74 @@
     }
 
     /* ==================== 套票管理 Modal 與操作 ==================== */
+
+    const PACKAGE_PRESETS = [
+      { name: "鬍子", price: 1200 },
+      { name: "腋下", price: 1200 },
+      { name: "私密處全除（VIO）", price: 4800 },
+      { name: "VIO+腋下", price: 5700 },
+      { name: "前手", price: 2500 },
+      { name: "全手", price: 4050 },
+      { name: "腹部", price: 2800 },
+      { name: "小腿", price: 3500 },
+      { name: "全腿", price: 5700 }
+    ];
+
+    function onPackagePresetChange() {
+      const sel = document.getElementById("pkg_itemPreset");
+      const wrap = document.getElementById("pkg_customNameWrap");
+      const nameEl = document.getElementById("pkg_name");
+      const priceEl = document.getElementById("pkg_price");
+      if (!sel) return;
+      const val = sel.value || "";
+      if (val.startsWith("__custom__")) {
+        if (wrap) wrap.classList.remove("hidden");
+        if (nameEl) { nameEl.required = true; nameEl.value = ""; }
+        return;
+      }
+      if (wrap) wrap.classList.add("hidden");
+      if (nameEl) nameEl.required = false;
+      const parts = val.split("|");
+      const itemName = parts[0] || "";
+      const price = safeNumber(parts[1], 0);
+      if (nameEl) nameEl.value = itemName;
+      if (priceEl) priceEl.value = price;
+      syncPackagePaidFromPrice();
+    }
+
+    function syncPackagePaidFromPrice() {
+      const paidCb = document.getElementById("pkg_paid");
+      const paidAmt = document.getElementById("pkg_paidAmount");
+      const priceEl = document.getElementById("pkg_price");
+      if (!paidAmt || !priceEl) return;
+      if (!paidCb || paidCb.checked) {
+        paidAmt.value = safeNumber(priceEl.value, 0);
+      }
+    }
+
+    function onPackagePaidToggle() {
+      const paidCb = document.getElementById("pkg_paid");
+      const payMethod = document.getElementById("pkg_payMethod");
+      if (paidCb && !paidCb.checked) {
+        if (payMethod) payMethod.value = "未收款";
+        const paidAmt = document.getElementById("pkg_paidAmount");
+        if (paidAmt) paidAmt.value = 0;
+      } else {
+        if (payMethod && payMethod.value === "未收款") payMethod.value = "現金";
+        syncPackagePaidFromPrice();
+      }
+    }
+
+    function getPackageDisplayName() {
+      const sel = document.getElementById("pkg_itemPreset");
+      const val = (sel && sel.value) || "";
+      if (val.startsWith("__custom__")) {
+        return (document.getElementById("pkg_name").value || "").trim();
+      }
+      if (val) return val.split("|")[0] || "";
+      return (document.getElementById("pkg_name").value || "").trim();
+    }
+
     function openPackageModal(customerId, customerName = "", packageId = "") {
       const cust = state.customers.find(c => String(c.id) === String(customerId));
       const cname = customerName || (cust ? cust.name : customerId);
@@ -3390,18 +3529,31 @@
       document.getElementById("pkg_id").value = existing ? existing.id : "";
       if (titleEl) titleEl.textContent = existing ? "🎫 編輯會員套票方案" : "🎫 新增會員套票方案";
       if (existing) {
-        document.getElementById("pkg_name").value = existing.name || "日式無痛淨毛（三堂）";
+        const existName = existing.name || "腋下";
+        const existPrice = safeNumber(existing.price, 0);
+        const preset = document.getElementById("pkg_itemPreset");
+        const matched = PACKAGE_PRESETS.find(x => x.name === existName);
+        if (preset) {
+          if (matched) {
+            preset.value = `${matched.name}|${matched.price}`;
+            document.getElementById("pkg_customNameWrap").classList.add("hidden");
+          } else {
+            preset.value = "__custom__|0";
+            document.getElementById("pkg_customNameWrap").classList.remove("hidden");
+          }
+        }
+        document.getElementById("pkg_name").value = existName;
         document.getElementById("pkg_totalSessions").value = safeNumber(existing.totalSessions, 3);
         document.getElementById("pkg_usedSessions").value = safeNumber(existing.usedSessions, 0);
-        document.getElementById("pkg_price").value = safeNumber(existing.price, 0);
+        document.getElementById("pkg_price").value = existPrice;
         document.getElementById("pkg_expiresDate").value = existing.expiresDate || "";
         const note = String(existing.note || "");
-        const paid = /已收款|已付/.test(note) || !/未收款/.test(note);
-        document.getElementById("pkg_paid").checked = paid && !/未收款/.test(note);
+        const paid = /已收款|已付/.test(note) && !/未收款/.test(note);
+        document.getElementById("pkg_paid").checked = paid;
         const amtMatch = note.match(/實收\$?(\d+)/);
-        document.getElementById("pkg_paidAmount").value = amtMatch ? amtMatch[1] : safeNumber(existing.price, 0);
+        document.getElementById("pkg_paidAmount").value = amtMatch ? amtMatch[1] : existPrice;
         const pmMatch = note.match(/收款方式[：:]([^｜|]+)/);
-        document.getElementById("pkg_payMethod").value = pmMatch ? pmMatch[1].trim() : (document.getElementById("pkg_paid").checked ? "現金" : "未收款");
+        document.getElementById("pkg_payMethod").value = pmMatch ? pmMatch[1].trim() : (paid ? "現金" : "未收款");
         document.getElementById("pkg_note").value = note
           .replace(/\[?(已收款|未收款)\]?/g, "")
           .replace(/實收\$?\d+/g, "")
@@ -3409,14 +3561,18 @@
           .replace(/[｜|]/g, " ")
           .trim();
       } else {
-        document.getElementById("pkg_name").value = "日式無痛淨毛（三堂）";
+        const preset = document.getElementById("pkg_itemPreset");
+        if (preset) preset.value = "腋下|1200";
+        document.getElementById("pkg_name").value = "腋下";
+        const customWrap = document.getElementById("pkg_customNameWrap");
+        if (customWrap) customWrap.classList.add("hidden");
         document.getElementById("pkg_totalSessions").value = 3;
         document.getElementById("pkg_usedSessions").value = 0;
-        document.getElementById("pkg_price").value = 0;
+        document.getElementById("pkg_price").value = 1200;
         document.getElementById("pkg_expiresDate").value = "";
         document.getElementById("pkg_note").value = "";
         document.getElementById("pkg_paid").checked = true;
-        document.getElementById("pkg_paidAmount").value = 0;
+        document.getElementById("pkg_paidAmount").value = 1200;
         document.getElementById("pkg_payMethod").value = "現金";
       }
       document.getElementById("packageModal").classList.remove("hidden");
@@ -3449,7 +3605,7 @@
             id: document.getElementById("pkg_id").value || "",
             customerId,
             customerName,
-            name: document.getElementById("pkg_name").value.trim(),
+            name: getPackageDisplayName() || document.getElementById("pkg_name").value.trim(),
             totalSessions: safeNumber(document.getElementById("pkg_totalSessions").value, 3),
             usedSessions: safeNumber(document.getElementById("pkg_usedSessions").value, 0),
             price: safeNumber(document.getElementById("pkg_price").value, 0),
