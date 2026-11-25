@@ -548,7 +548,7 @@
         🎟️ 優惠券管理
       </button>
       <button id="nav-finance" onclick="switchAdminTab('finance')" class="px-4 py-2 rounded-xl text-sm font-bold tab-inactive whitespace-nowrap">
-        💰 帳務與儲值
+        💰 帳務
       </button>
       <button id="nav-management" onclick="switchAdminTab('management')" class="px-4 py-2 rounded-xl text-sm font-bold tab-inactive whitespace-nowrap">
         ⚙️ 管理
@@ -707,13 +707,13 @@
       </div>
     </section>
 
-    <!-- ---------- 分頁 4：帳務與儲值 ---------- -->
+    <!-- ---------- 分頁 4：帳務 ---------- -->
     <section id="tab-finance" class="space-y-4 hidden">
       <div class="glass-card rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-[#fffdfb] to-[#faf3ec] space-y-3.5">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 class="text-base font-extrabold text-[#33241d]">💰 營運帳務與儲值中心</h2>
-            <p class="text-xs text-[#8b7365]">掌握每月與年度服務營收、來客數、營運支出與會員儲值金流動</p>
+            <h2 class="text-base font-extrabold text-[#33241d]">💰 營運帳務中心</h2>
+            <p class="text-xs text-[#8b7365]">掌握每月與年度服務營收、來客數、營運支出與會員儲值流動</p>
           </div>
 
           <div class="flex flex-wrap items-center gap-2">
@@ -945,6 +945,12 @@
           </div>
 
           <div class="space-y-2">
+            <label class="block text-sm font-extrabold text-[#33241d]">預約成功 LINE 訊息範本</label>
+            <p class="text-[11px] text-[#8b7365]">支援變數：{{name}} {{date}} {{start}} {{end}} {{service}}。建立預約後可再手動微調再複製。</p>
+            <textarea id="settingBookingLineTemplate" rows="12" class="w-full px-3.5 py-3 rounded-2xl border border-[#decbb9] text-sm bg-white leading-relaxed focus:outline-none focus:border-[#8c5e43]" placeholder="請輸入預約成功通知範本..."></textarea>
+          </div>
+
+          <div class="space-y-2">
             <label class="block text-sm font-extrabold text-[#33241d]">客戶端「注意事項」內容</label>
             <p class="text-[11px] text-[#8b7365]">支援換行。建議包含預約規則、到店須知、付款方式等。</p>
             <textarea id="settingNoticeText" rows="14" class="w-full px-3.5 py-3 rounded-2xl border border-[#decbb9] text-sm bg-white leading-relaxed focus:outline-none focus:border-[#8c5e43]" placeholder="請輸入注意事項內容..."></textarea>
@@ -1127,8 +1133,6 @@
               <option value="現金">現金</option>
               <option value="轉帳">轉帳</option>
               <option value="扣儲值金">扣儲值金</option>
-              <option value="三堂套票">三堂套票</option>
-              <option value="待現場確認">待現場確認</option>
             </select>
           </div>
           <div>
@@ -1323,7 +1327,7 @@
               <select id="pkg_payMethod" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
                 <option value="現金">現金</option>
                 <option value="轉帳">轉帳</option>
-                <option value="LINE Pay">LINE Pay</option>
+                <option value="儲值金扣除">儲值金扣除</option>
                 <option value="其他">其他</option>
                 <option value="未收款">未收款</option>
               </select>
@@ -1358,8 +1362,8 @@
         <h3 class="text-base font-extrabold text-emerald-800">✅ 預約已建立</h3>
         <button type="button" onclick="closeBookingSuccessModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
       </div>
-      <p class="text-xs text-[#7c6557]">可複製以下訊息，直接貼到 LINE 通知貴賓：</p>
-      <textarea id="bookingSuccessMsg" readonly rows="10" class="w-full text-xs leading-relaxed p-3 rounded-2xl border border-[#decbb9] bg-[#fcfaf8] text-[#33241d] font-medium"></textarea>
+      <p class="text-xs text-[#7c6557]">可先編輯後再複製，直接貼到 LINE 通知貴賓：</p>
+      <textarea id="bookingSuccessMsg" rows="10" class="w-full text-xs leading-relaxed p-3 rounded-2xl border border-[#decbb9] bg-white text-[#33241d] font-medium focus:outline-none focus:border-[#8c5e43]"></textarea>
       <div class="flex justify-end gap-2 pt-1">
         <button type="button" onclick="closeBookingSuccessModal()" class="px-4 py-2 rounded-xl bg-[#f3ece5] text-[#6b5344] font-bold text-xs">關閉</button>
         <button type="button" onclick="copyBookingSuccessMsg()" class="px-4 py-2 rounded-xl font-bold btn-primary shadow text-xs">📋 複製訊息</button>
@@ -2173,12 +2177,15 @@
       const ss = (state.siteSettings) || (state.portalData && state.portalData.siteSettings) || {};
       const enabled = !!ss.onlineBookingEnabled;
       const notice = ss.noticeText || DEFAULT_NOTICE_TEXT;
+      const lineTpl = ss.bookingLineTemplate || DEFAULT_BOOKING_LINE_TEMPLATE;
       const cb = document.getElementById("settingOnlineBookingEnabled");
       const label = document.getElementById("settingOnlineBookingLabel");
       const ta = document.getElementById("settingNoticeText");
+      const tplEl = document.getElementById("settingBookingLineTemplate");
       if (cb) cb.checked = enabled;
       if (label) label.textContent = enabled ? "目前：開啟" : "目前：關閉";
       if (ta) ta.value = notice;
+      if (tplEl) tplEl.value = lineTpl;
       if (cb && !cb._bound) {
         cb._bound = true;
         cb.addEventListener("change", () => {
@@ -2190,10 +2197,12 @@
     async function saveSiteSettings() {
       const cb = document.getElementById("settingOnlineBookingEnabled");
       const ta = document.getElementById("settingNoticeText");
+      const tplEl = document.getElementById("settingBookingLineTemplate");
       const btn = document.getElementById("saveSiteSettingsBtn");
       const payload = {
         onlineBookingEnabled: !!(cb && cb.checked),
-        noticeText: (ta && ta.value) || ""
+        noticeText: (ta && ta.value) || "",
+        bookingLineTemplate: (tplEl && tplEl.value) || DEFAULT_BOOKING_LINE_TEMPLATE
       };
       try {
         setButtonBusy(btn, true, "儲存中...");
@@ -3363,21 +3372,14 @@
       const start = info.startTime || "";
       const end = info.endTime ? ` - ${info.endTime}` : "";
       const service = info.service || "";
-      return (
-`【馥語美學｜預約確認】
-
-親愛的 ${name} 您好 ✨
-已為您安排預約，細節如下：
-
-📅 日期：${date}
-🕐 時間：${start}${end}
-💫 項目：${service}
-
-若需改期或取消，請盡早與我們聯繫。
-期待與您見面，祝您有美好的一天 💛
-
-馥語美學`
-      );
+      const ss = state.siteSettings || {};
+      const tpl = (ss.bookingLineTemplate || DEFAULT_BOOKING_LINE_TEMPLATE || "");
+      return String(tpl)
+        .replace(/\{\{name\}\}/g, name)
+        .replace(/\{\{date\}\}/g, date)
+        .replace(/\{\{start\}\}/g, start)
+        .replace(/\{\{end\}\}/g, end)
+        .replace(/\{\{service\}\}/g, service);
     }
 
     function openBookingSuccessModal(info) {
@@ -4184,44 +4186,49 @@
           ` : ""}
         </div>
 
-        <div class="mt-4 space-y-2 text-xs">
-          <div class="font-bold text-sm text-[#3a2a22]">🎟️ 持有優惠券（${custCoupons.length} 張）</div>
-          ${custCoupons.length === 0 ? `<div class="text-[#8b7365]">尚無優惠券</div>` : custCoupons.map(cp => `
-            <div class="p-2.5 rounded-xl bg-[#fcfaf8] border border-[#eee3d8] flex items-center justify-between">
-              <div>
-                <span class="font-bold">${esc(cp.title)}</span>（折 $${safeNumber(cp.discountAmount, 0)}）
-                <span class="text-[#8b7365] ml-1">到期：${esc(cp.expiresDate)}</span>
-              </div>
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${cp.status === "可使用" ? "bg-emerald-100 text-emerald-800" : "bg-stone-200 text-stone-700"}">${esc(cp.status)}</span>
-            </div>
-          `).join("")}
-        </div>
+        <div class="mt-4 pt-3 border-t border-[#f1e8df]">
+          <div class="grid grid-cols-3 gap-1.5 mb-2.5">
+            <button type="button" onclick="switchCustDetailSubTab('coupons')" id="cdSubTabCoupons" class="py-2 rounded-xl text-[11px] font-extrabold tab-active">🎟️ 優惠券（${custCoupons.length}）</button>
+            <button type="button" onclick="switchCustDetailSubTab('history')" id="cdSubTabHistory" class="py-2 rounded-xl text-[11px] font-extrabold tab-inactive">📅 歷史消費（${custBookings.length}）</button>
+            <button type="button" onclick="switchCustDetailSubTab('tx')" id="cdSubTabTx" class="py-2 rounded-xl text-[11px] font-extrabold tab-inactive">💳 儲值異動（${custTx.length}）</button>
+          </div>
 
-        <div class="mt-4 space-y-2 text-xs">
-          <div class="font-bold text-sm text-[#3a2a22]">📅 歷史消費與預約紀錄（${custBookings.length} 筆）</div>
-          ${custBookings.length === 0 ? `<div class="text-[#8b7365]">尚無預約紀錄</div>` : custBookings.map(b => `
-            <div class="p-2.5 rounded-xl bg-[#fcfaf8] border border-[#eee3d8] flex items-center justify-between">
-              <div>
-                <strong>${esc(b.date)} ${esc(b.startTime)}</strong> · ${esc(b.service)}（$${safeNumber(b.finalPrice, 0).toLocaleString()} / ${esc(b.payMethod)}）
+          <div id="cdPanelCoupons" class="space-y-2 text-xs">
+            ${custCoupons.length === 0 ? `<div class="text-[#8b7365] py-2">尚無優惠券</div>` : custCoupons.map(cp => `
+              <div class="p-2.5 rounded-xl bg-[#fcfaf8] border border-[#eee3d8] flex items-center justify-between">
+                <div>
+                  <span class="font-bold">${esc(cp.title)}</span>（折 $${safeNumber(cp.discountAmount, 0)}）
+                  <span class="text-[#8b7365] ml-1">到期：${esc(cp.expiresDate)}</span>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${cp.status === "可使用" ? "bg-emerald-100 text-emerald-800" : "bg-stone-200 text-stone-700"}">${esc(cp.status)}</span>
               </div>
-              <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#f1e7dd] text-[#6a4f3f]">${esc(b.status)}</span>
-            </div>
-          `).join("")}
-        </div>
+            `).join("")}
+          </div>
 
-        <div class="mt-4 space-y-2 text-xs">
-          <div class="font-bold text-sm text-[#3a2a22]">💳 儲值金異動明細（${custTx.length} 筆）</div>
-          ${custTx.length === 0 ? `<div class="text-[#8b7365]">尚無儲值異動</div>` : custTx.map(t => `
-            <div class="p-2 rounded-xl bg-[#fcfaf8] border border-[#eee3d8] flex items-center justify-between">
-              <div>
-                <span class="font-bold">${esc(t.type)}</span> · <span class="text-[#8b7365]">${esc(t.time)}</span>
-                ${t.note ? `<span class="text-[#6a4f3f]">（${esc(t.note)}）</span>` : ""}
+          <div id="cdPanelHistory" class="space-y-2 text-xs hidden">
+            ${custBookings.length === 0 ? `<div class="text-[#8b7365] py-2">尚無預約紀錄</div>` : custBookings.map(b => `
+              <div class="p-2.5 rounded-xl bg-[#fcfaf8] border border-[#eee3d8] flex items-center justify-between">
+                <div>
+                  <strong>${esc(b.date)} ${esc(b.startTime)}</strong> · ${esc(b.service)}（$${safeNumber(b.finalPrice, 0).toLocaleString()} / ${esc(b.payMethod)}）
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#f1e7dd] text-[#6a4f3f]">${esc(b.status)}</span>
               </div>
-              <div class="font-bold ${safeNumber(t.pointsChange, 0) >= 0 ? "text-emerald-700" : "text-[#b42318]"}">
-                ${safeNumber(t.pointsChange, 0) >= 0 ? "+" : ""}${safeNumber(t.pointsChange, 0).toLocaleString()}（餘 $${safeNumber(t.balanceAfter, 0).toLocaleString()}）
+            `).join("")}
+          </div>
+
+          <div id="cdPanelTx" class="space-y-2 text-xs hidden">
+            ${custTx.length === 0 ? `<div class="text-[#8b7365] py-2">尚無儲值異動</div>` : custTx.map(t => `
+              <div class="p-2 rounded-xl bg-[#fcfaf8] border border-[#eee3d8] flex items-center justify-between">
+                <div>
+                  <span class="font-bold">${esc(t.type === "套票售出" ? "套票" : t.type)}</span> · <span class="text-[#8b7365]">${esc(t.time)}</span>
+                  ${t.note ? `<span class="text-[#6a4f3f]">（${esc(t.note)}）</span>` : ""}
+                </div>
+                <div class="font-bold ${safeNumber(t.pointsChange, 0) >= 0 ? "text-emerald-700" : "text-[#b42318]"}">
+                  ${safeNumber(t.pointsChange, 0) >= 0 ? "+" : ""}${safeNumber(t.pointsChange, 0).toLocaleString()}（餘 $${safeNumber(t.balanceAfter, 0).toLocaleString()}）
+                </div>
               </div>
-            </div>
-          `).join("")}
+            `).join("")}
+          </div>
         </div>
       `;
 
@@ -4230,6 +4237,22 @@
 
     function closeCustomerDetailModal() {
       document.getElementById("customerDetailModal").classList.add("hidden");
+    }
+
+    function switchCustDetailSubTab(which) {
+      const map = {
+        coupons: ["cdPanelCoupons", "cdSubTabCoupons"],
+        history: ["cdPanelHistory", "cdSubTabHistory"],
+        tx: ["cdPanelTx", "cdSubTabTx"]
+      };
+      Object.keys(map).forEach(k => {
+        const [panelId, btnId] = map[k];
+        const panel = document.getElementById(panelId);
+        const btn = document.getElementById(btnId);
+        const on = k === which;
+        if (panel) panel.classList.toggle("hidden", !on);
+        if (btn) btn.className = `py-2 rounded-xl text-[11px] font-extrabold ${on ? "tab-active" : "tab-inactive"}`;
+      });
     }
 
     async function handleAdminUnbindLine(customerId) {
@@ -4731,7 +4754,7 @@
       }
     }
 
-    /* ==================== 分頁 4：帳務與儲值（月統計 + 年分析 + 來客數） ==================== */
+    /* ==================== 分頁 4：帳務（月統計 + 年分析 + 來客數） ==================== */
     function populateFinanceYearPicker() {
       const sel = document.getElementById("financeYearPicker");
       if (!sel) return;
@@ -5004,7 +5027,7 @@
         allIncome.push({
           sortKey: String(t.time || ""),
           title: `${t.time || ""} · ${t.customerName || ""}`,
-          detail: t.note || "套票售出",
+          detail: t.note || "套票",
           amount: safeNumber(t.cashPaid, 0),
           tag: "套票收入"
         });
@@ -5674,14 +5697,18 @@
         const todayStr = formatTodayStr();
         const availCoupons = coupons.filter(cp => cp.status === "可使用" && (!cp.expiresDate || cp.expiresDate >= todayStr));
         const cpEl = document.getElementById("custPortalCoupons");
-        cpEl.innerHTML = `<div class="text-xs font-bold text-[#4a382f] mb-1.5">🎟️ 我的可用優惠券（${availCoupons.length} 張）</div>` +
-          (availCoupons.length === 0
-            ? `<div class="text-xs text-[#8b7365]">目前尚無可使用的優惠券</div>`
-            : `<div class="flex flex-wrap gap-1.5">${availCoupons.map(cp => `
+        if (availCoupons.length === 0) {
+          cpEl.classList.add("hidden");
+          cpEl.innerHTML = "";
+        } else {
+          cpEl.classList.remove("hidden");
+          cpEl.innerHTML = `<div class="text-xs font-bold text-[#4a382f] mb-1.5">🎟️ 我的可用優惠券（${availCoupons.length} 張）</div>` +
+            `<div class="flex flex-wrap gap-1.5">${availCoupons.map(cp => `
                 <span class="px-2.5 py-1 rounded-xl bg-[#fdf3ea] border border-[#f0d6be] text-xs font-bold text-[#8c522b]">
                   ${esc(cp.title)}（折 $${safeNumber(cp.discountAmount, 0)} · 至 ${esc(cp.expiresDate)}）
                 </span>
-              `).join("")}</div>`);
+              `).join("")}</div>`;
+        }
 
         const activeBookings = bookings.filter(b =>
           ["待審核", "改期申請中", "取消申請中", "尚未到來", "已報到"].indexOf(String(b.status || "").trim()) !== -1
@@ -5913,7 +5940,7 @@
         rows.push({
           sortKey: String(tx.time || ""),
           time: tx.time || "",
-          title: tx.type || "異動",
+          title: (tx.type === "套票售出" ? "套票" : (tx.type || "異動")),
           detail: tx.note || "",
           moneyText: isPkg ? "" : (pts > 0 ? `+$${pts.toLocaleString()}` : pts < 0 ? `-$${Math.abs(pts).toLocaleString()}` : ""),
           moneyCls: pts > 0 ? "text-emerald-700" : pts < 0 ? "text-rose-700" : "text-[#6a4f3f]",
@@ -5958,6 +5985,20 @@
 
 付款方式：
 現金 / 轉帳 / LINE Pay / 無卡分期`;
+
+    const DEFAULT_BOOKING_LINE_TEMPLATE = `【馥語美學｜預約確認】
+
+親愛的 {{name}} 您好 ✨
+已為您安排預約，細節如下：
+
+📅 日期：{{date}}
+🕐 時間：{{start}}{{end}}
+💫 項目：{{service}}
+
+若需改期或取消，請盡早與我們聯繫。
+期待與您見面，祝您有美好的一天 💛
+
+馥語美學`;
 
     function renderConsultationQuestionnaire() {
       renderMultiChoiceList("q_pastHairRemovalList", "pastHairRemoval", QUESTION_CONFIG.pastHairRemoval);
