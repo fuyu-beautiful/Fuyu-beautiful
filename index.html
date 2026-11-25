@@ -1115,6 +1115,7 @@
             <input type="text" id="bk_customerName" required placeholder="客戶顯示姓名 *" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold text-[#33241d]" />
           </div>
           <div id="bk_customerRiskBadges" class="hidden pt-1"></div>
+          <div id="bk_customerTagsHint" class="hidden mt-1"></div>
           <div id="bk_customerPackageHint" class="hidden mt-1 p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-[11px] text-indigo-950"></div>
         </div>
 
@@ -1748,6 +1749,7 @@
       expenses: [],
       packages: [],
       packageCatalog: [],
+      tagCatalog: [],
       blockedSlots: [],
       consultations: [],
       consultationLogs: [],
@@ -2182,6 +2184,7 @@
       state.expenses = snap.expenses || [];
       state.packages = snap.packages || [];
       state.packageCatalog = snap.packageCatalog || [];
+      state.tagCatalog = snap.tagCatalog || state.tagCatalog || [];
       state.blockedSlots = snap.blockedSlots || [];
       state.siteSettings = snap.siteSettings || { onlineBookingEnabled: false, noticeText: "" };
       state.consultations = snap.consultations || [];
@@ -2302,6 +2305,7 @@
       if (isCatalog && typeof renderCatalogAdmin === "function") renderCatalogAdmin();
       if (isPkgcat && typeof renderPackageCatalogAdmin === "function") renderPackageCatalogAdmin();
       if (isSettings && typeof fillSettingsForm === "function") fillSettingsForm();
+      if (isReports && typeof renderTagCatalogManager === "function") renderTagCatalogManager();
     }
 
     function loadSiteSettingsToForm() {
@@ -2603,18 +2607,24 @@
         return mode === "calendar" ? "" : `<span class="text-[11px] text-[#8b7365]">未填項目</span>`;
       }
       if (mode === "calendar") {
-        const maxShow = 3;
-        const shown = items.slice(0, maxShow);
-        const extra = items.length - shown.length;
-        return shown.map(it => `
-          <div class="w-full px-1 py-0.5 rounded text-[9px] leading-tight bg-white/80 border border-[#e8d9cb] text-[#5c4638] font-semibold truncate" title="${esc(it)}">${esc(it)}</div>
-        `).join("") + (extra > 0
-          ? `<div class="text-[9px] font-extrabold text-[#8c5e43] px-1">另 ${extra} 項</div>`
-          : "");
+        // 月曆格：精簡為「第1項」+「+N」
+        const first = items[0];
+        const extra = items.length - 1;
+        return `<div class="w-full px-1 py-0.5 rounded text-[9px] leading-tight bg-white/85 border border-[#e8d9cb] text-[#5c4638] font-semibold truncate" title="${esc(items.join("、"))}">${esc(first)}${extra > 0 ? ` <span class="text-[#8c5e43] font-extrabold">+${extra}</span>` : ""}</div>`;
       }
-      return `<div class="flex flex-wrap gap-1">${items.map(it => `
-        <span class="inline-flex items-center px-2 py-0.5 rounded-lg bg-[#f6efe8] border border-[#e6d5c3] text-[11px] font-bold text-[#4a382f]">${esc(it)}</span>
-      `).join("")}</div>`;
+      // 當日排程：直向清單，較易掃讀
+      return `<ol class="m-0 pl-4 space-y-0.5 text-[11px] text-[#4a382f] list-decimal">
+        ${items.map(it => `<li class="leading-snug"><span class="font-semibold">${esc(it)}</span></li>`).join("")}
+      </ol>`;
+    }
+
+    function renderCustomerTagsHtml(tags, size) {
+      const list = parseCustomerTags(tags);
+      if (!list.length) return "";
+      const cls = size === "sm"
+        ? "px-1.5 py-0.5 rounded-md bg-[#eef2ff] border border-indigo-200 text-[9px] font-extrabold text-indigo-800"
+        : "px-2 py-0.5 rounded-full bg-[#eef2ff] border border-indigo-200 text-[10px] font-extrabold text-indigo-800";
+      return `<div class="flex flex-wrap gap-1">${list.map(t => `<span class="${cls}">#${esc(t)}</span>`).join("")}</div>`;
     }
 
     function syncBookingServiceChipsFromInput() {
@@ -2808,31 +2818,33 @@
           b.status === "取消申請中" ? "bg-rose-100 text-rose-800 border border-rose-300" :
           "bg-[#f1e7dd] text-[#6a4f3f]";
 
+        const tagsHtml = cust ? renderCustomerTagsHtml(cust.tags, "sm") : "";
         return `
-          <div class="p-3.5 rounded-xl border ${isCompleted ? "border-[#e6ddd3] bg-[#f6f3ef]/85 opacity-80" : "border-[#eee3d8] bg-[#fcfaf8]"} flex flex-col gap-2.5">
-            <div class="space-y-1">
-              <div class="flex flex-wrap items-center gap-1.5">
+          <div class="p-3.5 rounded-xl border ${isCompleted ? "border-[#e6ddd3] bg-[#f6f3ef]/85 opacity-80" : "border-[#eee3d8] bg-[#fcfaf8]"} flex flex-col gap-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-1.5 min-w-0">
                 <span class="font-extrabold text-sm text-[#3a2a22] tabular-nums">${esc(b.startTime)} - ${esc(b.endTime)}</span>
                 <span class="font-bold text-sm text-[#8c5e43]">${esc(b.customerName)}</span>
-                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${colorStyle.pillClass}">${esc(colorStyle.label)}</span>
                 <span class="text-[11px] px-2 py-0.5 rounded-full font-bold ${statusColor}">${esc(b.status)}</span>
               </div>
-              ${riskHtml ? `<div class="flex flex-wrap gap-1 pt-0.5">${riskHtml}</div>` : ""}
-              <div class="pt-0.5">${renderServiceItemsHtml(b.service, "day")}</div>
-              <div class="text-xs text-[#4a382f]"><span class="font-semibold">$${rev.toLocaleString()}</span>（${esc(b.payMethod || "-")}）</div>
-              <div class="text-[11px] text-[#8b7365]">
-                累計來店 ${visits} 次${lineClean ? ` · LINE：${esc(lineClean)}` : ""}${b.note ? ` · 備註：${esc(b.note)}` : ""}
-              </div>
+              <div class="text-xs font-extrabold text-[#8c5e43] tabular-nums">$${rev.toLocaleString()} <span class="font-semibold text-[#8b7365]">（${esc(b.payMethod || "-")}）</span></div>
             </div>
-            <div class="flex flex-wrap items-center justify-end gap-1.5 pt-1 border-t border-[#f2e8dd]">
-              ${b.status === "尚未到來" || b.status === "已報到" ? `
-                <button onclick="openSettleModal('${escJs(b.id)}')" class="px-3 py-1 rounded-lg text-xs font-extrabold btn-primary shadow-sm">
-                  ✨ 完成結算
-                </button>
-              ` : ""}
-              <button onclick="openBookingModalById('${escJs(b.id)}')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white border border-[#decbb9] text-[#5c4638] hover:bg-[#f5eee7]">
-                編輯
-              </button>
+            ${tagsHtml ? `<div>${tagsHtml}</div>` : ""}
+            ${riskHtml ? `<div class="flex flex-wrap gap-1">${riskHtml}</div>` : ""}
+            <div class="rounded-xl bg-white/80 border border-[#efe4d8] px-2.5 py-1.5">
+              <div class="text-[10px] font-extrabold text-[#8b7365] mb-0.5">預約項目</div>
+              ${renderServiceItemsHtml(b.service, "day")}
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[#f2e8dd]">
+              <div class="text-[11px] text-[#8b7365]">
+                來店 ${visits} 次${lineClean ? ` · LINE：${esc(lineClean)}` : ""}${b.note ? ` · ${esc(b.note)}` : ""}
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5">
+                ${b.status === "尚未到來" || b.status === "已報到" ? `
+                  <button onclick="openSettleModal('${escJs(b.id)}')" class="px-3 py-1 rounded-lg text-xs font-extrabold btn-primary shadow-sm">✨ 完成結算</button>
+                ` : ""}
+                <button onclick="openBookingModalById('${escJs(b.id)}')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-white border border-[#decbb9] text-[#5c4638] hover:bg-[#f5eee7]">編輯</button>
+              </div>
             </div>
           </div>
         `;
@@ -3307,6 +3319,17 @@
         document.getElementById("bk_customerName").value = cust.name;
       }
       renderBookingModalRiskBadges(cid);
+      const tagBox = document.getElementById("bk_customerTagsHint");
+      if (tagBox) {
+        const tagsHtml = cust ? renderCustomerTagsHtml(cust.tags) : "";
+        if (tagsHtml) {
+          tagBox.classList.remove("hidden");
+          tagBox.innerHTML = `<div class="text-[10px] font-extrabold text-[#8b7365] mb-0.5">內部標籤</div>${tagsHtml}`;
+        } else {
+          tagBox.classList.add("hidden");
+          tagBox.innerHTML = "";
+        }
+      }
       refreshBookingCouponSelect(cid, "");
       const hint = document.getElementById("bk_customerPackageHint");
       if (hint) {
@@ -3795,8 +3818,55 @@
 
     function getAllUsedCustomerTags() {
       const set = new Set(DEFAULT_CUSTOMER_TAGS);
+      (state.tagCatalog || []).forEach(t => { if (t) set.add(String(t)); });
       (state.customers || []).forEach(c => parseCustomerTags(c.tags).forEach(t => set.add(t)));
       return Array.from(set);
+    }
+
+    function renderTagCatalogManager() {
+      const box = document.getElementById("tagCatalogAdminList");
+      if (!box) return;
+      const tags = (state.tagCatalog && state.tagCatalog.length) ? state.tagCatalog.slice() : getAllUsedCustomerTags();
+      box.innerHTML = tags.length
+        ? tags.map(t => `
+          <div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#eef2ff] border border-indigo-200 text-[11px] font-extrabold text-indigo-900">
+            #${esc(t)}
+            <button type="button" onclick="handleDeleteTagCatalog('${escJs(t)}')" class="text-rose-600 ml-0.5" title="從標籤庫移除">✕</button>
+          </div>`).join("")
+        : `<span class="text-[11px] text-[#8b7365]">尚無標籤，請新增</span>`;
+    }
+
+    async function handleAddTagCatalog() {
+      const el = document.getElementById("tagCatalogNewInput");
+      const t = (el && el.value || "").trim();
+      if (!t) return showToast("請輸入標籤名稱", true);
+      try {
+        setLoading(true, "儲存標籤庫...");
+        const snap = await apiPost({ action: "saveTagCatalogAdmin", password: state.adminPassword, tag: t, mode: "add" });
+        applyAdminSnapshot(snap);
+        if (el) el.value = "";
+        renderTagCatalogManager();
+        showToast("已新增標籤（雲端保存）");
+      } catch (err) {
+        showToast(err.message || "新增失敗", true);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function handleDeleteTagCatalog(tag) {
+      if (!confirm("從標籤庫移除「" + tag + "」？\n（不會自動清除已套在會員上的標籤）")) return;
+      try {
+        setLoading(true, "更新標籤庫...");
+        const snap = await apiPost({ action: "saveTagCatalogAdmin", password: state.adminPassword, tag: tag, mode: "remove" });
+        applyAdminSnapshot(snap);
+        renderTagCatalogManager();
+        showToast("已從標籤庫移除");
+      } catch (err) {
+        showToast(err.message || "移除失敗", true);
+      } finally {
+        setLoading(false);
+      }
     }
 
     function renderCustomerTagFilterOptions() {
