@@ -1149,9 +1149,17 @@
           </div>
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">優惠券</label>
-            <select id="bk_usedCouponId" onchange="onBookingCouponChange()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white">
-              <option value="">不使用</option>
-            </select>
+            <input type="hidden" id="bk_usedCouponId" value="" />
+            <div id="bk_couponHint" class="text-[11px] text-[#8b7365]">選擇會員後顯示可用優惠券</div>
+          </div>
+        </div>
+
+        <div id="bk_customerCouponBox" class="hidden p-3 rounded-2xl bg-[#fdf6ef] border border-[#f0d6be] space-y-2 text-xs">
+          <div class="font-extrabold text-[#8c522b]">🎟️ 此會員可用優惠券（可多選加入）</div>
+          <div id="bk_availableCouponsList" class="space-y-1"></div>
+          <div>
+            <div class="text-[11px] font-bold text-[#6a4f3f] mb-1">已加入優惠券：</div>
+            <div id="bk_selectedCouponsList" class="space-y-1"></div>
           </div>
         </div>
 
@@ -1324,7 +1332,7 @@
             </div>
             <div>
               <label class="block font-bold text-[#4a382f] mb-1">收款方式</label>
-              <select id="pkg_payMethod" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
+              <select id="pkg_payMethod" onchange="onPackagePayMethodChange()" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
                 <option value="現金">現金</option>
                 <option value="轉帳">轉帳</option>
                 <option value="儲值金扣除">儲值金扣除</option>
@@ -1332,6 +1340,13 @@
                 <option value="未收款">未收款</option>
               </select>
             </div>
+          </div>
+          <div id="pkg_splitCashBox" class="hidden p-2.5 rounded-xl bg-amber-50 border border-amber-300">
+            <label class="flex items-start gap-2 cursor-pointer">
+              <input type="checkbox" id="pkg_splitCashFallback" class="mt-0.5 w-4 h-4 accent-[#8c5e43]" />
+              <span class="text-xs font-extrabold text-amber-900 leading-snug">儲值金不足時，差額改以現金補足</span>
+            </label>
+            <p id="pkg_splitCashHint" class="text-[11px] text-amber-800 pl-6 mt-1"></p>
           </div>
         </div>
 
@@ -2902,7 +2917,7 @@
             bookingId: bkId,
             payMethod: method,
             usedCouponId: document.getElementById("st_couponId").value,
-            packageId: method === "三堂套票" ? packageId : "",
+            packageId: packageId || ((b && b.usedPackageId) || ""),
             splitCashFallback: method === "扣儲值金" ? splitCashFallback : false,
             finalPrice,
             note: document.getElementById("st_note").value.trim()
@@ -2923,6 +2938,7 @@
     function openBookingModal(prefillDate = null, prefillCustomerId = "") {
       document.getElementById("bk_id").value = "";
       const _pkgH = document.getElementById("bk_packageId"); if (_pkgH) _pkgH.value = "";
+      state.selectedBookingCouponIds = [];
       document.getElementById("bookingModalTitle").textContent = "新增預約";
       document.getElementById("bk_deleteBtn").classList.add("hidden");
       document.getElementById("bk_memberSearch").value = "";
@@ -3034,15 +3050,88 @@
       refreshBookingCouponSelect(selectedCustId, selectedCouponId);
     }
 
+    function getSelectedBookingCouponIds() {
+      return (state.selectedBookingCouponIds || []).join(",");
+    }
+
     function refreshBookingCouponSelect(custId, selectedCouponId = "") {
-      const coupSel = document.getElementById("bk_usedCouponId");
+      const preselected = selectedCouponId
+        ? String(selectedCouponId).split(",").map(s => s.trim()).filter(Boolean)
+        : [];
+      state.selectedBookingCouponIds = preselected.slice();
+      renderBookingCouponPicker(custId);
+      const hid = document.getElementById("bk_usedCouponId");
+      if (hid) hid.value = getSelectedBookingCouponIds();
+    }
+
+    function renderBookingCouponPicker(custId) {
+      const box = document.getElementById("bk_customerCouponBox");
+      const listEl = document.getElementById("bk_availableCouponsList");
+      const selectedEl = document.getElementById("bk_selectedCouponsList");
+      const hint = document.getElementById("bk_couponHint");
+      if (!box || !listEl || !selectedEl) return;
+      if (!custId) {
+        box.classList.add("hidden");
+        if (hint) hint.textContent = "選擇會員後顯示可用優惠券";
+        state.selectedBookingCouponIds = [];
+        const hid = document.getElementById("bk_usedCouponId");
+        if (hid) hid.value = "";
+        return;
+      }
+      const selectedSet = new Set(state.selectedBookingCouponIds || []);
       const avail = getVisibleCoupons().filter(cp =>
-        (cp.status === "可使用" || (selectedCouponId && String(cp.couponId) === String(selectedCouponId))) &&
-        (!custId || String(cp.customerId) === String(custId))
+        (cp.status === "可使用" || selectedSet.has(String(cp.couponId))) &&
+        String(cp.customerId) === String(custId)
       );
-      coupSel.innerHTML = `<option value="">不使用</option>` + avail.map(cp =>
-        `<option value="${esc(cp.couponId)}" ${String(cp.couponId) === String(selectedCouponId) ? "selected" : ""}>${esc(cp.title)} (-$${safeNumber(cp.discountAmount, 0)})</option>`
-      ).join("");
+      if (avail.length === 0) {
+        box.classList.add("hidden");
+        if (hint) hint.textContent = "此會員目前無可用優惠券";
+        return;
+      }
+      box.classList.remove("hidden");
+      if (hint) hint.textContent = `可加入 ${avail.length} 張`;
+      listEl.innerHTML = avail.map(cp => {
+        const id = String(cp.couponId);
+        const added = selectedSet.has(id);
+        return `
+          <div class="flex items-center justify-between gap-2 py-1 border-t border-[#f0d6be] first:border-0">
+            <div class="min-w-0">
+              <span class="font-bold text-[#33241d]">${esc(cp.title)}</span>
+              <span class="ml-1 text-[#8c5e43] font-extrabold">-$${safeNumber(cp.discountAmount, 0)}</span>
+              ${cp.expiresDate ? `<span class="text-[10px] text-[#8b7365]">（至 ${esc(cp.expiresDate)}）</span>` : ""}
+            </div>
+            ${added
+              ? `<button type="button" onclick="removeBookingCoupon('${escJs(id)}')" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 font-extrabold shrink-0">✓ 已加入（移除）</button>`
+              : `<button type="button" onclick="addBookingCoupon('${escJs(id)}')" class="px-2.5 py-1 rounded-lg bg-[#f4e8de] text-[#8c5e43] font-extrabold shrink-0">＋ 加入</button>`
+            }
+          </div>`;
+      }).join("");
+      const selectedCoupons = avail.filter(cp => selectedSet.has(String(cp.couponId)));
+      if (selectedCoupons.length === 0) {
+        selectedEl.innerHTML = `<div class="text-[#8b7365]">尚未加入優惠券</div>`;
+      } else {
+        selectedEl.innerHTML = selectedCoupons.map(cp => `
+          <div class="p-2 rounded-xl bg-white border border-[#f0d6be] flex items-center justify-between gap-2">
+            <span class="font-bold">${esc(cp.title)}（-$${safeNumber(cp.discountAmount, 0)}）</span>
+            <button type="button" onclick="removeBookingCoupon('${escJs(cp.couponId)}')" class="text-rose-700 font-bold">✕</button>
+          </div>`).join("");
+      }
+      const hid = document.getElementById("bk_usedCouponId");
+      if (hid) hid.value = getSelectedBookingCouponIds();
+      onBookingCouponChange();
+    }
+
+    function addBookingCoupon(couponId) {
+      const id = String(couponId);
+      if (!state.selectedBookingCouponIds) state.selectedBookingCouponIds = [];
+      if (state.selectedBookingCouponIds.indexOf(id) === -1) state.selectedBookingCouponIds.push(id);
+      renderBookingCouponPicker(document.getElementById("bk_customerId").value);
+    }
+
+    function removeBookingCoupon(couponId) {
+      const id = String(couponId);
+      state.selectedBookingCouponIds = (state.selectedBookingCouponIds || []).filter(x => x !== id);
+      renderBookingCouponPicker(document.getElementById("bk_customerId").value);
     }
 
     function onBookingCustomerChange() {
@@ -3081,16 +3170,26 @@
       const p = (state.packages || []).find(x => String(x.id) === String(packageId));
       if (!p) return showToast("找不到套票", true);
       if (safeNumber(p.remainingSessions, 0) <= 0) return showToast("此套票已無剩餘堂數", true);
-      // 套票核銷只扣堂數：金額已在購買時收過，預約金額固定 0
       const label = `${p.name}（套票扣1堂）`;
-      const serviceEl = document.getElementById("bk_service");
-      serviceEl.value = label;
-      const payEl = document.getElementById("bk_payMethod");
-      if (payEl) payEl.value = "三堂套票";
+      document.getElementById("bk_service").value = label;
       document.getElementById("bk_finalPrice").value = 0;
       const pkgHid = document.getElementById("bk_packageId");
       if (pkgHid) pkgHid.value = p.id;
-      showToast(`已加入：${p.name}（完成時只扣堂數）`);
+      const payEl = document.getElementById("bk_payMethod");
+      if (payEl) {
+        let hasPkgOpt = false;
+        for (let i = 0; i < payEl.options.length; i++) {
+          if (payEl.options[i].value === "三堂套票") { hasPkgOpt = true; break; }
+        }
+        if (!hasPkgOpt) {
+          const opt = document.createElement("option");
+          opt.value = "三堂套票";
+          opt.textContent = "三堂套票（扣堂）";
+          payEl.appendChild(opt);
+        }
+        payEl.value = "三堂套票";
+      }
+      showToast(`已加入：${p.name}（完成時自動扣 1 堂）`);
     }
 
     function selectAdminBookingCategory(catName) {
@@ -3215,6 +3314,21 @@
       if (state.selectedAdminBookingServiceIds.length > 0) {
         recalcAdminBookingFromSelectedItems(true);
       }
+      // 多張優惠券累加折抵（以目前金額為基礎，避免負數）
+      const ids = state.selectedBookingCouponIds || [];
+      if (!ids.length) return;
+      let discount = 0;
+      ids.forEach(id => {
+        const cp = getVisibleCoupons().find(c => String(c.couponId) === String(id));
+        if (cp) discount += safeNumber(cp.discountAmount, 0);
+      });
+      if (discount > 0 && state.selectedAdminBookingServiceIds.length === 0) {
+        const priceEl = document.getElementById("bk_finalPrice");
+        const base = safeNumber(priceEl.dataset.basePrice || priceEl.value, 0);
+        if (!priceEl.dataset.basePrice) priceEl.dataset.basePrice = String(base);
+        const basePrice = safeNumber(priceEl.dataset.basePrice, base);
+        priceEl.value = Math.max(0, basePrice - discount);
+      }
     }
 
     function recalcAdminBookingFromSelectedItems(overwriteFields = true) {
@@ -3336,8 +3450,8 @@
         payMethod,
         status: newStatus,
         note: document.getElementById("bk_note").value.trim(),
-        usedCouponId: document.getElementById("bk_usedCouponId").value || "",
-        usedPackageId: payMethod === "三堂套票" ? pkgIdVal : "",
+        usedCouponId: (typeof getSelectedBookingCouponIds === "function" ? getSelectedBookingCouponIds() : (document.getElementById("bk_usedCouponId") ? document.getElementById("bk_usedCouponId").value : "")) || "",
+        usedPackageId: pkgIdVal || "",
         forceBlocked
       };
       const btn = document.getElementById("bk_submitBtn");
@@ -3846,6 +3960,30 @@
         if (payMethod && payMethod.value === "未收款") payMethod.value = "現金";
         syncPackagePaidFromPrice();
       }
+      onPackagePayMethodChange();
+    }
+
+    function onPackagePayMethodChange() {
+      const method = (document.getElementById("pkg_payMethod") || {}).value || "";
+      const box = document.getElementById("pkg_splitCashBox");
+      const hint = document.getElementById("pkg_splitCashHint");
+      const isStored = method === "儲值金扣除" || method === "扣儲值金";
+      if (box) box.classList.toggle("hidden", !isStored);
+      if (!isStored) {
+        const cb = document.getElementById("pkg_splitCashFallback");
+        if (cb) cb.checked = false;
+        if (hint) hint.textContent = "";
+        return;
+      }
+      const cid = document.getElementById("pkg_customerId").value;
+      const cust = state.customers.find(c => String(c.id) === String(cid));
+      const need = safeNumber(document.getElementById("pkg_paidAmount").value, 0) || safeNumber(document.getElementById("pkg_price").value, 0);
+      const bal = cust ? safeNumber(cust.balance, 0) : 0;
+      if (hint) {
+        if (!cust) hint.textContent = "請先選擇會員";
+        else if (bal >= need) hint.textContent = `會員目前儲值金 $${bal.toLocaleString()}，足夠全額扣除`;
+        else hint.textContent = `目前餘額 $${bal.toLocaleString()}，尚差 $${(need - bal).toLocaleString()}（勾選後以現金補足）`;
+      }
     }
 
     function openPackageModal(customerId, customerName = "", packageId = "") {
@@ -3932,7 +4070,8 @@
             note,
             paid: paid,
             paidAmount: paidAmount > 0 ? paidAmount : safeNumber(document.getElementById("pkg_price").value, 0),
-            payMethod: payMethod
+            payMethod: payMethod,
+            splitCashFallback: !!(document.getElementById("pkg_splitCashFallback") && document.getElementById("pkg_splitCashFallback").checked)
           }
         });
         applyAdminSnapshot(snap);
@@ -3967,6 +4106,9 @@
         applyAdminSnapshot(snap);
         if (!document.getElementById("customerDetailModal").classList.contains("hidden")) {
           openCustomerDetailModal(customerId);
+        }
+        if (state.financeSubTab === "packages" && typeof renderPackagesFinanceList === "function") {
+          renderPackagesFinanceList();
         }
         showToast("已扣除 1 堂套票");
       } catch (err) {
@@ -5041,24 +5183,6 @@
       };
 
       incomeContainer.innerHTML = `
-        <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 mb-2">
-          <div class="text-[11px] font-bold text-emerald-800">${periodLabel} 總收入</div>
-          <div class="text-2xl font-extrabold text-emerald-900 tabular-nums mt-1">$${totalPeriodIncome.toLocaleString()}</div>
-          <div class="grid grid-cols-3 gap-2 mt-3 text-[11px]">
-            <div class="p-2 rounded-xl bg-white/80 border border-emerald-100">
-              <div class="text-[#8b7365]">服務現金</div>
-              <div class="font-extrabold text-[#33241d] tabular-nums">$${serviceRev.toLocaleString()}</div>
-            </div>
-            <div class="p-2 rounded-xl bg-white/80 border border-emerald-100">
-              <div class="text-[#8b7365]">儲值收入</div>
-              <div class="font-extrabold text-[#33241d] tabular-nums">$${topupCashInPeriod.toLocaleString()}</div>
-            </div>
-            <div class="p-2 rounded-xl bg-white/80 border border-emerald-100">
-              <div class="text-[#8b7365]">套票收入</div>
-              <div class="font-extrabold text-[#33241d] tabular-nums">$${packageCashInPeriod.toLocaleString()}</div>
-            </div>
-          </div>
-        </div>
         <div class="text-xs font-extrabold text-[#33241d] mb-1.5">全部收入明細（${allIncome.length} 筆）</div>
         ${allIncome.length === 0
           ? `<div class="text-xs text-[#8b7365] py-6 text-center">${periodLabel} 尚無收入紀錄</div>`
@@ -5936,16 +6060,26 @@
       });
       list.forEach(tx => {
         const pts = safeNumber(tx.pointsChange, 0);
-        const isPkg = String(tx.type || "").indexOf("套票") !== -1;
+        const cash = safeNumber(tx.cashPaid, 0);
+        const type = String(tx.type || "").trim();
+        const isPkgUse = type === "套票扣堂";
+        let title = type || "異動";
+        if (type === "套票售出") title = "套票";
+        if (isPkgUse) title = "套票使用";
+        let moneyText = "";
+        if (pts > 0) moneyText = `+$${pts.toLocaleString()}`;
+        else if (pts < 0) moneyText = `-$${Math.abs(pts).toLocaleString()}`;
+        else if (cash > 0) moneyText = `$${cash.toLocaleString()}`;
+        else if (isPkgUse) moneyText = "-1 堂";
+        const showBal = tx.balanceAfter !== "" && tx.balanceAfter !== undefined && tx.balanceAfter !== null;
         rows.push({
           sortKey: String(tx.time || ""),
           time: tx.time || "",
-          title: (tx.type === "套票售出" ? "套票" : (tx.type || "異動")),
+          title,
           detail: tx.note || "",
-          moneyText: isPkg ? "" : (pts > 0 ? `+$${pts.toLocaleString()}` : pts < 0 ? `-$${Math.abs(pts).toLocaleString()}` : ""),
-          moneyCls: pts > 0 ? "text-emerald-700" : pts < 0 ? "text-rose-700" : "text-[#6a4f3f]",
-          sub: (!isPkg && tx.balanceAfter !== "" && tx.balanceAfter !== undefined)
-            ? `儲值餘額 $${safeNumber(tx.balanceAfter, 0).toLocaleString()}` : ""
+          moneyText,
+          moneyCls: pts > 0 ? "text-emerald-700" : (pts < 0 || isPkgUse) ? "text-rose-700" : cash > 0 ? "text-[#8c5e43]" : "text-[#6a4f3f]",
+          sub: showBal ? `儲值餘額 $${safeNumber(tx.balanceAfter, 0).toLocaleString()}` : ""
         });
       });
       rows.sort((a, b) => String(b.sortKey).localeCompare(String(a.sortKey)));
