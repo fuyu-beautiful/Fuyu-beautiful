@@ -2623,8 +2623,8 @@
     }
 
     function getServiceColorStyle(booking) {
-      const cat = String(booking.category || "").trim();
-      const srv = String(booking.service || "").trim();
+      const cat = String((booking && booking.category) || "").trim();
+      const srv = String((booking && booking.service) || "").trim();
       let matchedCat = cat;
       let matchedItem = srv;
 
@@ -2635,17 +2635,38 @@
           matchedItem = String(found.name || srv).trim() || srv;
         }
       }
-      // 小提醒改顯示「項目」而非分類
       const itemLabel = matchedItem || srv || matchedCat || "其他";
-
       const text = `${matchedCat} ${srv}`;
+
+      // 與月曆一致：熱蠟／日式冰肌／其他，僅用左側色條＋淡底，不整塊染色
       if (text.indexOf("熱蠟") !== -1) {
-        return { pillClass: "bg-rose-100 text-rose-800 border border-rose-200", label: itemLabel };
+        return {
+          typeKey: "wax",
+          typeLabel: "熱蠟",
+          pillClass: "bg-rose-100 text-rose-800 border border-rose-200",
+          chipClass: "bg-rose-50/90 text-rose-800 border border-rose-200",
+          cardClass: "border-l-4 border-l-rose-400 bg-rose-50/35 border-rose-100",
+          label: itemLabel
+        };
       }
       if (text.indexOf("冰肌") !== -1 || text.indexOf("日式") !== -1 || text.indexOf("淨毛") !== -1) {
-        return { pillClass: "bg-sky-100 text-sky-800 border border-sky-200", label: itemLabel };
+        return {
+          typeKey: "japanese",
+          typeLabel: "日式",
+          pillClass: "bg-sky-100 text-sky-800 border border-sky-200",
+          chipClass: "bg-sky-50/90 text-sky-800 border border-sky-200",
+          cardClass: "border-l-4 border-l-sky-400 bg-sky-50/35 border-sky-100",
+          label: itemLabel
+        };
       }
-      return { pillClass: "bg-[#f2e8de] text-[#6a4832] border border-[#e3d1c0]", label: itemLabel };
+      return {
+        typeKey: "other",
+        typeLabel: "其他",
+        pillClass: "bg-[#f2e8de] text-[#6a4832] border border-[#e3d1c0]",
+        chipClass: "bg-[#f7f0e8] text-[#6a4832] border border-[#e3d1c0]",
+        cardClass: "border-l-4 border-l-[#c4a484] bg-[#fcfaf8] border-[#eee3d8]",
+        label: itemLabel
+      };
     }
 
     function splitServiceItems(service) {
@@ -2678,13 +2699,15 @@
       }
       if (mode === "calendar") {
         const { pkgParts, addOnParts } = classifyServiceParts(service);
+        const st = getServiceColorStyle({ service: service, category: "" });
         const labelBits = [];
-        if (pkgParts.length) labelBits.push("套票:" + pkgParts[0]);
+        if (pkgParts.length) labelBits.push("套票");
         if (addOnParts.length) labelBits.push(addOnParts[0]);
+        else if (pkgParts.length) labelBits.push(pkgParts[0]);
         const title = [...pkgParts.map(p => "套票 " + p), ...addOnParts].join("、");
-        const extra = Math.max(0, (pkgParts.length + addOnParts.length) - labelBits.length);
-        const text = labelBits.join(" / ") || items[0];
-        return `<div class="w-full px-1 py-0.5 rounded text-[9px] leading-tight bg-white/85 border border-[#e8d9cb] text-[#5c4638] font-semibold truncate" title="${esc(title)}">${esc(text)}${extra > 0 ? ` <span class="text-[#8c5e43] font-extrabold">+${extra}</span>` : ""}</div>`;
+        const extra = Math.max(0, (pkgParts.length + addOnParts.length) - 1);
+        const text = labelBits.join(" ") || items[0];
+        return `<div class="w-full px-1 py-0.5 rounded text-[9px] leading-tight font-semibold truncate ${st.chipClass}" title="${esc(title)}">${esc(text)}${extra > 0 ? ` <span class="font-extrabold opacity-80">+${extra}</span>` : ""}</div>`;
       }
       // 當日排程：套票 / 加選分開，避免零散難讀
       const { pkgParts, addOnParts } = classifyServiceParts(service);
@@ -2909,19 +2932,24 @@
           "bg-[#f1e7dd] text-[#6a4f3f]";
 
         const tagsHtml = cust ? renderCustomerTagsHtml(cust.tags, "sm") : "";
+        const typeBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${colorStyle.pillClass}">${esc(colorStyle.typeLabel || "其他")}</span>`;
+        const surface = isCompleted
+          ? "border-[#e6ddd3] bg-[#f6f3ef]/85 opacity-80 border-l-4 border-l-[#cfc4b8]"
+          : colorStyle.cardClass;
         return `
-          <div class="p-3.5 rounded-xl border ${isCompleted ? "border-[#e6ddd3] bg-[#f6f3ef]/85 opacity-80" : "border-[#eee3d8] bg-[#fcfaf8]"} flex flex-col gap-2">
+          <div class="p-3.5 rounded-xl border ${surface} flex flex-col gap-2">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <div class="flex flex-wrap items-center gap-1.5 min-w-0">
                 <span class="font-extrabold text-sm text-[#3a2a22] tabular-nums">${esc(b.startTime)} - ${esc(b.endTime)}</span>
                 <span class="font-bold text-sm text-[#8c5e43]">${esc(b.customerName)}</span>
+                ${typeBadge}
                 <span class="text-[11px] px-2 py-0.5 rounded-full font-bold ${statusColor}">${esc(b.status)}</span>
               </div>
               <div class="text-xs font-extrabold text-[#8c5e43] tabular-nums">$${rev.toLocaleString()} <span class="font-semibold text-[#8b7365]">（${esc(b.payMethod || "-")}）</span></div>
             </div>
             ${tagsHtml ? `<div>${tagsHtml}</div>` : ""}
             ${riskHtml ? `<div class="flex flex-wrap gap-1">${riskHtml}</div>` : ""}
-            <div class="rounded-xl bg-white/80 border border-[#efe4d8] px-2.5 py-1.5">
+            <div class="rounded-xl bg-white/85 border border-white/60 px-2.5 py-1.5">
               <div class="text-[10px] font-extrabold text-[#8b7365] mb-0.5">預約項目</div>
               ${renderServiceItemsHtml(b.service, "day")}
             </div>
@@ -6543,7 +6571,7 @@
                 <div class="flex items-center gap-1.5 shrink-0">
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${badgeCls}">${esc(st)}</span>
                   ${["尚未到來","待審核"].indexOf(st) !== -1 ? `
-                    <button type="button" onclick="openCustChangeBookingModal('${escJs(b.id)}')" class="px-4 py-2.5 rounded-xl bg-[#8c5e43] text-white text-sm font-extrabold shadow hover:bg-[#7a4f38] border border-[#744c36]">異動預約</button>
+                    <button type="button" onclick="openCustChangeBookingModal('${escJs(b.id)}')" class="px-2.5 py-1.5 rounded-lg bg-[#8c5e43] text-white text-[11px] font-extrabold shadow-sm hover:bg-[#7a4f38] border border-[#744c36]">異動</button>
                   ` : ""}
                 </div>
               </div>`;
