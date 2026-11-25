@@ -744,7 +744,7 @@
             <div id="finMonthRevenue" class="text-lg font-extrabold text-emerald-700 mt-1 tabular-nums">$0</div>
           </div>
           <div class="p-3.5 rounded-2xl bg-white border border-indigo-100">
-            <div class="text-[11px] font-bold text-indigo-700">當月套票預收</div>
+            <div id="finPackageLabel" class="text-[11px] font-bold text-indigo-700">當月套票收入</div>
             <div id="finMonthPackagePrepay" class="text-lg font-extrabold text-indigo-800 mt-1 tabular-nums">$0</div>
           </div>
           <div class="p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
@@ -768,9 +768,10 @@
 
         <div id="financeYearAnalysisPanel" class="hidden pt-2 border-t border-[#ead9c8] space-y-3">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <h3 id="finYearAnalysisTitle" class="text-sm font-extrabold text-[#33241d]">📊 年度各月營收、來客數與收支分析</h3>
-            <span class="text-[11px] text-[#8b7365]">點擊任一月份列可切換檢視該月明細</span>
+            <h3 id="finYearAnalysisTitle" class="text-sm font-extrabold text-[#33241d]">📊 年度總覽與月報</h3>
+            <span class="text-[11px] text-[#8b7365]">點擊月份列可切換到該月明細</span>
           </div>
+          <div id="finYearSummaryCards" class="space-y-2"></div>
           <div id="finYearMonthlyBreakdown" class="overflow-x-auto rounded-2xl border border-[#e7d8c8] bg-white"></div>
         </div>
       </div>
@@ -1350,6 +1351,22 @@
   </div>
 
   <!-- ==================== 彈窗 5：儲值／退儲值／轉儲值 ==================== -->
+  
+  <div id="bookingSuccessModal" class="fixed inset-0 z-[60] modal-backdrop flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 shadow-xl space-y-3">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-extrabold text-emerald-800">✅ 預約已建立</h3>
+        <button type="button" onclick="closeBookingSuccessModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
+      </div>
+      <p class="text-xs text-[#7c6557]">可複製以下訊息，直接貼到 LINE 通知貴賓：</p>
+      <textarea id="bookingSuccessMsg" readonly rows="10" class="w-full text-xs leading-relaxed p-3 rounded-2xl border border-[#decbb9] bg-[#fcfaf8] text-[#33241d] font-medium"></textarea>
+      <div class="flex justify-end gap-2 pt-1">
+        <button type="button" onclick="closeBookingSuccessModal()" class="px-4 py-2 rounded-xl bg-[#f3ece5] text-[#6b5344] font-bold text-xs">關閉</button>
+        <button type="button" onclick="copyBookingSuccessMsg()" class="px-4 py-2 rounded-xl font-bold btn-primary shadow text-xs">📋 複製訊息</button>
+      </div>
+    </div>
+  </div>
+
   <div id="topUpModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 hidden">
     <div id="topUpModalContent" class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl"></div>
   </div>
@@ -3272,14 +3289,36 @@
       let finalPrice = safeNumber(document.getElementById("bk_finalPrice").value, 0);
       if (payMethod === "三堂套票") finalPrice = 0;
 
+      const startTimeVal = document.getElementById("bk_startTime").value;
+      const endTimeVal = document.getElementById("bk_endTime").value;
+      const startMin = timeToMinutes(startTimeVal);
+      const endMin = timeToMinutes(endTimeVal);
+      const blockedHits = (state.blockedSlots || []).filter(blk => {
+        if (blk.date !== dateStr) return false;
+        if (blk.fullDay) return true;
+        const bStart = timeToMinutes(blk.startTime);
+        const bEnd = timeToMinutes(blk.endTime);
+        return startMin < bEnd && endMin > bStart;
+      });
+      let forceBlocked = false;
+      if (blockedHits.length > 0) {
+        const detail = blockedHits.map(c =>
+          c.fullDay ? `${c.date} 整天禁約（${c.reason || "禁約"}）` : `${c.startTime}-${c.endTime}（${c.reason || "禁約"}）`
+        ).join("；");
+        if (!confirm(`⚠️ 此時段落在禁約範圍：\n${detail}\n\n仍要強制新增預約嗎？`)) {
+          return;
+        }
+        forceBlocked = true;
+      }
+
       const payload = {
         id: bookingId,
         customerId,
         customerName,
         staff: "Ruby",
         date: dateStr,
-        startTime: document.getElementById("bk_startTime").value,
-        endTime: document.getElementById("bk_endTime").value,
+        startTime: startTimeVal,
+        endTime: endTimeVal,
         duration: safeNumber(document.getElementById("bk_duration").value, 60),
         category: payMethod === "三堂套票" ? "日式無痛淨毛（三堂）" : (firstSelectedItem ? String(firstSelectedItem.category || "") : ""),
         service: serviceText,
@@ -3289,7 +3328,8 @@
         status: newStatus,
         note: document.getElementById("bk_note").value.trim(),
         usedCouponId: document.getElementById("bk_usedCouponId").value || "",
-        usedPackageId: payMethod === "三堂套票" ? pkgIdVal : ""
+        usedPackageId: payMethod === "三堂套票" ? pkgIdVal : "",
+        forceBlocked
       };
       const btn = document.getElementById("bk_submitBtn");
       try {
@@ -3300,12 +3340,76 @@
 
         const becameCompleted = newStatus === "已完成" && (!prevBooking || prevBooking.status !== "已完成");
         closeBookingModal();
+        openBookingSuccessModal({
+          customerName,
+          date: dateStr,
+          startTime: startTimeVal,
+          endTime: endTimeVal,
+          service: serviceText,
+          status: newStatus
+        });
         showToast(becameCompleted ? "已儲存預約並更新會員來客數 +1" : "已儲存預約");
       } catch (err) {
         showToast(err.message || "儲存失敗", true);
       } finally {
         setButtonBusy(btn, false);
         setLoading(false);
+      }
+    }
+
+    function buildLineBookingNotifyText(info) {
+      const name = info.customerName || "貴賓";
+      const date = info.date || "";
+      const start = info.startTime || "";
+      const end = info.endTime ? ` - ${info.endTime}` : "";
+      const service = info.service || "";
+      return (
+`【馥語美學｜預約確認】
+
+親愛的 ${name} 您好 ✨
+已為您安排預約，細節如下：
+
+📅 日期：${date}
+🕐 時間：${start}${end}
+💫 項目：${service}
+
+若需改期或取消，請盡早與我們聯繫。
+期待與您見面，祝您有美好的一天 💛
+
+馥語美學`
+      );
+    }
+
+    function openBookingSuccessModal(info) {
+      const msg = buildLineBookingNotifyText(info || {});
+      const ta = document.getElementById("bookingSuccessMsg");
+      if (ta) ta.value = msg;
+      const modal = document.getElementById("bookingSuccessModal");
+      if (modal) modal.classList.remove("hidden");
+    }
+
+    function closeBookingSuccessModal() {
+      const modal = document.getElementById("bookingSuccessModal");
+      if (modal) modal.classList.add("hidden");
+    }
+
+    async function copyBookingSuccessMsg() {
+      const ta = document.getElementById("bookingSuccessMsg");
+      if (!ta) return;
+      const text = ta.value || "";
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+        } else {
+          ta.focus();
+          ta.select();
+          document.execCommand("copy");
+        }
+        showToast("已複製，可直接貼到 LINE");
+      } catch (err) {
+        ta.focus();
+        ta.select();
+        showToast("請長按文字手動複製", true);
       }
     }
 
@@ -4748,6 +4852,8 @@
       const totalPeriodIncome = serviceRev + topupCashInPeriod + packageCashInPeriod;
       const pkgPreEl = document.getElementById("finMonthPackagePrepay");
       if (pkgPreEl) pkgPreEl.textContent = `$${packageCashInPeriod.toLocaleString()}`;
+      const pkgLabelEl = document.getElementById("finPackageLabel");
+      if (pkgLabelEl) pkgLabelEl.textContent = isYear ? `${targetYear}年套票收入` : "當月套票收入";
 
       const periodExpenses = state.expenses
         .filter(ex => String(ex.date || "").startsWith(periodPrefix))
@@ -4771,7 +4877,32 @@
       document.getElementById("finTotalBalance").textContent = `$${totalAllBalance.toLocaleString()}`;
 
       if (isYear) {
-        document.getElementById("finYearAnalysisTitle").textContent = `📊 ${targetYear} 年各月營收、來客數與收支分析`;
+        document.getElementById("finYearAnalysisTitle").textContent = `📊 ${targetYear} 年度總覽與月報`;
+        // 年度摘要卡片
+        const yearSummaryEl = document.getElementById("finYearSummaryCards");
+        if (yearSummaryEl) {
+          yearSummaryEl.innerHTML = `
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+              <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-100">
+                <div class="text-[11px] text-emerald-800 font-bold">年總收入</div>
+                <div class="text-base font-extrabold text-emerald-900 tabular-nums mt-0.5">$${totalPeriodIncome.toLocaleString()}</div>
+              </div>
+              <div class="p-3 rounded-2xl bg-rose-50 border border-rose-100">
+                <div class="text-[11px] text-rose-800 font-bold">年總支出</div>
+                <div class="text-base font-extrabold text-rose-900 tabular-nums mt-0.5">-$${totalPeriodExp.toLocaleString()}</div>
+              </div>
+              <div class="p-3 rounded-2xl bg-sky-50 border border-sky-100">
+                <div class="text-[11px] text-sky-800 font-bold">年來客數</div>
+                <div class="text-base font-extrabold text-sky-900 tabular-nums mt-0.5">${periodVisits} 人次</div>
+                <div class="text-[10px] text-[#8b7365]">不重複 ${uniqueCustCount} 客</div>
+              </div>
+              <div class="p-3 rounded-2xl bg-[#f8f1ea] border border-[#ead9c8]">
+                <div class="text-[11px] text-[#6a4f3f] font-bold">年淨額</div>
+                <div class="text-base font-extrabold tabular-nums mt-0.5 ${net>=0?"text-emerald-800":"text-rose-800"}">${net>=0?"$":"-$"}${Math.abs(net).toLocaleString()}</div>
+                <div class="text-[10px] text-[#8b7365]">服務$${serviceRev.toLocaleString()} · 儲值$${topupCashInPeriod.toLocaleString()} · 套票$${packageCashInPeriod.toLocaleString()}</div>
+              </div>
+            </div>`;
+        }
         const rowsHtml = [];
         for (let m = 1; m <= 12; m++) {
           const ymKey = `${targetYear}-${String(m).padStart(2, "0")}`;
@@ -4817,11 +4948,11 @@
             <thead class="bg-[#f8f1ea] text-[#6a4f3f] font-extrabold">
               <tr>
                 <th class="px-3 py-2">月份</th>
-                <th class="px-3 py-2 text-right">來客數</th>
-                <th class="px-3 py-2 text-right">課程產值</th>
-                <th class="px-3 py-2 text-right">實收總收入</th>
-                <th class="px-3 py-2 text-right">營運支出</th>
-                <th class="px-3 py-2 text-right">單月淨額</th>
+                <th class="px-3 py-2 text-right">來客</th>
+                <th class="px-3 py-2 text-right">服務產值</th>
+                <th class="px-3 py-2 text-right">總收入</th>
+                <th class="px-3 py-2 text-right">支出</th>
+                <th class="px-3 py-2 text-right">淨額</th>
               </tr>
             </thead>
             <tbody>${rowsHtml.join("")}</tbody>
@@ -4830,47 +4961,122 @@
       }
 
       const incomeContainer = document.getElementById("incomeListContainer");
-      const filteredCompleted = completedInPeriod.filter(b =>
-        !q || `${b.customerName} ${b.service} ${b.payMethod}`.toLowerCase().includes(q)
-      );
-      if (filteredCompleted.length === 0) {
-        incomeContainer.innerHTML = `<div class="text-xs text-[#8b7365] py-6 text-center">${isYear ? `${targetYear}年` : targetYm} 尚無已結算的服務收入紀錄</div>`;
-      } else {
-        incomeContainer.innerHTML = filteredCompleted.map(b => `
-          <div class="p-3 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] flex items-center justify-between gap-2 text-xs">
-            <div class="min-w-0">
-              <div class="font-extrabold text-[#33241d]">${esc(b.date)} ${esc(b.startTime)} · ${esc(b.customerName)}</div>
-              <div class="text-[#5c4638] truncate mt-0.5">${esc(b.service)} · <span class="font-bold text-[#8c5e43]">${esc(b.payMethod)}</span></div>
+      const periodLabel = isYear ? `${targetYear}年` : targetYm;
+      const serviceCashRows = completedInPeriod.filter(b => {
+        const pm = String(b.payMethod || "");
+        if (pm === "扣儲值金" || pm === "三堂套票") return false;
+        return true;
+      }).filter(b => !q || `${b.customerName} ${b.service} ${b.payMethod}`.toLowerCase().includes(q));
+      const topupRows = state.transactions
+        .filter(t => String(t.time || "").startsWith(periodPrefix) && t.type === "儲值入帳")
+        .filter(t => !q || `${t.customerName} ${t.note}`.toLowerCase().includes(q));
+      const pkgRows = state.transactions
+        .filter(t => String(t.time || "").startsWith(periodPrefix) && t.type === "套票售出")
+        .filter(t => !q || `${t.customerName} ${t.note}`.toLowerCase().includes(q));
+
+      // 合併全部收入明細（依時間新到舊）
+      const allIncome = [];
+      serviceCashRows.forEach(b => {
+        let amt = safeNumber(b.finalPrice, 0);
+        const pm = String(b.payMethod || "");
+        if (pm.indexOf("扣儲值金+現金") !== -1) {
+          const m = String(b.note || "").match(/補現金\$(\d+)/);
+          amt = m ? safeNumber(m[1], 0) : 0;
+        }
+        allIncome.push({
+          sortKey: `${b.date} ${b.startTime}`,
+          title: `${b.date} ${b.startTime} · ${b.customerName}`,
+          detail: `${b.service || ""} · ${pm}`,
+          amount: amt,
+          tag: "服務結算"
+        });
+      });
+      topupRows.forEach(t => {
+        allIncome.push({
+          sortKey: String(t.time || ""),
+          title: `${t.time || ""} · ${t.customerName || ""}`,
+          detail: t.note || "儲值入帳",
+          amount: safeNumber(t.cashPaid, 0),
+          tag: "儲值收入"
+        });
+      });
+      pkgRows.forEach(t => {
+        allIncome.push({
+          sortKey: String(t.time || ""),
+          title: `${t.time || ""} · ${t.customerName || ""}`,
+          detail: t.note || "套票售出",
+          amount: safeNumber(t.cashPaid, 0),
+          tag: "套票收入"
+        });
+      });
+      allIncome.sort((a, b) => String(b.sortKey).localeCompare(String(a.sortKey)));
+
+      const tagCls = {
+        "服務結算": "bg-emerald-50 text-emerald-800",
+        "儲值收入": "bg-amber-50 text-amber-800",
+        "套票收入": "bg-indigo-50 text-indigo-800"
+      };
+
+      incomeContainer.innerHTML = `
+        <div class="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 mb-2">
+          <div class="text-[11px] font-bold text-emerald-800">${periodLabel} 總收入</div>
+          <div class="text-2xl font-extrabold text-emerald-900 tabular-nums mt-1">$${totalPeriodIncome.toLocaleString()}</div>
+          <div class="grid grid-cols-3 gap-2 mt-3 text-[11px]">
+            <div class="p-2 rounded-xl bg-white/80 border border-emerald-100">
+              <div class="text-[#8b7365]">服務現金</div>
+              <div class="font-extrabold text-[#33241d] tabular-nums">$${serviceRev.toLocaleString()}</div>
             </div>
-            <div class="text-right shrink-0">
-              <div class="text-sm font-extrabold text-emerald-700 tabular-nums">+$${safeNumber(b.finalPrice, 0).toLocaleString()}</div>
-              <div class="text-[10px] text-[#8b7365]">${b.payMethod === "扣儲值金" ? "扣儲值點數" : "已入帳"}</div>
+            <div class="p-2 rounded-xl bg-white/80 border border-emerald-100">
+              <div class="text-[#8b7365]">儲值收入</div>
+              <div class="font-extrabold text-[#33241d] tabular-nums">$${topupCashInPeriod.toLocaleString()}</div>
+            </div>
+            <div class="p-2 rounded-xl bg-white/80 border border-emerald-100">
+              <div class="text-[#8b7365]">套票收入</div>
+              <div class="font-extrabold text-[#33241d] tabular-nums">$${packageCashInPeriod.toLocaleString()}</div>
             </div>
           </div>
-        `).join("");
-      }
+        </div>
+        <div class="text-xs font-extrabold text-[#33241d] mb-1.5">全部收入明細（${allIncome.length} 筆）</div>
+        ${allIncome.length === 0
+          ? `<div class="text-xs text-[#8b7365] py-6 text-center">${periodLabel} 尚無收入紀錄</div>`
+          : allIncome.map(r => `
+            <div class="p-3 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] flex items-center justify-between gap-2 text-xs">
+              <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${tagCls[r.tag] || "bg-stone-100"}">${r.tag}</span>
+                  <span class="font-extrabold text-[#33241d]">${esc(r.title)}</span>
+                </div>
+                <div class="text-[#5c4638] truncate mt-0.5">${esc(r.detail)}</div>
+              </div>
+              <div class="text-sm font-extrabold text-emerald-700 tabular-nums shrink-0">+$${safeNumber(r.amount,0).toLocaleString()}</div>
+            </div>`).join("")}
+      `;
 
       const expContainer = document.getElementById("expensesListContainer");
       const filteredExp = periodExpenses.filter(ex =>
         !q || `${ex.category} ${ex.note}`.toLowerCase().includes(q)
       );
-      if (filteredExp.length === 0) {
-        expContainer.innerHTML = `<div class="text-xs text-[#8b7365] py-6 text-center">${isYear ? `${targetYear}年` : targetYm} 尚無營運支出紀錄</div>`;
-      } else {
-        expContainer.innerHTML = filteredExp.map(ex => `
-          <div class="p-3 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] flex items-center justify-between gap-2 text-xs">
-            <div>
-              <span class="px-2 py-0.5 rounded-full bg-[#f3ece5] text-[#6a4f3f] font-bold mr-1.5">${esc(ex.category)}</span>
-              <span class="font-bold text-[#33241d]">${esc(ex.date)}</span>
-              <span class="text-[#5c4638] ml-1.5">${esc(ex.note || "")}</span>
-            </div>
-            <div class="flex items-center gap-3 shrink-0">
-              <span class="font-extrabold text-[#b42318] tabular-nums">-$${safeNumber(ex.amount, 0).toLocaleString()}</span>
-              <button onclick="handleDeleteExpense('${escJs(ex.id)}')" class="text-[#8b7365] hover:text-[#b42318] underline">刪除</button>
-            </div>
-          </div>
-        `).join("");
-      }
+      expContainer.innerHTML = `
+        <div class="p-4 rounded-2xl bg-rose-50 border border-rose-200 mb-2">
+          <div class="text-[11px] font-bold text-rose-800">${periodLabel} 總支出</div>
+          <div class="text-2xl font-extrabold text-rose-900 tabular-nums mt-1">-$${totalPeriodExp.toLocaleString()}</div>
+        </div>
+        <div class="text-xs font-extrabold text-[#33241d] mb-1.5">全部支出明細（${filteredExp.length} 筆）</div>
+        ${filteredExp.length === 0
+          ? `<div class="text-xs text-[#8b7365] py-6 text-center">${periodLabel} 尚無營運支出紀錄</div>`
+          : filteredExp.map(ex => `
+            <div class="p-3 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] flex items-center justify-between gap-2 text-xs">
+              <div class="min-w-0">
+                <span class="px-2 py-0.5 rounded-full bg-[#f3ece5] text-[#6a4f3f] font-bold mr-1.5">${esc(ex.category)}</span>
+                <span class="font-bold text-[#33241d]">${esc(ex.date)}</span>
+                <div class="text-[#5c4638] mt-0.5">${esc(ex.note || "")}</div>
+              </div>
+              <div class="flex items-center gap-2 shrink-0">
+                <span class="font-extrabold text-[#b42318] tabular-nums">-$${safeNumber(ex.amount, 0).toLocaleString()}</span>
+                <button type="button" onclick="handleDeleteExpense('${escJs(ex.id)}')" class="text-[11px] text-rose-700 underline">刪除</button>
+              </div>
+            </div>`).join("")}
+      `;
 
       const txContainer = document.getElementById("transactionsListContainer");
       const periodTx = state.transactions.filter(t =>
