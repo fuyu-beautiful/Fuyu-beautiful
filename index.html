@@ -1007,7 +1007,7 @@
             <option value="現金">💵 現金</option>
             <option value="轉帳">🏦 轉帳</option>
             <option value="扣儲值金">💳 扣儲值金</option>
-            <option value="三堂套票">🎫 三堂套票（自動扣 1 堂）</option>
+            <option value="三堂套票">🎫 套票(扣堂)</option>
           </select>
           <p id="st_memberBalanceHint" class="hidden text-[11px] font-bold mt-1.5"></p>
         </div>
@@ -1059,8 +1059,6 @@
         <button onclick="closeBookingModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
       </div>
 
-      <div id="bk_blockedConflictAlert" class="hidden mb-3 p-2.5 rounded-xl bg-red-50 border border-red-300 text-xs font-bold text-red-800"></div>
-
       <form onsubmit="handleSaveBooking(event)" class="space-y-3.5 text-xs">
         <input type="hidden" id="bk_id" />
         <input type="hidden" id="bk_packageId" />
@@ -1083,10 +1081,12 @@
           <div id="bk_customerPackageHint" class="hidden mt-1 p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-[11px] text-indigo-950"></div>
         </div>
 
+        <div id="bk_blockedConflictAlert" class="hidden p-2.5 rounded-xl bg-red-50 border border-red-300 text-xs font-bold text-red-800"></div>
+
         <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">預約日期 *</label>
-            <input type="date" id="bk_date" required onchange="recalcAdminBookingFromSelectedItems(false)" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
+            <input type="date" id="bk_date" required onchange="recalcAdminBookingFromSelectedItems(false); checkBookingBlockedConflict()" class="w-full px-2.5 py-2 rounded-xl border border-[#decbb9] bg-white" />
           </div>
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">開始時間 *</label>
@@ -1252,10 +1252,14 @@
           <label class="block font-bold text-[#4a382f] mb-1">項目名稱 *</label>
           <input type="text" id="pkgCat_name" required placeholder="例如：腋下" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold" />
         </div>
-        <div class="grid grid-cols-2 gap-2">
+        <div class="grid grid-cols-3 gap-2">
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">堂數</label>
             <input type="number" id="pkgCat_sessions" min="1" max="50" value="3" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold" />
+          </div>
+          <div>
+            <label class="block font-bold text-[#4a382f] mb-1">單堂時間(分)</label>
+            <input type="number" id="pkgCat_duration" min="0" max="480" value="60" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold" />
           </div>
           <div>
             <label class="block font-bold text-[#4a382f] mb-1">套票總價 ($)</label>
@@ -2452,20 +2456,26 @@
       const cat = String(booking.category || "").trim();
       const srv = String(booking.service || "").trim();
       let matchedCat = cat;
+      let matchedItem = srv;
 
-      if (!matchedCat && srv) {
+      if (srv) {
         const found = state.catalog.find(item => srv.indexOf(item.name) !== -1);
-        if (found) matchedCat = String(found.category || "");
+        if (found) {
+          if (!matchedCat) matchedCat = String(found.category || "");
+          matchedItem = String(found.name || srv).trim() || srv;
+        }
       }
+      // 小提醒改顯示「項目」而非分類
+      const itemLabel = matchedItem || srv || matchedCat || "其他";
 
       const text = `${matchedCat} ${srv}`;
       if (text.indexOf("熱蠟") !== -1) {
-        return { pillClass: "bg-rose-100 text-rose-800 border border-rose-200", label: "熱蠟" };
+        return { pillClass: "bg-rose-100 text-rose-800 border border-rose-200", label: itemLabel };
       }
       if (text.indexOf("冰肌") !== -1 || text.indexOf("日式") !== -1 || text.indexOf("淨毛") !== -1) {
-        return { pillClass: "bg-sky-100 text-sky-800 border border-sky-200", label: matchedCat || "冰肌" };
+        return { pillClass: "bg-sky-100 text-sky-800 border border-sky-200", label: itemLabel };
       }
-      return { pillClass: "bg-[#f2e8de] text-[#6a4832] border border-[#e3d1c0]", label: matchedCat || "其他" };
+      return { pillClass: "bg-[#f2e8de] text-[#6a4832] border border-[#e3d1c0]", label: itemLabel };
     }
 
     function changeCalendarMonth(delta) {
@@ -3175,6 +3185,21 @@
       document.getElementById("bk_finalPrice").value = 0;
       const pkgHid = document.getElementById("bk_packageId");
       if (pkgHid) pkgHid.value = p.id;
+      // 由套票分類項目帶入單堂時間，並重算結束時間
+      const catItem = (state.packageCatalog || []).find(x =>
+        String(x.name || "") === String(p.name || "").split("｜").pop() ||
+        String(p.name || "").indexOf(String(x.name || "")) !== -1
+      );
+      const dur = safeNumber(catItem && catItem.duration, 60) || 60;
+      document.getElementById("bk_duration").value = dur;
+      const startEl = document.getElementById("bk_startTime");
+      const endEl = document.getElementById("bk_endTime");
+      if (startEl && startEl.value && endEl) {
+        const parts = String(startEl.value).split(":");
+        const sm = (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
+        const em = sm + dur + 10;
+        endEl.value = `${String(Math.floor(em / 60) % 24).padStart(2, "0")}:${String(em % 60).padStart(2, "0")}`;
+      }
       const payEl = document.getElementById("bk_payMethod");
       if (payEl) {
         let hasPkgOpt = false;
@@ -3184,12 +3209,13 @@
         if (!hasPkgOpt) {
           const opt = document.createElement("option");
           opt.value = "三堂套票";
-          opt.textContent = "三堂套票（扣堂）";
+          opt.textContent = "套票(扣堂)";
           payEl.appendChild(opt);
         }
         payEl.value = "三堂套票";
       }
-      showToast(`已加入：${p.name}（完成時自動扣 1 堂）`);
+      checkBookingBlockedConflict();
+      showToast(`已加入：${p.name}（約 ${dur} 分鐘，完成時自動扣 1 堂）`);
     }
 
     function selectAdminBookingCategory(catName) {
@@ -3808,7 +3834,7 @@
                 <div>
                   <span class="font-bold text-[#33241d]">${esc(it.name)}</span>
                   <span class="text-[#8c5e43] font-extrabold ml-1.5">$${safeNumber(it.price,0).toLocaleString()}</span>
-                  <span class="text-[11px] text-[#8b7365] ml-1">· ${safeNumber(it.sessions,3)} 堂</span>
+                  <span class="text-[11px] text-[#8b7365] ml-1">· ${safeNumber(it.sessions,3)} 堂${safeNumber(it.duration,0) > 0 ? ` · ${safeNumber(it.duration,0)} 分` : ""}</span>
                   ${it.active === false ? `<span class="ml-1 px-1.5 py-0.5 rounded bg-stone-200 text-stone-600 text-[10px]">停用</span>` : ""}
                 </div>
                 <div class="flex items-center gap-1.5">
@@ -3828,8 +3854,9 @@
       document.getElementById("pkgCat_modalTitle").textContent = existing ? "編輯套票項目" : "新增套票項目";
       document.getElementById("pkgCat_category").value = existing ? existing.category : "";
       document.getElementById("pkgCat_name").value = existing ? existing.name : "";
-      document.getElementById("pkgCat_sessions").value = existing ? safeNumber(existing.sessions, 3) : "";
-      document.getElementById("pkgCat_price").value = existing ? safeNumber(existing.price, 0) : "";
+      document.getElementById("pkgCat_sessions").value = existing ? safeNumber(existing.sessions, 3) : 3;
+      document.getElementById("pkgCat_duration").value = existing ? safeNumber(existing.duration, 60) : 60;
+      document.getElementById("pkgCat_price").value = existing ? safeNumber(existing.price, 0) : 0;
       document.getElementById("pkgCat_active").checked = existing ? existing.active !== false : true;
       const dl = document.getElementById("pkgCatCategoryList");
       if (dl) {
@@ -3857,6 +3884,7 @@
             category: document.getElementById("pkgCat_category").value.trim(),
             name: document.getElementById("pkgCat_name").value.trim(),
             sessions: safeNumber(document.getElementById("pkgCat_sessions").value, 3),
+            duration: safeNumber(document.getElementById("pkgCat_duration").value, 60),
             price: safeNumber(document.getElementById("pkgCat_price").value, 0),
             active: !!document.getElementById("pkgCat_active").checked
           }
@@ -5226,10 +5254,15 @@
       `;
 
       const txContainer = document.getElementById("transactionsListContainer");
-      const periodTx = state.transactions.filter(t =>
-        String(t.time || "").startsWith(periodPrefix) &&
-        (!q || `${t.customerName} ${t.type} ${t.note}`.toLowerCase().includes(q))
-      );
+      const periodTx = state.transactions.filter(t => {
+        if (!String(t.time || "").startsWith(periodPrefix)) return false;
+        const type = String(t.type || "").trim();
+        const pts = safeNumber(t.pointsChange, 0);
+        // 儲值金紀錄：排除與儲值無關的套票售出／扣堂（僅堂數異動、無儲值增減）
+        if ((type === "套票售出" || type === "套票扣堂") && pts === 0) return false;
+        if (!q) return true;
+        return `${t.customerName} ${t.type} ${t.note}`.toLowerCase().includes(q);
+      });
       if (periodTx.length === 0) {
         txContainer.innerHTML = `<div class="text-xs text-[#8b7365] py-6 text-center">${isYear ? `${targetYear}年` : targetYm} 尚無儲值金異動紀錄</div>`;
       } else {
@@ -5847,7 +5880,10 @@
           if (activeBookings.length === 0) {
             activeBox.innerHTML = `<div class="text-xs text-[#8b7365] py-2">目前沒有進行中的預約</div>`;
           } else {
-            activeBox.innerHTML = activeBookings.slice(0, 12).map(b => {
+            const limit = 5;
+            const showAll = !!state.custShowAllActiveBookings;
+            const viewList = showAll ? activeBookings : activeBookings.slice(0, limit);
+            activeBox.innerHTML = viewList.map(b => {
               const st = String(b.status || "").trim();
               const badgeCls =
                 st === "待審核" ? "bg-amber-100 text-amber-800" :
@@ -5867,19 +5903,28 @@
                   ` : ""}
                 </div>
               </div>`;
-            }).join("");
+            }).join("") + (activeBookings.length > limit ? `
+              <button type="button" onclick="state.custShowAllActiveBookings=${showAll ? "false" : "true"}; renderCustomerPortalView();" class="w-full py-2 rounded-xl text-xs font-extrabold bg-[#f3ece5] text-[#6a4f3f] hover:bg-[#e7dcd0]">
+                ${showAll ? "收合，只顯示最近 5 筆" : `展開其餘 ${activeBookings.length - limit} 筆預約`}
+              </button>` : "");
           }
         }
         if (pastBox) {
           if (pastBookings.length === 0) {
             pastBox.innerHTML = `<div class="text-xs text-[#8b7365] py-2">尚無過往預約紀錄</div>`;
           } else {
-            pastBox.innerHTML = pastBookings.slice(0, 20).map(b => `
+            const limit = 5;
+            const showAll = !!state.custShowAllPastBookings;
+            const viewList = showAll ? pastBookings : pastBookings.slice(0, limit);
+            pastBox.innerHTML = viewList.map(b => `
               <div class="text-xs p-2 rounded-xl bg-[#f7f4f0] border border-[#ece3da] flex items-center justify-between opacity-90">
                 <span>${esc(b.date)} ${esc(b.startTime)} · ${esc(b.service)}</span>
                 <span class="px-2 py-0.5 rounded-full font-bold text-[11px] ${b.status === "已完成" ? "bg-stone-200 text-stone-700" : "bg-rose-100 text-rose-700"}">${esc(b.status)}</span>
               </div>
-            `).join("");
+            `).join("") + (pastBookings.length > limit ? `
+              <button type="button" onclick="state.custShowAllPastBookings=${showAll ? "false" : "true"}; renderCustomerPortalView();" class="w-full py-2 rounded-xl text-xs font-extrabold bg-[#f3ece5] text-[#6a4f3f] hover:bg-[#e7dcd0]">
+                ${showAll ? "收合，只顯示最近 5 筆" : `展開其餘 ${pastBookings.length - limit} 筆紀錄`}
+              </button>` : "");
           }
         }
         switchCustomerBookingTab("active");
