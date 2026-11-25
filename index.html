@@ -575,8 +575,9 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div class="lg:col-span-7 glass-card rounded-2xl p-3 sm:p-4">
-          <div class="flex items-center justify-between mb-3">
+        <div class="lg:col-span-7 glass-card rounded-2xl p-3 sm:p-4 space-y-3">
+          <div id="selectedDateBlockedCard" class="hidden"></div>
+          <div class="flex items-center justify-between">
             <button onclick="changeCalendarMonth(-1)" class="px-2.5 py-1 rounded-lg bg-[#f4ece4] text-xs font-bold text-[#5c4638]">◀ 上月</button>
             <h3 id="calendarMonthTitle" class="font-bold text-sm text-[#33241d]">2026年 11月</h3>
             <button onclick="changeCalendarMonth(1)" class="px-2.5 py-1 rounded-lg bg-[#f4ece4] text-xs font-bold text-[#5c4638]">下月 ▶</button>
@@ -609,7 +610,6 @@
               + 排入此日
             </button>
           </div>
-          <div id="selectedDateBlockedCard" class="hidden"></div>
           <div id="dayBookingsList" class="space-y-2.5"></div>
         </div>
       </div>
@@ -738,10 +738,14 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           <div class="p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
             <div id="finRevLabel" class="text-[11px] font-bold text-[#8b7365]">當月結算營收</div>
             <div id="finMonthRevenue" class="text-lg font-extrabold text-emerald-700 mt-1 tabular-nums">$0</div>
+          </div>
+          <div class="p-3.5 rounded-2xl bg-white border border-indigo-100">
+            <div class="text-[11px] font-bold text-indigo-700">當月套票預收</div>
+            <div id="finMonthPackagePrepay" class="text-lg font-extrabold text-indigo-800 mt-1 tabular-nums">$0</div>
           </div>
           <div class="p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
             <div id="finVisitsLabel" class="text-[11px] font-bold text-[#8b7365]">當月來客數</div>
@@ -756,7 +760,7 @@
             <div id="finNetLabel" class="text-[11px] font-bold text-[#8b7365]">當月收支淨額</div>
             <div id="finMonthNet" class="text-lg font-extrabold text-[#3a2a22] mt-1 tabular-nums">$0</div>
           </div>
-          <div class="col-span-2 sm:col-span-1 p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
+          <div class="p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
             <div class="text-[11px] font-bold text-[#8b7365]">全體會員儲值餘額</div>
             <div id="finTotalBalance" class="text-lg font-extrabold text-[#8c5e43] mt-1 tabular-nums">$0</div>
           </div>
@@ -1688,6 +1692,26 @@
       }
     };
 
+
+    function bindMoneyInputs(root) {
+      const scope = root || document;
+      scope.querySelectorAll('input[type="number"], input.money-input').forEach(el => {
+        if (el.dataset.moneyBound === "1") return;
+        el.dataset.moneyBound = "1";
+        el.setAttribute("inputmode", "decimal");
+        el.addEventListener("input", () => {
+          const cleaned = String(el.value || "").replace(/[^0-9.]/g, "");
+          // 只留一個小數點
+          const parts = cleaned.split(".");
+          el.value = parts.length <= 1 ? cleaned : (parts[0] + "." + parts.slice(1).join("").replace(/\./g, ""));
+        });
+        el.addEventListener("keypress", (ev) => {
+          const ch = ev.key;
+          if (ch.length === 1 && !/[0-9.]/.test(ch)) ev.preventDefault();
+        });
+      });
+    }
+
     function formatTodayStr() {
       const d = new Date();
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -2056,6 +2080,7 @@
     }
 
     function applyAdminSnapshot(snap, fromLocalCache = false) {
+      setTimeout(() => bindMoneyInputs(document), 0);
       if (snap.dataVersion) state.dataVersion = String(snap.dataVersion);
       state.webAppUrl = snap.webAppUrl || state.webAppUrl || "";
       state.catalog = snap.catalog || [];
@@ -3334,6 +3359,8 @@
         return;
       }
 
+      filtered.sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "zh-Hant"));
+
       container.innerHTML = filtered.map(c => {
         const bal = safeNumber(c.balance, 0);
         const visits = getCustomerEffectiveVisitCount(c);
@@ -3579,10 +3606,10 @@
       const existing = itemId ? (state.packageCatalog || []).find(x => String(x.id) === String(itemId)) : null;
       document.getElementById("pkgCat_id").value = existing ? existing.id : "";
       document.getElementById("pkgCat_modalTitle").textContent = existing ? "編輯套票項目" : "新增套票項目";
-      document.getElementById("pkgCat_category").value = existing ? existing.category : "日式無痛淨毛（三堂）";
+      document.getElementById("pkgCat_category").value = existing ? existing.category : "";
       document.getElementById("pkgCat_name").value = existing ? existing.name : "";
-      document.getElementById("pkgCat_sessions").value = existing ? safeNumber(existing.sessions, 3) : 3;
-      document.getElementById("pkgCat_price").value = existing ? safeNumber(existing.price, 0) : 0;
+      document.getElementById("pkgCat_sessions").value = existing ? safeNumber(existing.sessions, 3) : "";
+      document.getElementById("pkgCat_price").value = existing ? safeNumber(existing.price, 0) : "";
       document.getElementById("pkgCat_active").checked = existing ? existing.active !== false : true;
       const dl = document.getElementById("pkgCatCategoryList");
       if (dl) {
@@ -3760,6 +3787,7 @@
         onMemberPackageItemChange();
       }
       document.getElementById("packageModal").classList.remove("hidden");
+      setTimeout(() => bindMoneyInputs(document.getElementById("packageModal")), 0);
     }
 
     function closePackageModal() {
@@ -3789,6 +3817,7 @@
             id: document.getElementById("pkg_id").value || "",
             customerId,
             customerName,
+            category: (document.getElementById("pkg_categorySelect") && document.getElementById("pkg_categorySelect").value) || "",
             name: (document.getElementById("pkg_name").value || "").trim(),
             totalSessions: safeNumber(document.getElementById("pkg_totalSessions").value, 3),
             usedSessions: safeNumber(document.getElementById("pkg_usedSessions").value, 0),
@@ -3796,7 +3825,7 @@
             expiresDate: document.getElementById("pkg_expiresDate").value || "",
             note,
             paid: paid,
-            paidAmount: paidAmount,
+            paidAmount: paidAmount > 0 ? paidAmount : safeNumber(document.getElementById("pkg_price").value, 0),
             payMethod: payMethod
           }
         });
@@ -3810,6 +3839,7 @@
           openCustomerDetailModal(customerId);
         }
         if (state.financeSubTab === "packages") renderPackagesFinanceList();
+        if (typeof renderFinanceTab === "function") renderFinanceTab();
         showToast(document.getElementById("pkg_id").value ? "已更新套票方案" : "已新增會員套票方案");
       } catch (err) {
         showToast(err.message || "儲存套票失敗", true);
@@ -4155,11 +4185,11 @@
           <form onsubmit="submitTopUpForm(event, '${escJs(cust.id)}')" class="space-y-3 text-xs">
             <div>
               <label class="block font-bold mb-1">實收現金／轉帳金額 ($)*</label>
-              <input type="number" id="tu_cashPaid" required min="0" value="3000" class="w-full px-3 py-2 rounded-xl border border-[#decbb9]" />
+              <input type="number" id="tu_cashPaid" required min="0" value="0" inputmode="decimal" class="money-input w-full px-3 py-2 rounded-xl border border-[#decbb9]" />
             </div>
             <div>
               <label class="block font-bold mb-1">贈送儲值紅利點數 ($)</label>
-              <input type="number" id="tu_bonusPoints" min="0" value="300" class="w-full px-3 py-2 rounded-xl border border-[#decbb9]" />
+              <input type="number" id="tu_bonusPoints" min="0" value="0" inputmode="decimal" class="money-input w-full px-3 py-2 rounded-xl border border-[#decbb9]" />
             </div>
             <div>
               <label class="block font-bold mb-1">備註</label>
@@ -4230,6 +4260,7 @@
         `;
       }
       document.getElementById("topUpModal").classList.remove("hidden");
+      setTimeout(() => bindMoneyInputs(document.getElementById("topUpModal")), 0);
     }
 
     function closeTopUpModal() {
@@ -4254,6 +4285,8 @@
         });
         applyAdminSnapshot(snap);
         closeTopUpModal();
+        if (typeof renderFinanceTab === "function") renderFinanceTab();
+        if (typeof renderCustomersTab === "function") renderCustomersTab();
         showToast("儲值入帳成功");
       } catch (err) {
         showToast(err.message || "儲值失敗", true);
@@ -4663,6 +4696,7 @@
                 <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 text-[10px] font-bold">剩 ${rem}/${total} 堂</span>
               </div>
               <div class="mt-1 font-bold text-[#4a382f]">${esc(p.name || "套票")}</div>
+              ${String(p.note||"").match(/分類：([^｜|]+)/)?`<div class="text-[10px] text-indigo-700 mt-0.5">分類：${esc(String(p.note).match(/分類：([^｜|]+)/)[1])}</div>`:""}
               <div class="text-[11px] text-[#8b7365] mt-0.5">
                 已用 ${used} 堂 · 總價 $${safeNumber(p.price, 0).toLocaleString()}
                 ${p.expiresDate ? ` · 效期 ${esc(p.expiresDate)}` : ""}
@@ -4707,7 +4741,13 @@
         .filter(t => String(t.time || "").startsWith(periodPrefix) && t.type === "儲值入帳")
         .reduce((s, t) => s + safeNumber(t.cashPaid, 0), 0);
 
-      const totalPeriodIncome = serviceRev + topupCashInPeriod;
+      const packageCashInPeriod = state.transactions
+        .filter(t => String(t.time || "").startsWith(periodPrefix) && t.type === "套票售出")
+        .reduce((s, t) => s + safeNumber(t.cashPaid, 0), 0);
+
+      const totalPeriodIncome = serviceRev + topupCashInPeriod + packageCashInPeriod;
+      const pkgPreEl = document.getElementById("finMonthPackagePrepay");
+      if (pkgPreEl) pkgPreEl.textContent = `$${packageCashInPeriod.toLocaleString()}`;
 
       const periodExpenses = state.expenses
         .filter(ex => String(ex.date || "").startsWith(periodPrefix))
@@ -4751,7 +4791,10 @@
           const mTopupCash = state.transactions
             .filter(t => String(t.time || "").startsWith(ymKey) && t.type === "儲值入帳")
             .reduce((s, t) => s + safeNumber(t.cashPaid, 0), 0);
-          const mIncome = mNonStoredRev + mTopupCash;
+          const mPkgCash = state.transactions
+            .filter(t => String(t.time || "").startsWith(ymKey) && t.type === "套票售出")
+            .reduce((s, t) => s + safeNumber(t.cashPaid, 0), 0);
+          const mIncome = mNonStoredRev + mTopupCash + mPkgCash;
           const mExp = state.expenses
             .filter(ex => String(ex.date || "").startsWith(ymKey))
             .reduce((s, ex) => s + safeNumber(ex.amount, 0), 0);
