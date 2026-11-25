@@ -2601,21 +2601,57 @@
         .filter(Boolean);
     }
 
+    function isPackageServicePart(text) {
+      const t = String(text || "");
+      return /套票扣|扣\s*1\s*堂|（套票/.test(t) || /\(套票/.test(t);
+    }
+
+    function classifyServiceParts(service) {
+      const parts = splitServiceItems(service);
+      const pkgParts = [];
+      const addOnParts = [];
+      parts.forEach(p => {
+        if (isPackageServicePart(p)) pkgParts.push(p.replace(/（套票扣1堂）/g, "").replace(/\(套票扣1堂\)/g, "").trim());
+        else addOnParts.push(p);
+      });
+      return { pkgParts, addOnParts, parts };
+    }
+
     function renderServiceItemsHtml(service, mode) {
       const items = splitServiceItems(service);
       if (!items.length) {
         return mode === "calendar" ? "" : `<span class="text-[11px] text-[#8b7365]">未填項目</span>`;
       }
       if (mode === "calendar") {
-        // 月曆格：精簡為「第1項」+「+N」
-        const first = items[0];
-        const extra = items.length - 1;
-        return `<div class="w-full px-1 py-0.5 rounded text-[9px] leading-tight bg-white/85 border border-[#e8d9cb] text-[#5c4638] font-semibold truncate" title="${esc(items.join("、"))}">${esc(first)}${extra > 0 ? ` <span class="text-[#8c5e43] font-extrabold">+${extra}</span>` : ""}</div>`;
+        const { pkgParts, addOnParts } = classifyServiceParts(service);
+        const labelBits = [];
+        if (pkgParts.length) labelBits.push("套票:" + pkgParts[0]);
+        if (addOnParts.length) labelBits.push(addOnParts[0]);
+        const title = [...pkgParts.map(p => "套票 " + p), ...addOnParts].join("、");
+        const extra = Math.max(0, (pkgParts.length + addOnParts.length) - labelBits.length);
+        const text = labelBits.join(" / ") || items[0];
+        return `<div class="w-full px-1 py-0.5 rounded text-[9px] leading-tight bg-white/85 border border-[#e8d9cb] text-[#5c4638] font-semibold truncate" title="${esc(title)}">${esc(text)}${extra > 0 ? ` <span class="text-[#8c5e43] font-extrabold">+${extra}</span>` : ""}</div>`;
       }
-      // 當日排程：直向清單，較易掃讀
-      return `<ol class="m-0 pl-4 space-y-0.5 text-[11px] text-[#4a382f] list-decimal">
-        ${items.map(it => `<li class="leading-snug"><span class="font-semibold">${esc(it)}</span></li>`).join("")}
-      </ol>`;
+      // 當日排程：套票 / 加選分開，避免零散難讀
+      const { pkgParts, addOnParts } = classifyServiceParts(service);
+      let html = `<div class="space-y-1.5 text-[11px]">`;
+      if (pkgParts.length) {
+        html += `<div class="flex items-start gap-1.5">
+          <span class="shrink-0 px-1.5 py-0.5 rounded bg-indigo-600 text-white text-[10px] font-extrabold">套票</span>
+          <span class="font-semibold text-[#33241d] leading-snug">${pkgParts.map(esc).join("、")}<span class="text-indigo-700 font-bold">（扣1堂）</span></span>
+        </div>`;
+      }
+      if (addOnParts.length) {
+        html += `<div class="flex items-start gap-1.5">
+          <span class="shrink-0 px-1.5 py-0.5 rounded bg-[#8c5e43] text-white text-[10px] font-extrabold">加選</span>
+          <span class="font-semibold text-[#33241d] leading-snug">${addOnParts.map(esc).join("、")}</span>
+        </div>`;
+      }
+      if (!pkgParts.length && !addOnParts.length) {
+        html += `<span class="text-[#8b7365]">未填項目</span>`;
+      }
+      html += `</div>`;
+      return html;
     }
 
     function renderCustomerTagsHtml(tags, size) {
@@ -3159,22 +3195,72 @@
       document.getElementById("bk_service").value = b.service || "";
       if (typeof syncBookingServiceChipsFromInput === "function") syncBookingServiceChipsFromInput();
       document.getElementById("bk_finalPrice").value = safeNumber(b.finalPrice, 0);
-      document.getElementById("bk_payMethod").value = b.payMethod || "現金";
+      // 付款方式可能是「現金+套票」等複合值，下拉需對應基本選項
+      const payEl = document.getElementById("bk_payMethod");
+      let pm = String(b.payMethod || "現金");
+      if (pm.indexOf("扣儲值金") !== -1) pm = "扣儲值金";
+      else if (pm.indexOf("轉帳") !== -1) pm = "轉帳";
+      else if (pm.indexOf("三堂套票") !== -1 || pm === "套票(扣堂)") pm = "三堂套票";
+      else if (pm.indexOf("現金") !== -1) pm = "現金";
+      if (payEl) {
+        let hasPkgOpt = false;
+        for (let i = 0; i < payEl.options.length; i++) {
+          if (payEl.options[i].value === "三堂套票") { hasPkgOpt = true; break; }
+        }
+        if (pm === "三堂套票" && !hasPkgOpt) {
+          const opt = document.createElement("option");
+          opt.value = "三堂套票";
+          opt.textContent = "套票(扣堂)";
+          payEl.appendChild(opt);
+        }
+        payEl.value = pm;
+      }
       document.getElementById("bk_status").value = b.status || "尚未到來";
       document.getElementById("bk_note").value = b.note || "";
 
-      const parts = String(b.service || "").split(/\s*\+\s*/).map(s => s.trim()).filter(Boolean);
+      // 還原套票：優先 usedPackageId；否則從服務文字推斷
+      const pkgHid = document.getElementById("bk_packageId");
+      let pkgId = String(b.usedPackageId || "").trim();
+      if (!pkgId && b.customerId) {
+        const { pkgParts } = classifyServiceParts(b.service);
+        if (pkgParts.length) {
+          const hit = (state.packages || []).find(p =>
+            String(p.customerId) === String(b.customerId) &&
+            pkgParts.some(name => String(p.name || "").indexOf(name) !== -1 || name.indexOf(String(p.name || "")) !== -1)
+          );
+          if (hit) pkgId = hit.id;
+        }
+      }
+      if (pkgHid) pkgHid.value = pkgId;
+
+      const { addOnParts } = classifyServiceParts(b.service);
       const matchedIds = [];
-      parts.forEach(p => {
-        const found = state.catalog.find(item => item.name === p);
-        if (found) matchedIds.push(String(found.id));
+      addOnParts.forEach(p => {
+        const found = state.catalog.find(item => item.name === p || p.indexOf(item.name) !== -1);
+        if (found && matchedIds.indexOf(String(found.id)) === -1) matchedIds.push(String(found.id));
       });
       state.selectedAdminBookingServiceIds = matchedIds;
       state.activeAdminBookingCategory = "";
 
       populateBookingModalSelects(b.customerId, b.usedCouponId, true);
       renderBookingModalRiskBadges(b.customerId);
+      // 標籤提示
+      const cust = state.customers.find(c => String(c.id) === String(b.customerId));
+      const tagBox = document.getElementById("bk_customerTagsHint");
+      if (tagBox) {
+        const tagsHtml = cust ? renderCustomerTagsHtml(cust.tags) : "";
+        if (tagsHtml) {
+          tagBox.classList.remove("hidden");
+          tagBox.innerHTML = `<div class="text-[10px] font-extrabold text-[#8b7365] mb-0.5">內部標籤</div>${tagsHtml}`;
+        } else {
+          tagBox.classList.add("hidden");
+          tagBox.innerHTML = "";
+        }
+      }
       renderAdminBookingCategoryPicker();
+      // 重建已選列表（含套票列與可取消）
+      recalcAdminBookingFromSelectedItems(true);
+      // 保留原服務文字中手動調整過的部分：若僅有套票狀態再覆蓋
       checkBookingBlockedConflict();
       document.getElementById("bookingModal").classList.remove("hidden");
     }
@@ -3367,8 +3453,19 @@
     function clearBookingPackageSelection() {
       const pkgHid = document.getElementById("bk_packageId");
       if (pkgHid) pkgHid.value = "";
+      const payEl = document.getElementById("bk_payMethod");
+      if (payEl && payEl.value === "三堂套票") {
+        payEl.value = "現金";
+      }
       recalcAdminBookingFromSelectedItems(true);
-      showToast("已移除套票扣堂");
+      // 若沒有加選項目，清掉摘要避免殘留套票文字
+      const selectedItems = state.catalog.filter(x => state.selectedAdminBookingServiceIds.indexOf(String(x.id)) !== -1);
+      if (!selectedItems.length) {
+        const svc = document.getElementById("bk_service");
+        if (svc) svc.value = "";
+        if (typeof syncBookingServiceChipsFromInput === "function") syncBookingServiceChipsFromInput();
+      }
+      showToast("已取消使用套票（儲存後才會生效）");
     }
 
     function addPackageAsBookingItem(packageId) {
@@ -3715,7 +3812,7 @@
         status: newStatus,
         note: document.getElementById("bk_note").value.trim(),
         usedCouponId: (typeof getSelectedBookingCouponIds === "function" ? getSelectedBookingCouponIds() : (document.getElementById("bk_usedCouponId") ? document.getElementById("bk_usedCouponId").value : "")) || "",
-        usedPackageId: pkgIdVal || "",
+        usedPackageId: pkgIdVal,  // 空字串代表明確取消套票
         forceBlocked
       };
       const btn = document.getElementById("bk_submitBtn");
