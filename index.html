@@ -3176,30 +3176,29 @@
       }
     }
 
+    function getPackageDurationMinutes(pkg) {
+      if (!pkg) return 60;
+      const catItem = (state.packageCatalog || []).find(x =>
+        String(x.name || "") === String(pkg.name || "").split("｜").pop() ||
+        String(pkg.name || "").indexOf(String(x.name || "")) !== -1
+      );
+      return safeNumber(catItem && catItem.duration, 60) || 60;
+    }
+
+    function clearBookingPackageSelection() {
+      const pkgHid = document.getElementById("bk_packageId");
+      if (pkgHid) pkgHid.value = "";
+      recalcAdminBookingFromSelectedItems(true);
+      showToast("已移除套票扣堂");
+    }
+
     function addPackageAsBookingItem(packageId) {
       const p = (state.packages || []).find(x => String(x.id) === String(packageId));
       if (!p) return showToast("找不到套票", true);
       if (safeNumber(p.remainingSessions, 0) <= 0) return showToast("此套票已無剩餘堂數", true);
-      const label = `${p.name}（套票扣1堂）`;
-      document.getElementById("bk_service").value = label;
-      document.getElementById("bk_finalPrice").value = 0;
       const pkgHid = document.getElementById("bk_packageId");
       if (pkgHid) pkgHid.value = p.id;
-      // 由套票分類項目帶入單堂時間，並重算結束時間
-      const catItem = (state.packageCatalog || []).find(x =>
-        String(x.name || "") === String(p.name || "").split("｜").pop() ||
-        String(p.name || "").indexOf(String(x.name || "")) !== -1
-      );
-      const dur = safeNumber(catItem && catItem.duration, 60) || 60;
-      document.getElementById("bk_duration").value = dur;
-      const startEl = document.getElementById("bk_startTime");
-      const endEl = document.getElementById("bk_endTime");
-      if (startEl && startEl.value && endEl) {
-        const parts = String(startEl.value).split(":");
-        const sm = (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
-        const em = sm + dur + 10;
-        endEl.value = `${String(Math.floor(em / 60) % 24).padStart(2, "0")}:${String(em % 60).padStart(2, "0")}`;
-      }
+      const hasExtras = (state.selectedAdminBookingServiceIds || []).length > 0;
       const payEl = document.getElementById("bk_payMethod");
       if (payEl) {
         let hasPkgOpt = false;
@@ -3212,10 +3211,13 @@
           opt.textContent = "套票(扣堂)";
           payEl.appendChild(opt);
         }
-        payEl.value = "三堂套票";
+        if (!hasExtras) payEl.value = "三堂套票";
+        else if (payEl.value === "三堂套票") payEl.value = "現金";
       }
-      checkBookingBlockedConflict();
-      showToast(`已加入：${p.name}（約 ${dur} 分鐘，完成時自動扣 1 堂）`);
+      recalcAdminBookingFromSelectedItems(true);
+      showToast(hasExtras
+        ? `已加入套票扣堂：${p.name}（加選項目另計金額與時間）`
+        : `已加入：${p.name}（約 ${getPackageDurationMinutes(p)} 分鐘，完成時自動扣 1 堂）`);
     }
 
     function selectAdminBookingCategory(catName) {
@@ -3301,23 +3303,7 @@
       }).join("");
 
       const selectedItems = activeCatalog.filter(x => state.selectedAdminBookingServiceIds.indexOf(String(x.id)) !== -1);
-      document.getElementById("bk_selectedCountBadge").textContent = `已選 ${selectedItems.length} 項`;
-
-      if (selectedItems.length === 0) {
-        selectedBox.innerHTML = `<div class="text-[11px] text-[#8b7365] py-1">尚未加入項目（點上方「＋ 加入」自動計算金額與時間）</div>`;
-      } else {
-        selectedBox.innerHTML = selectedItems.map(item => `
-          <div class="px-2.5 py-1.5 rounded-lg bg-white border border-[#e6d6c6] flex items-center justify-between gap-2 text-xs">
-            <div class="truncate">
-              <span class="font-bold text-[#33241d]">${esc(item.name)}</span>
-              <span class="text-[#8c5e43] font-bold ml-1">$${safeNumber(item.price, 0).toLocaleString()}</span>
-            </div>
-            <button type="button" onclick="removeAdminBookingServiceId('${escJs(item.id)}')" class="text-rose-700 font-bold px-1.5 hover:bg-rose-50 rounded">
-              ✕
-            </button>
-          </div>
-        `).join("");
-      }
+      recalcAdminBookingFromSelectedItems(true);
     }
 
     function addAdminBookingServiceId(itemId) {
@@ -3359,21 +3345,93 @@
 
     function recalcAdminBookingFromSelectedItems(overwriteFields = true) {
       const selectedItems = state.catalog.filter(x => state.selectedAdminBookingServiceIds.indexOf(String(x.id)) !== -1);
-      const couponId = document.getElementById("bk_usedCouponId").value;
-      const couponObj = couponId ? getVisibleCoupons().find(cp => String(cp.couponId) === String(couponId)) : null;
-      const discount = couponObj ? safeNumber(couponObj.discountAmount, 0) : 0;
+      let discount = 0;
+      (state.selectedBookingCouponIds || []).forEach(id => {
+        const cp = getVisibleCoupons().find(c => String(c.couponId) === String(id));
+        if (cp) discount += safeNumber(cp.discountAmount, 0);
+      });
+      const hidCoupon = document.getElementById("bk_usedCouponId");
+      if (!(state.selectedBookingCouponIds || []).length && hidCoupon && hidCoupon.value) {
+        const cp = getVisibleCoupons().find(c => String(c.couponId) === String(hidCoupon.value));
+        if (cp) discount = safeNumber(cp.discountAmount, 0);
+      }
 
-      if (overwriteFields && selectedItems.length > 0) {
-        const namesText = selectedItems.map(i => i.name).join(" + ");
-        const totalP = Math.max(0, selectedItems.reduce((s, i) => s + safeNumber(i.price, 0), 0) - discount);
-        const totalD = selectedItems.reduce((s, i) => s + safeNumber(i.duration, 0), 0) || 60;
-        document.getElementById("bk_service").value = namesText;
+      const pkgId = (document.getElementById("bk_packageId") && document.getElementById("bk_packageId").value) || "";
+      const pkg = pkgId ? (state.packages || []).find(x => String(x.id) === String(pkgId)) : null;
+      const pkgDur = pkg ? getPackageDurationMinutes(pkg) : 0;
+      const pkgLabel = pkg ? `${pkg.name}（套票扣1堂）` : "";
+
+      const itemsPrice = selectedItems.reduce((s, i) => s + safeNumber(i.price, 0), 0);
+      const itemsDur = selectedItems.reduce((s, i) => s + safeNumber(i.duration, 0), 0);
+      const namesParts = [];
+      if (pkgLabel) namesParts.push(pkgLabel);
+      selectedItems.forEach(i => namesParts.push(i.name));
+
+      // package free; add-ons priced
+      const totalP = Math.max(0, itemsPrice - discount);
+      const totalD = (pkgDur + itemsDur) || (pkg ? pkgDur : 60) || 60;
+
+      if (overwriteFields && (selectedItems.length > 0 || pkg)) {
+        document.getElementById("bk_service").value = namesParts.join(" + ");
         document.getElementById("bk_finalPrice").value = totalP;
         document.getElementById("bk_duration").value = totalD;
+        const priceEl = document.getElementById("bk_finalPrice");
+        if (priceEl) priceEl.dataset.basePrice = String(itemsPrice);
+      }
+
+      const selectedBox = document.getElementById("bk_selectedItemsList");
+      const badge = document.getElementById("bk_selectedCountBadge");
+      if (badge) badge.textContent = `已選 ${(pkg ? 1 : 0) + selectedItems.length} 項`;
+      if (selectedBox && overwriteFields) {
+        let htmlParts = [];
+        if (pkg) {
+          htmlParts.push(`
+            <div class="p-2 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-between gap-2 text-xs">
+              <div class="min-w-0">
+                <span class="px-1.5 py-0.5 rounded bg-indigo-600 text-white text-[10px] font-bold mr-1">套票扣堂</span>
+                <span class="font-bold text-[#33241d]">${esc(pkg.name)}</span>
+                <span class="text-[11px] text-indigo-800 ml-1">約 ${pkgDur} 分 / 完成 -1 堂</span>
+              </div>
+              <button type="button" onclick="clearBookingPackageSelection()" class="text-rose-700 font-bold px-1.5 hover:bg-rose-50 rounded">✕</button>
+            </div>`);
+        }
+        selectedItems.forEach(item => {
+          htmlParts.push(`
+            <div class="p-2 rounded-xl bg-[#fffaf5] border border-[#e6d5c3] flex items-center justify-between gap-2 text-xs">
+              <div class="min-w-0">
+                <span class="px-1.5 py-0.5 rounded bg-[#f3ece5] text-[#6a4f3f] text-[10px] font-bold mr-1">${esc(item.category || "")}</span>
+                <span class="font-bold text-[#33241d]">${esc(item.name)}</span>
+                <span class="text-[#8c5e43] font-bold ml-1">$${safeNumber(item.price, 0).toLocaleString()}</span>
+                ${safeNumber(item.duration, 0) > 0 ? `<span class="text-[11px] text-[#8b7365] ml-1">${safeNumber(item.duration, 0)} 分</span>` : ""}
+              </div>
+              <button type="button" onclick="removeAdminBookingServiceId('${escJs(item.id)}')" class="text-rose-700 font-bold px-1.5 hover:bg-rose-50 rounded">✕</button>
+            </div>`);
+        });
+        selectedBox.innerHTML = htmlParts.length
+          ? htmlParts.join("")
+          : `<div class="text-xs text-[#8b7365] py-2 px-3 rounded-xl bg-[#faf7f4] border border-dashed border-[#e2d4c5]">尚未加入任何項目，請從上方挑選或加入會員套票</div>`;
+      }
+
+      const payEl = document.getElementById("bk_payMethod");
+      if (payEl && pkg && selectedItems.length > 0 && payEl.value === "三堂套票") {
+        payEl.value = "現金";
+      }
+      if (payEl && pkg && selectedItems.length === 0) {
+        let hasPkgOpt = false;
+        for (let i = 0; i < payEl.options.length; i++) {
+          if (payEl.options[i].value === "三堂套票") { hasPkgOpt = true; break; }
+        }
+        if (!hasPkgOpt) {
+          const opt = document.createElement("option");
+          opt.value = "三堂套票";
+          opt.textContent = "套票(扣堂)";
+          payEl.appendChild(opt);
+        }
+        payEl.value = "三堂套票";
       }
 
       const start = document.getElementById("bk_startTime").value || "11:00";
-      const dur = safeNumber(document.getElementById("bk_duration").value, 60);
+      const dur = safeNumber(document.getElementById("bk_duration").value, totalD || 60);
       const [h, m] = start.split(":").map(Number);
       const total = Math.min(24 * 60 - 1, (h || 11) * 60 + (m || 0) + dur + 10);
       document.getElementById("bk_endTime").value = `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
@@ -4275,34 +4333,6 @@
           }
         </div>
 
-        <div class="mt-4 p-3.5 rounded-2xl bg-[#f7f9f8] border border-[#dce7e2] space-y-2 text-xs">
-          <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <div class="font-bold text-[#2b4438]">🔗 LINE 帳號綁定與換機重綁管理</div>
-              <div class="text-[11px] text-[#5c7267] mt-0.5">
-                目前狀態：${cust.lineUserId || lineClean
-                  ? `<span class="text-emerald-700 font-bold">已綁定（${esc(lineClean || cust.lineUserId)}）</span>`
-                  : `<span class="text-amber-700 font-bold">尚未綁定 LINE</span>`}
-              </div>
-            </div>
-            <div class="flex flex-wrap gap-1.5">
-              <button type="button" onclick="copyText('${escJs(normalLink)}', '已複製會員專屬連結（含諮詢表與預約）')" class="px-2.5 py-1 rounded-lg bg-white border border-[#c5d6ce] text-[#2b4438] font-bold">
-                複製一般連結
-              </button>
-              <button type="button" onclick="copyText('${escJs(rebindLink)}', '已複製【換機強制重綁連結】！請傳給顧客用新 LINE 開啟')" class="px-2.5 py-1 rounded-lg bg-emerald-700 text-white font-bold">
-                複製換機重綁連結
-              </button>
-              ${cust.lineUserId ? `
-                <button type="button" onclick="handleAdminUnbindLine('${escJs(cust.id)}')" class="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-bold">
-                  解除舊綁定
-                </button>
-              ` : ""}
-            </div>
-          </div>
-          <p class="text-[11px] text-[#687d73]">
-            💡 若顧客更換手機或重新註冊 LINE，傳送「換機重綁連結」給她開啟，系統會自動覆蓋舊綁定並保留所有儲值與紀錄。
-          </p>
-        </div>
 
         <div class="mt-4 p-3.5 rounded-2xl bg-[#fcf9f5] border border-[#efe3d6] space-y-2.5 text-xs">
           <div class="flex flex-wrap items-center justify-between gap-2">
@@ -4400,6 +4430,36 @@
             `).join("")}
           </div>
         </div>
+
+        <div class="mt-4 p-3.5 rounded-2xl bg-[#f7f9f8] border border-[#dce7e2] space-y-2 text-xs">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div class="font-bold text-[#2b4438]">🔗 LINE 帳號綁定與換機重綁管理</div>
+              <div class="text-[11px] text-[#5c7267] mt-0.5">
+                目前狀態：${cust.lineUserId || lineClean
+                  ? `<span class="text-emerald-700 font-bold">已綁定（${esc(lineClean || cust.lineUserId)}）</span>`
+                  : `<span class="text-amber-700 font-bold">尚未綁定 LINE</span>`}
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              <button type="button" onclick="copyText('${escJs(normalLink)}', '已複製會員專屬連結（含諮詢表與預約）')" class="px-2.5 py-1 rounded-lg bg-white border border-[#c5d6ce] text-[#2b4438] font-bold">
+                複製一般連結
+              </button>
+              <button type="button" onclick="copyText('${escJs(rebindLink)}', '已複製【換機強制重綁連結】！請傳給顧客用新 LINE 開啟')" class="px-2.5 py-1 rounded-lg bg-emerald-700 text-white font-bold">
+                複製換機重綁連結
+              </button>
+              ${cust.lineUserId ? `
+                <button type="button" onclick="handleAdminUnbindLine('${escJs(cust.id)}')" class="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-bold">
+                  解除舊綁定
+                </button>
+              ` : ""}
+            </div>
+          </div>
+          <p class="text-[11px] text-[#687d73]">
+            💡 若顧客更換手機或重新註冊 LINE，傳送「換機重綁連結」給她開啟，系統會自動覆蓋舊綁定並保留所有儲值與紀錄。
+          </p>
+        </div>
+
       `;
 
       modal.classList.remove("hidden");
@@ -6127,7 +6187,11 @@
           sub: showBal ? `儲值餘額 $${safeNumber(tx.balanceAfter, 0).toLocaleString()}` : ""
         });
       });
-      rows.sort((a, b) => String(b.sortKey).localeCompare(String(a.sortKey)));
+      rows.sort((a, b) => {
+        const ka = String(a.sortKey || a.time || "");
+        const kb = String(b.sortKey || b.time || "");
+        return kb.localeCompare(ka);
+      });
       if (!rows.length) {
         box.innerHTML = `<div class="text-center py-8 text-[#8b7365]">尚無消費或儲值紀錄</div>`;
         return;
