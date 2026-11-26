@@ -217,7 +217,6 @@
 
     <!-- 會員資料與我的預約、套票堂數、過去預約 -->
     <div id="customerProfileCard" class="glass-card rounded-2xl p-5 mb-4 hidden">
-      <div id="custNextBookingBanner" class="hidden mb-3 p-3 rounded-2xl bg-[#fff7ef] border border-[#ead2b8] text-xs"></div>
       <div class="flex items-start justify-between gap-2">
         <div>
           <span class="inline-block text-[11px] px-2.5 py-0.5 rounded-full bg-[#f4e8de] text-[#8c5e43] font-semibold mb-1">
@@ -6795,7 +6794,7 @@
         const completedCount = bookings.filter(b => b.status === "已完成").length;
         const effectiveVisits = Math.max(completedCount, safeNumber(cust.visitCount, 0));
 
-        document.getElementById("custPortalName").innerHTML = `<span class="text-xl sm:text-2xl font-extrabold tracking-wide text-[#33241d]">${esc(cust.name || "貴賓")}</span>${cust.nickname ? `<span class="inline-flex items-center align-middle ml-2 px-2.5 py-1 rounded-full bg-[#f5eee7] border border-[#eadbc9] text-[11px] font-semibold text-[#8c6b54]">暱稱・${esc(cust.nickname)}</span>` : ""}`;
+        document.getElementById("custPortalName").innerHTML = `<span class="text-xl sm:text-2xl font-extrabold tracking-wide text-[#33241d]">${esc(cust.name || "貴賓")}</span>${cust.nickname ? `<span class="inline-flex items-center align-middle ml-2 px-2.5 py-1 rounded-full bg-[#f5eee7] border border-[#eadbc9] text-[11px] font-semibold text-[#8c6b54]">${esc(cust.nickname)}</span>` : ""}`;
         document.getElementById("custPortalMeta").textContent = `${cust.contact || "尚無電話"} · 生日：${cust.birthday || "未填"}`;
         const bal = safeNumber(cust.balance, 0);
         const balWrap = document.getElementById("custPortalBalanceWrap");
@@ -6853,24 +6852,6 @@
         const pastBookings = bookings.filter(b =>
           ["已完成", "取消", "已取消"].indexOf(String(b.status || "").trim()) !== -1
         );
-        const nextBanner = document.getElementById("custNextBookingBanner");
-        if (nextBanner) {
-          const upcoming = activeBookings.slice().sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`));
-          const next = upcoming[0];
-          if (next) {
-            nextBanner.classList.remove("hidden");
-            const st = String(next.status || "").trim();
-            const stHint = st === "待審核" ? "待店家確認" : st === "改期申請中" ? "改期審核中" : st === "取消申請中" ? "取消審核中" : st === "已報到" ? "已報到" : "已排程";
-            nextBanner.innerHTML = `
-              <div class="font-extrabold text-[#8c5e43] mb-0.5">下一個預約 · ${esc(stHint)}</div>
-              <div class="text-[#33241d] font-bold">${esc(next.date)} ${esc(next.startTime)}${next.endTime ? `–${esc(next.endTime)}` : ""}</div>
-              <div class="text-[11px] text-[#6a4f3f] mt-0.5 leading-snug">${esc(next.service || "")}</div>`;
-          } else {
-            nextBanner.classList.add("hidden");
-            nextBanner.innerHTML = "";
-          }
-        }
-
         const activeBox = document.getElementById("custPortalBookingsActive");
         const pastBox = document.getElementById("custPortalBookingsPast");
         if (activeBox) {
