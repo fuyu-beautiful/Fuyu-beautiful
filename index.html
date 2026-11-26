@@ -4514,9 +4514,18 @@
               ${pkgSummary
                 ? `<span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200 font-bold">🎫 ${esc(pkgSummary)}</span>`
                 : `<span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-500">無有效套票</span>`}
-              <span class="px-2 py-0.5 rounded-full bg-[#f5efe9] text-[#6a4f3f] font-semibold">${visits}次</span>
+              <span class="px-2 py-0.5 rounded-full bg-[#f5efe9] text-[#6a4f3f] font-semibold">累計來店 ${visits} 次</span>
               ${availCpCount ? `<span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-semibold">券${availCpCount}</span>` : ""}
               ${tagsShort.map(t => `<span class="px-1.5 py-0.5 rounded-md bg-[#eef2ff] text-indigo-800 text-[10px] font-extrabold">#${esc(t)}</span>`).join("")}
+            </div>
+            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#806b5d] bg-[#fcfaf8] rounded-xl px-2.5 py-2">
+              ${lastVisit ? (() => {
+                const visitDate = String(lastVisit.date || "").slice(0, 10);
+                const today = formatTodayStr();
+                const toDayNumber = v => { const m = String(v || "").match(/^(\d{4})-(\d{2})-(\d{2})/); return m ? Math.floor(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) / 86400000) : NaN; };
+                const daysSince = Math.max(0, toDayNumber(today) - toDayNumber(visitDate));
+                return `<span>🗓️ 最後消費：<b class="text-[#5c4638]">${esc(visitDate || "-")}</b></span><span>距上次來店：<b class="text-[#8c5e43]">${daysSince} 天</b></span>`;
+              })() : `<span>🗓️ 最後消費：尚無完成消費紀錄</span>`}
             </div>
 
             <div class="grid grid-cols-3 gap-1.5 pt-1 border-t border-[#f2e8df]">
