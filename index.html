@@ -659,8 +659,8 @@
       <div class="glass-card rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-[#fffdfb] to-[#faf2ea]">
         <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
-            <h2 class="text-base font-extrabold text-[#33241d]">🎟️ 優惠券與自動發放中心</h2>
-            <p class="text-xs text-[#8b7365] mt-0.5">調整固定自動發放金額與期限，或手動發送專屬優惠券</p>
+            <h2 class="text-base font-extrabold text-[#33241d]">🎟️ 優惠券</h2>
+            <p class="text-xs text-[#8b7365] mt-0.5">查詢持有狀態、手動發券；自動規則在下方可展開</p>
           </div>
           <button type="button" onclick="openIssueCouponModal()" class="px-4 py-2 rounded-xl text-xs font-bold btn-primary shadow whitespace-nowrap">
             + 手動發放優惠券
@@ -668,18 +668,18 @@
         </div>
 
         <div class="grid grid-cols-3 gap-2.5 text-center">
-          <div class="p-3 rounded-2xl bg-white border border-[#efe2d5]">
+          <button type="button" onclick="filterCouponsByStat('可使用')" class="p-3 rounded-2xl bg-white border border-[#efe2d5] hover:border-emerald-300 transition">
             <div class="text-[11px] text-[#8b7365]">可使用中</div>
             <div id="cpStatAvail" class="text-lg font-extrabold text-emerald-700 mt-0.5">0 張</div>
-          </div>
-          <div class="p-3 rounded-2xl bg-white border border-[#efe2d5]">
-            <div class="text-[11px] text-[#8b7365]">已核銷使用</div>
+          </button>
+          <button type="button" onclick="filterCouponsByStat('已使用')" class="p-3 rounded-2xl bg-white border border-[#efe2d5] hover:border-blue-300 transition">
+            <div class="text-[11px] text-[#8b7365]">已核銷</div>
             <div id="cpStatUsed" class="text-lg font-extrabold text-blue-700 mt-0.5">0 張</div>
-          </div>
-          <div class="p-3 rounded-2xl bg-white border border-[#efe2d5]">
-            <div class="text-[11px] text-[#8b7365]">累計發出總數</div>
+          </button>
+          <button type="button" onclick="filterCouponsByStat('all')" class="p-3 rounded-2xl bg-white border border-[#efe2d5] hover:border-[#c9a888] transition">
+            <div class="text-[11px] text-[#8b7365]">全部</div>
             <div id="cpStatTotal" class="text-lg font-extrabold text-[#8c5e43] mt-0.5">0 張</div>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -701,15 +701,18 @@
       </div>
 
       <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2">
+        <button type="button" onclick="toggleCouponRulesPanel()" class="w-full flex flex-wrap items-center justify-between gap-2 text-left">
           <div class="flex items-center gap-2">
             <span class="w-2 h-2 rounded-full bg-[#8c5e43]"></span>
-            <h3 class="text-sm font-extrabold text-[#33241d]">⚙️ 固定自動發放規則設定</h3>
+            <h3 class="text-sm font-extrabold text-[#33241d]">⚙️ 自動發放規則</h3>
+            <span class="text-[11px] text-[#8b7365]">壽星／新客（少改）</span>
           </div>
-          <span class="text-[11px] text-[#8b7365]">發放條件已鎖定，可調整折抵金額與有效期限</span>
+          <span id="couponRulesToggleLabel" class="text-xs font-extrabold text-[#8c5e43] px-2.5 py-1 rounded-lg bg-[#f3ece5]">展開設定 ▾</span>
+        </button>
+        <div id="couponRulesPanel" class="hidden space-y-2">
+          <p class="text-[11px] text-[#8b7365]">發放條件已鎖定，可調整折抵金額與有效期限。</p>
+          <div id="couponRulesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
         </div>
-
-        <div id="couponRulesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
       </div>
     </section>
 
@@ -742,31 +745,39 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-          <div class="p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
-            <div id="finRevLabel" class="text-[11px] font-bold text-[#8b7365]">當月結算營收</div>
-            <div id="finMonthRevenue" class="text-lg font-extrabold text-emerald-700 mt-1 tabular-nums">$0</div>
+        <!-- 主數字：實收／支出／結餘（計算口徑不變，僅調整層級） -->
+        <div class="grid grid-cols-3 gap-2 sm:gap-2.5">
+          <div class="p-3 sm:p-3.5 rounded-2xl bg-emerald-50 border border-emerald-100">
+            <div id="finRevLabel" class="text-[10px] sm:text-[11px] font-bold text-emerald-800">本期實收</div>
+            <div id="finMonthRevenue" class="text-base sm:text-lg font-extrabold text-emerald-700 mt-1 tabular-nums">$0</div>
           </div>
-          <div class="p-3.5 rounded-2xl bg-white border border-indigo-100">
-            <div id="finPackageLabel" class="text-[11px] font-bold text-indigo-700">當月套票收入</div>
-            <div id="finMonthPackagePrepay" class="text-lg font-extrabold text-indigo-800 mt-1 tabular-nums">$0</div>
+          <div class="p-3 sm:p-3.5 rounded-2xl bg-rose-50 border border-rose-100">
+            <div id="finExpLabel" class="text-[10px] sm:text-[11px] font-bold text-rose-800">本期支出</div>
+            <div id="finMonthExpense" class="text-base sm:text-lg font-extrabold text-[#b42318] mt-1 tabular-nums">-$0</div>
           </div>
-          <div class="p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
-            <div id="finVisitsLabel" class="text-[11px] font-bold text-[#8b7365]">當月來客數</div>
-            <div id="finPeriodVisits" class="text-lg font-extrabold text-sky-700 mt-1 tabular-nums">0 人次</div>
-            <div id="finAvgTicket" class="text-[10px] text-[#8b7365] mt-0.5">客單均價 $0</div>
+          <div class="p-3 sm:p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
+            <div id="finNetLabel" class="text-[10px] sm:text-[11px] font-bold text-[#8b7365]">本期結餘</div>
+            <div id="finMonthNet" class="text-base sm:text-lg font-extrabold text-[#3a2a22] mt-1 tabular-nums">$0</div>
           </div>
-          <div class="p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
-            <div id="finExpLabel" class="text-[11px] font-bold text-[#8b7365]">當月營運支出</div>
-            <div id="finMonthExpense" class="text-lg font-extrabold text-[#b42318] mt-1 tabular-nums">-$0</div>
+        </div>
+        <!-- 次要數字：仍更新同一批 element id，不影響原計算 -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <div class="p-2.5 rounded-xl bg-white border border-indigo-100">
+            <div id="finPackageLabel" class="text-[10px] font-bold text-indigo-700">套票收入</div>
+            <div id="finMonthPackagePrepay" class="text-sm font-extrabold text-indigo-800 mt-0.5 tabular-nums">$0</div>
           </div>
-          <div class="p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
-            <div id="finNetLabel" class="text-[11px] font-bold text-[#8b7365]">當月收支淨額</div>
-            <div id="finMonthNet" class="text-lg font-extrabold text-[#3a2a22] mt-1 tabular-nums">$0</div>
+          <div class="p-2.5 rounded-xl bg-white border border-[#efe2d5]">
+            <div id="finVisitsLabel" class="text-[10px] font-bold text-[#8b7365]">來客數</div>
+            <div id="finPeriodVisits" class="text-sm font-extrabold text-sky-700 mt-0.5 tabular-nums">0 人次</div>
+            <div id="finAvgTicket" class="text-[10px] text-[#8b7365] mt-0.5 leading-snug">客單均價 $0</div>
           </div>
-          <div class="p-3.5 rounded-2xl bg-white border border-[#efe2d5]">
-            <div class="text-[11px] font-bold text-[#8b7365]">全體會員儲值餘額</div>
-            <div id="finTotalBalance" class="text-lg font-extrabold text-[#8c5e43] mt-1 tabular-nums">$0</div>
+          <div class="p-2.5 rounded-xl bg-white border border-[#efe2d5] col-span-2 sm:col-span-1">
+            <div class="text-[10px] font-bold text-[#8b7365]">會員儲值總餘額</div>
+            <div id="finTotalBalance" class="text-sm font-extrabold text-[#8c5e43] mt-0.5 tabular-nums">$0</div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-[#faf6f2] border border-[#eadbc9] col-span-2 sm:col-span-1 hidden sm:block">
+            <div class="text-[10px] font-bold text-[#8b7365]">說明</div>
+            <div class="text-[10px] text-[#6a4f3f] mt-0.5 leading-snug">實收＝服務結算＋儲值／套票現金入帳</div>
           </div>
         </div>
 
@@ -833,22 +844,19 @@
     <!-- ---------- 分頁 5：管理 ---------- -->
     <section id="tab-management" class="space-y-4 hidden">
       <div class="glass-card rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-2.5">
-        <div class="flex items-center gap-2 flex-wrap">
-          <button id="subtab-catalog-btn" onclick="switchManagementSubTab('catalog')" class="px-4 py-2 rounded-xl text-xs font-bold subtab-active">
-            💆‍♀️ 服務與產品價目
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1">
+          <button id="subtab-catalog-btn" onclick="switchManagementSubTab('catalog')" class="px-3 py-2 rounded-xl text-xs font-bold subtab-active whitespace-nowrap shrink-0">
+            💆‍♀️ 價目
           </button>
-          <button id="subtab-blocked-btn" onclick="switchManagementSubTab('blocked')" class="px-4 py-2 rounded-xl text-xs font-bold subtab-inactive">
-            🚫 禁約時段設定
+          <button id="subtab-blocked-btn" onclick="switchManagementSubTab('blocked')" class="px-3 py-2 rounded-xl text-xs font-bold subtab-inactive whitespace-nowrap shrink-0">
+            🚫 禁約
           </button>
-          <button id="subtab-pkgcat-btn" onclick="switchManagementSubTab('pkgcat')" class="px-4 py-2 rounded-xl text-xs font-bold subtab-inactive">
-            🎫 套票分類
+          <button id="subtab-settings-btn" onclick="switchManagementSubTab('settings')" class="px-3 py-2 rounded-xl text-xs font-bold subtab-inactive whitespace-nowrap shrink-0">
+            ⚙️ 設定與備份
           </button>
-          <button id="subtab-settings-btn" onclick="switchManagementSubTab('settings')" class="px-4 py-2 rounded-xl text-xs font-bold subtab-inactive">
-            ⚙️ 前台設定
-          </button>
-          <button id="subtab-reports-btn" onclick="switchManagementSubTab('reports')" class="px-4 py-2 rounded-xl text-xs font-bold subtab-inactive">
-            📊 報表與備份
-          </button>
+          <!-- 保留 id 以免舊程式參照失效（已併入上方分頁，不顯示） -->
+          <button id="subtab-pkgcat-btn" type="button" class="hidden" aria-hidden="true"></button>
+          <button id="subtab-reports-btn" type="button" class="hidden" aria-hidden="true"></button>
         </div>
 
         <div id="managementActionButtons" class="flex flex-wrap items-center gap-2">
@@ -2268,8 +2276,14 @@
       tabs.forEach(t => {
         document.getElementById(`tab-${t}`).classList.toggle("hidden", t !== tabName);
         const btn = document.getElementById(`nav-${t}`);
-        btn.className = `px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap ${t === tabName ? "tab-active" : "tab-inactive"}`;
+        if (btn) btn.className = `px-3 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 ${t === tabName ? "tab-active" : "tab-inactive"}`;
       });
+      if (tabName === "management" && typeof switchManagementSubTab === "function") {
+        // 預設開「價目」（含套票品項），並同步頂部按鈕顯示
+        switchManagementSubTab("catalog");
+      }
+      if (tabName === "coupons" && typeof renderCouponsTab === "function") renderCouponsTab();
+      if (tabName === "finance" && typeof renderFinanceTab === "function") renderFinanceTab();
     }
 
         function downloadTextFile(filename, text, mime) {
@@ -2334,32 +2348,45 @@
     }
 
     function switchManagementSubTab(sub) {
+      // 三格：價目(含套票品項)／禁約／設定與備份；舊參數 pkgcat→價目、reports→設定
+      if (sub === "pkgcat") sub = "catalog";
+      if (sub === "reports") sub = "settings";
       const isCatalog = sub === "catalog";
       const isBlocked = sub === "blocked";
-      const isPkgcat = sub === "pkgcat";
       const isSettings = sub === "settings";
-      const isReports = sub === "reports";
       document.getElementById("subtab-catalog").classList.toggle("hidden", !isCatalog);
       document.getElementById("subtab-blocked").classList.toggle("hidden", !isBlocked);
       const pkgcatEl = document.getElementById("subtab-pkgcat");
-      if (pkgcatEl) pkgcatEl.classList.toggle("hidden", !isPkgcat);
+      // 套票品項併入「價目」
+      if (pkgcatEl) pkgcatEl.classList.toggle("hidden", !isCatalog);
       const settingsEl = document.getElementById("subtab-settings");
       if (settingsEl) settingsEl.classList.toggle("hidden", !isSettings);
       const reportsEl = document.getElementById("subtab-reports");
-      if (reportsEl) reportsEl.classList.toggle("hidden", !isReports);
-      document.getElementById("subtab-catalog-btn").className = `px-4 py-2 rounded-xl text-xs font-bold ${isCatalog ? "subtab-active" : "subtab-inactive"}`;
-      document.getElementById("subtab-blocked-btn").className = `px-4 py-2 rounded-xl text-xs font-bold ${isBlocked ? "subtab-active" : "subtab-inactive"}`;
-      const pkgBtn = document.getElementById("subtab-pkgcat-btn");
-      if (pkgBtn) pkgBtn.className = `px-4 py-2 rounded-xl text-xs font-bold ${isPkgcat ? "subtab-active" : "subtab-inactive"}`;
+      // 報表備份併入「設定與備份」
+      if (reportsEl) reportsEl.classList.toggle("hidden", !isSettings);
+      const catBtn = document.getElementById("subtab-catalog-btn");
+      const blkBtn = document.getElementById("subtab-blocked-btn");
       const setBtn = document.getElementById("subtab-settings-btn");
-      if (setBtn) setBtn.className = `px-4 py-2 rounded-xl text-xs font-bold ${isSettings ? "subtab-active" : "subtab-inactive"}`;
-      const repBtn = document.getElementById("subtab-reports-btn");
-      if (repBtn) repBtn.className = `px-4 py-2 rounded-xl text-xs font-bold ${isReports ? "subtab-active" : "subtab-inactive"}`;
-      if (isCatalog && typeof renderCatalogAdmin === "function") renderCatalogAdmin();
-      if (isPkgcat && typeof renderPackageCatalogAdmin === "function") renderPackageCatalogAdmin();
-      if (isSettings && typeof fillSettingsForm === "function") fillSettingsForm();
-      if (isReports && typeof renderTagCatalogManager === "function") renderTagCatalogManager();
-      if (isReports && typeof renderOperationLogs === "function") renderOperationLogs();
+      if (catBtn) catBtn.className = `px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 ${isCatalog ? "subtab-active" : "subtab-inactive"}`;
+      if (blkBtn) blkBtn.className = `px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 ${isBlocked ? "subtab-active" : "subtab-inactive"}`;
+      if (setBtn) setBtn.className = `px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 ${isSettings ? "subtab-active" : "subtab-inactive"}`;
+      // 頂部快捷按鈕：跟子頁走
+      const btnSvc = document.getElementById("btnOpenCatalogServiceModal");
+      const btnProd = document.getElementById("btnOpenCatalogProductModal");
+      const btnBlk = document.getElementById("btnOpenBlockedModal");
+      if (btnSvc) btnSvc.classList.toggle("hidden", !isCatalog);
+      if (btnProd) btnProd.classList.toggle("hidden", !isCatalog);
+      if (btnBlk) btnBlk.classList.toggle("hidden", !isBlocked);
+      if (isCatalog) {
+        if (typeof renderCatalogAdmin === "function") renderCatalogAdmin();
+        else if (typeof renderCatalogTab === "function") renderCatalogTab();
+        if (typeof renderPackageCatalogAdmin === "function") renderPackageCatalogAdmin();
+      }
+      if (isSettings) {
+        if (typeof fillSettingsForm === "function") fillSettingsForm();
+        if (typeof renderTagCatalogManager === "function") renderTagCatalogManager();
+        if (typeof renderOperationLogs === "function") renderOperationLogs();
+      }
     }
 
     function fillSettingsForm() { loadSiteSettingsToForm(); }
@@ -5420,6 +5447,22 @@
     }
 
     /* ==================== 分頁 3：優惠券管理 ==================== */
+    function filterCouponsByStat(status) {
+      const sel = document.getElementById("couponStatusFilter");
+      if (sel) sel.value = status === "all" ? "all" : status;
+      renderCouponsTab();
+    }
+
+    function toggleCouponRulesPanel() {
+      const panel = document.getElementById("couponRulesPanel");
+      const label = document.getElementById("couponRulesToggleLabel");
+      if (!panel) return;
+      const open = panel.classList.contains("hidden");
+      panel.classList.toggle("hidden", !open);
+      if (label) label.textContent = open ? "收合 ▴" : "展開設定 ▾";
+      if (open && typeof renderCouponRulesSection === "function") renderCouponRulesSection();
+    }
+
     function renderCouponsTab() {
       const visibleList = getVisibleCoupons();
       const todayStr = formatTodayStr();
@@ -5878,10 +5921,10 @@
       const totalAllBalance = state.customers.reduce((s, c) => s + safeNumber(c.balance, 0), 0);
       const net = totalPeriodIncome - totalPeriodExp;
 
-      document.getElementById("finRevLabel").textContent = isYear ? `${targetYear}年現金口收入` : "當月現金口收入";
+      document.getElementById("finRevLabel").textContent = isYear ? `${targetYear}年實收` : "本期實收";
       document.getElementById("finVisitsLabel").textContent = isYear ? `${targetYear}年完成人次` : "當月完成人次";
-      document.getElementById("finExpLabel").textContent = isYear ? `${targetYear}年總營運支出` : "當月營運支出";
-      document.getElementById("finNetLabel").textContent = isYear ? `${targetYear}年收支淨額` : "當月收支淨額";
+      document.getElementById("finExpLabel").textContent = isYear ? `${targetYear}年支出` : "本期支出";
+      document.getElementById("finNetLabel").textContent = isYear ? `${targetYear}年結餘` : "本期結餘";
 
       document.getElementById("finMonthRevenue").textContent = `$${totalPeriodIncome.toLocaleString()}`;
       document.getElementById("finPeriodVisits").textContent = `${periodVisits.toLocaleString()} 人次`;
