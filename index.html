@@ -250,11 +250,6 @@
     </div>
 
     <!-- 客戶分頁切換：注意事項 / 諮詢表 / 消費紀錄 -->
-    <div id="customerLineCtaBanner" class="hidden glass-card rounded-2xl p-4 mb-4 border border-[#cfe8d8] bg-emerald-50/80">
-      <div class="text-sm font-extrabold text-emerald-950">預約請透過官方 LINE</div>
-      <p class="text-[11px] text-emerald-900 mt-1 leading-snug">目前未開放線上直接預約。點下方可開啟官方 LINE 詢問空檔與預約。</p>
-      <a id="customerLineCtaLink" href="https://line.me/" target="_blank" rel="noopener" class="mt-2.5 inline-flex items-center justify-center w-full py-2.5 rounded-xl text-xs font-extrabold bg-[#06C755] text-white shadow">開啟官方 LINE</a>
-    </div>
     <div id="customerSubTabs" class="grid grid-cols-3 gap-2 mb-4 hidden">
       <button id="cTabNoticeBtn" onclick="switchCustomerTab('notice')" class="py-2.5 rounded-xl text-sm font-bold tab-active">
         📌 注意事項
@@ -1107,12 +1102,12 @@
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input type="text" id="bk_memberSearch" oninput="filterBookingCustomerSelect()" placeholder="輸入關鍵字搜尋會員..." class="px-3 py-2 rounded-xl border border-[#decbb9] bg-white focus:outline-none focus:border-[#8c5e43]" />
-            <select id="bk_customerId" onchange="onBookingCustomerChange()" class="px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-semibold">
-              <option value="">-- 散客／非會員 --</option>
+            <select id="bk_customerId" required onchange="onBookingCustomerChange()" class="px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-semibold">
+              <option value="" disabled selected>請搜尋並選擇已建檔客人</option>
             </select>
           </div>
           <div>
-            <input type="text" id="bk_customerName" required placeholder="客戶顯示姓名 *" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold text-[#33241d]" />
+            <input type="text" id="bk_customerName" required readonly placeholder="選擇會員後自動帶入姓名" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-[#f7f4f0] font-bold text-[#33241d]" />
           </div>
           <div id="bk_customerRiskBadges" class="hidden pt-1"></div>
           <div id="bk_customerTagsHint" class="hidden mt-1"></div>
@@ -1145,23 +1140,23 @@
           <div id="bk_categoryPills" class="flex flex-wrap gap-1.5"></div>
           <div id="bk_activeCategoryItems" class="rounded-xl bg-white border border-[#efe5da] divide-y divide-[#f3eae1] max-h-40 overflow-y-auto"></div>
 
-          <div>
-            <div class="text-[11px] font-bold text-[#6a4f3f] mb-1">已加入項目（點 ✕ 可移除）：</div>
+          <div class="pt-2 border-t border-[#eadfd4]">
+            <div class="text-[11px] font-bold text-[#6a4f3f] mb-1.5">已選預約項目（可點 ✕ 移除）</div>
             <div id="bk_selectedItemsList" class="space-y-1"></div>
+            <div class="mt-2.5">
+              <label class="block font-bold text-[#4a382f] mb-1">預約項目紀錄 *</label>
+              <input type="text" id="bk_service" required placeholder="選取項目後自動整理，可補充文字" class="w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white text-xs" oninput="syncBookingServiceChipsFromInput()" />
+              <div id="bk_serviceChips" class="hidden"></div>
+              <p class="text-[10px] text-[#8b7365] mt-1">已選項目與紀錄文字整合於同一區，避免重複顯示。</p>
+            </div>
           </div>
         </div>
 
         <div class="space-y-2">
           <div>
-            <label class="block font-bold text-[#4a382f] mb-1">預約項目摘要 *</label>
-            <div id="bk_serviceChips" class="min-h-[40px] p-2.5 rounded-xl border border-[#decbb9] bg-[#fcfaf8] flex flex-wrap gap-1.5 content-start"></div>
-            <input type="text" id="bk_service" required placeholder="可手動補充或微調項目文字" class="mt-1.5 w-full px-3 py-2 rounded-xl border border-[#decbb9] bg-white text-xs" oninput="syncBookingServiceChipsFromInput()" />
-            <p class="text-[10px] text-[#8b7365] mt-1">上方色塊為已選項目；多項目分開顯示。</p>
-          </div>
-          <div>
             <label id="bk_priceLabel" class="block font-bold text-[#4a382f] mb-1">預估金額 ($)</label>
-            <input type="number" id="bk_finalPrice" value="0" min="0" class="w-full max-w-[160px] px-3 py-2 rounded-xl border border-[#decbb9] bg-white font-bold text-[#8c5e43]" />
-            <p id="bk_priceHint" class="text-[10px] text-[#8b7365] mt-1">此為預估，實際收款請在「完成結算」時確認</p>
+            <input type="number" id="bk_finalPrice" value="0" min="0" readonly aria-readonly="true" class="w-full max-w-[160px] px-3 py-2 rounded-xl border border-[#decbb9] bg-[#f3f0ec] font-extrabold text-[#8c5e43] cursor-not-allowed" />
+            <p id="bk_priceHint" class="text-[10px] text-[#8b7365] mt-1">金額依所選項目自動計算並鎖定；如需調整，請於結帳頁面修改實收金額。</p>
           </div>
         </div>
 
@@ -2594,7 +2589,7 @@
                   </div>
                   <div class="flex items-center gap-1.5 shrink-0">
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${String(b.status)==="已報到" ? "bg-sky-600 text-white" : "bg-emerald-600 text-white"}">${esc(customerStatusLabel(b.status))}</span>
-                    <button type="button" onclick="closeReminderModal(); state.selectedDate='${escJs(b.date)}'; renderCalendar(); renderDayBookings();" class="px-2.5 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-800 font-bold">查看當日</button>
+                    <button type="button" onclick="viewReminderBookingDate('${escJs(b.date)}')" class="px-2.5 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-800 font-bold">查看</button>
                   </div>
                 </div>`).join("")}</div>`}
           <div class="flex justify-end mt-4 pt-3 border-t border-[#f1e7dc]">
@@ -2711,6 +2706,17 @@
 
     function closeReminderModal() {
       document.getElementById("reminderModal").classList.add("hidden");
+    }
+
+    function viewReminderBookingDate(dateStr) {
+      closeReminderModal();
+      state.selectedDate = String(dateStr || formatTodayStr());
+      renderCalendar();
+      renderDayBookings();
+      requestAnimationFrame(() => {
+        const target = document.getElementById("selectedDateTitle");
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
     }
 
     function getServiceColorStyle(booking) {
@@ -3595,9 +3601,13 @@
         return `${c.name} ${lineClean} ${c.nickname} ${c.contact}`.toLowerCase().includes(q);
       });
 
-      custSel.innerHTML = `<option value="">-- 散客／非會員 --</option>` + list.map(c => {
+      const placeholder = `<option value="" disabled ${currentVal ? "" : "selected"}>${list.length ? "請搜尋並選擇已建檔客人" : "查無符合的會員資料"}</option>`;
+      custSel.innerHTML = placeholder + list.map(c => {
         const lineClean = sanitizeLineDisplayName(c.lineDisplayName);
-        return `<option value="${esc(c.id)}" ${String(c.id) === String(currentVal) ? "selected" : ""}>${esc(c.name)}${lineClean ? `（${esc(lineClean)}）` : ""}${c.contact ? ` · ${esc(c.contact)}` : ""}</option>`;
+        const nickname = String(c.nickname || "").trim();
+        const extra = lineClean && lineClean !== c.name ? ` · LINE ${lineClean}` : (nickname && nickname !== c.name ? ` · ${nickname}` : "");
+        const phone = c.contact ? ` · ${c.contact}` : "";
+        return `<option value="${esc(c.id)}" ${String(c.id) === String(currentVal) ? "selected" : ""}>${esc(c.name)}${esc(extra)}${esc(phone)}</option>`;
       }).join("");
 
       if (q && list.length === 1 && autoFillName) {
@@ -4109,8 +4119,13 @@
         return;
       }
       const customerId = document.getElementById("bk_customerId").value || "";
-      const customerName = document.getElementById("bk_customerName").value.trim();
+      const selectedCustomer = state.customers.find(c => String(c.id) === String(customerId));
+      const customerName = selectedCustomer ? String(selectedCustomer.name || "").trim() : "";
       const dateStr = document.getElementById("bk_date").value;
+      if (!customerId || !selectedCustomer) {
+        showToast("請先搜尋並選擇已建檔的會員，才能新增或儲存預約", true);
+        return;
+      }
       const serviceText = document.getElementById("bk_service").value.trim();
       if (!customerName) {
         showToast("請選擇或填寫客人姓名", true);
@@ -6780,7 +6795,7 @@
         const completedCount = bookings.filter(b => b.status === "已完成").length;
         const effectiveVisits = Math.max(completedCount, safeNumber(cust.visitCount, 0));
 
-        document.getElementById("custPortalName").textContent = `${cust.name}${cust.nickname ? `（${cust.nickname}）` : ""}`;
+        document.getElementById("custPortalName").innerHTML = `<span class="text-xl sm:text-2xl font-extrabold tracking-wide text-[#33241d]">${esc(cust.name || "貴賓")}</span>${cust.nickname ? `<span class="inline-flex items-center align-middle ml-2 px-2.5 py-1 rounded-full bg-[#f5eee7] border border-[#eadbc9] text-[11px] font-semibold text-[#8c6b54]">暱稱・${esc(cust.nickname)}</span>` : ""}`;
         document.getElementById("custPortalMeta").textContent = `${cust.contact || "尚無電話"} · 生日：${cust.birthday || "未填"}`;
         const bal = safeNumber(cust.balance, 0);
         const balWrap = document.getElementById("custPortalBalanceWrap");
@@ -6915,12 +6930,6 @@
       }
 
       document.getElementById("customerSubTabs").classList.remove("hidden");
-      const lineCta = document.getElementById("customerLineCtaBanner");
-      if (lineCta) {
-        const onlineOn = !!(state.portalData && state.portalData.siteSettings && state.portalData.siteSettings.onlineBookingEnabled);
-        lineCta.classList.toggle("hidden", onlineOn);
-      }
-
       const hiddenNotice = document.getElementById("customerConsultHiddenNotice");
       const lockedCard = document.getElementById("customerConsultLockedCard");
       const formBox = document.getElementById("customerConsultFormBox");
