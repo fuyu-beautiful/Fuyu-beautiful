@@ -3268,6 +3268,38 @@
       document.getElementById("bookingModal").classList.remove("hidden");
     }
 
+    function matchCatalogIdsFromServiceParts(serviceText, packageObj) {
+      const parts = splitServiceItems(serviceText);
+      const pkgName = packageObj ? String(packageObj.name || "").trim() : "";
+      const remain = parts.filter(p => {
+        if (isPackageServicePart(p)) return false;
+        if (!pkgName) return true;
+        // 排除套票名稱本身（避免被誤判成加選項目）
+        if (p === pkgName) return false;
+        if (p.indexOf(pkgName) !== -1 || pkgName.indexOf(p) !== -1) return false;
+        // 去掉「（套票扣1堂）」後再比一次
+        const cleaned = p.replace(/（套票扣1堂）/g, "").replace(/\(套票扣1堂\)/g, "").trim();
+        if (cleaned === pkgName) return false;
+        return true;
+      });
+      const catalogSorted = (state.catalog || []).slice().sort((a, b) =>
+        String(b.name || "").length - String(a.name || "").length
+      );
+      const ids = [];
+      remain.forEach(p => {
+        const found = catalogSorted.find(item => {
+          const n = String(item.name || "").trim();
+          if (!n) return false;
+          return n === p || p.indexOf(n) !== -1 || n.indexOf(p) !== -1;
+        });
+        if (found) {
+          const id = String(found.id);
+          if (ids.indexOf(id) === -1) ids.push(id);
+        }
+      });
+      return ids;
+    }
+
     function openBookingModalById(bookingId) {
       const b = state.bookings.find(x => String(x.id) === String(bookingId));
       if (!b) return;
@@ -3319,15 +3351,16 @@
           if (hit) pkgId = hit.id;
         }
       }
-      if (pkgHid) pkgHid.value = pkgId;
+      // 付款為套票但沒有 usedPackageId：嘗試找該會員尚有餘堂或名稱相符的套票
+      if (!pkgId && b.customerId && (String(b.payMethod || "").indexOf("三堂套票") !== -1 || String(b.payMethod || "").indexOf("套票") !== -1)) {
+        const cand = (state.packages || []).filter(p => String(p.customerId) === String(b.customerId));
+        const byName = cand.find(p => String(b.service || "").indexOf(String(p.name || "")) !== -1);
+        pkgId = (byName || cand[0] || {}).id || "";
+      }
+      if (pkgHid) pkgHid.value = pkgId || "";
 
-      const { addOnParts } = classifyServiceParts(b.service);
-      const matchedIds = [];
-      addOnParts.forEach(p => {
-        const found = state.catalog.find(item => item.name === p || p.indexOf(item.name) !== -1);
-        if (found && matchedIds.indexOf(String(found.id)) === -1) matchedIds.push(String(found.id));
-      });
-      state.selectedAdminBookingServiceIds = matchedIds;
+      const packageObj = pkgId ? (state.packages || []).find(p => String(p.id) === String(pkgId)) : null;
+      state.selectedAdminBookingServiceIds = matchCatalogIdsFromServiceParts(b.service || "", packageObj);
       state.activeAdminBookingCategory = "";
 
       populateBookingModalSelects(b.customerId, b.usedCouponId, true);
@@ -3345,10 +3378,36 @@
           tagBox.innerHTML = "";
         }
       }
+      // 先帶入客戶套票提示，再重建已選列表
+      if (typeof onBookingCustomerChange === "function") {
+        // 不重設顧客下拉時也要刷新套票列
+        const hint = document.getElementById("bk_customerPackageHint");
+        if (hint && b.customerId) {
+          const pkgs = (state.packages || []).filter(p =>
+            String(p.customerId) === String(b.customerId) && safeNumber(p.remainingSessions, 0) > 0
+          );
+          if (pkgs.length) {
+            hint.classList.remove("hidden");
+            hint.innerHTML = `<div class="font-extrabold mb-1.5">🎫 此會員可用套票（可直接加入預約項目）</div>` +
+              pkgs.map(p => `
+                <div class="flex items-center justify-between gap-2 py-1 border-t border-indigo-100 first:border-0">
+                  <div class="min-w-0">
+                    <span class="font-bold">${esc(p.name)}</span>
+                    <span class="ml-1">剩 <strong>${safeNumber(p.remainingSessions, 0)}</strong>/${safeNumber(p.totalSessions, 3)} 堂</span>
+                  </div>
+                  <button type="button" onclick="addPackageAsBookingItem('${escJs(p.id)}')" class="px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-extrabold shrink-0">＋加入</button>
+                </div>`).join("");
+          }
+        }
+      }
       renderAdminBookingCategoryPicker();
-      // 重建已選列表（含套票列與可取消）
+      // 重建已選列表（套票 + 加選，皆可 ✕ 移除）
       recalcAdminBookingFromSelectedItems(true);
-      // 保留原服務文字中手動調整過的部分：若僅有套票狀態再覆蓋
+      // 若加選比對不到價目，仍保留原服務摘要文字，避免畫面空白
+      if (!(state.selectedAdminBookingServiceIds || []).length && !pkgId) {
+        document.getElementById("bk_service").value = b.service || "";
+        if (typeof syncBookingServiceChipsFromInput === "function") syncBookingServiceChipsFromInput();
+      }
       checkBookingBlockedConflict();
       document.getElementById("bookingModal").classList.remove("hidden");
     }
@@ -5641,12 +5700,19 @@
     function renderPackagesFinanceList() {
       const box = document.getElementById("packagesFinanceListContainer");
       if (!box) return;
-      const list = (state.packages || []).slice().sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || "")));
+      const list = (state.packages || []).slice().sort((a, b) => {
+        const ar = safeNumber(a.remainingSessions, 0) > 0 ? 0 : 1;
+        const br = safeNumber(b.remainingSessions, 0) > 0 ? 0 : 1;
+        if (ar !== br) return ar - br;
+        return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+      });
       if (!list.length) {
         box.innerHTML = `<div class="text-center py-8 text-xs text-[#8b7365]">目前尚無套票紀錄</div>`;
         return;
       }
-      box.innerHTML = list.map(p => {
+      const active = list.filter(p => safeNumber(p.remainingSessions, 0) > 0);
+      const done = list.filter(p => safeNumber(p.remainingSessions, 0) <= 0);
+      const renderCard = (p, exhausted) => {
         const rem = safeNumber(p.remainingSessions, 0);
         const total = safeNumber(p.totalSessions, 3);
         const used = safeNumber(p.usedSessions, Math.max(0, total - rem));
@@ -5656,15 +5722,22 @@
           : /未收款/.test(paidNote)
           ? `<span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold">未收款</span>`
           : "";
+        const remBadge = exhausted
+          ? `<span class="px-2 py-0.5 rounded-full bg-stone-200 text-stone-600 text-[10px] font-extrabold">已用完 0/${total}</span>`
+          : `<span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 text-[10px] font-bold">剩 ${rem}/${total} 堂</span>`;
         return `
-          <div class="p-3.5 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div class="min-w-0">
+          <div class="p-3.5 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+            exhausted
+              ? "bg-stone-100/80 border-stone-200 opacity-75"
+              : "bg-[#fcfaf8] border-[#eee3d8]"
+          }">
+            <div class="min-w-0 ${exhausted ? "grayscale-[0.35]" : ""}">
               <div class="flex flex-wrap items-center gap-1.5">
-                <span class="font-extrabold text-sm text-[#33241d]">${esc(p.customerName || "")}</span>
+                <span class="font-extrabold text-sm ${exhausted ? "text-stone-500" : "text-[#33241d]"}">${esc(p.customerName || "")}</span>
                 ${paidBadge}
-                <span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 text-[10px] font-bold">剩 ${rem}/${total} 堂</span>
+                ${remBadge}
               </div>
-              <div class="mt-1 font-bold text-[#4a382f]">${esc(p.name || "套票")}</div>
+              <div class="mt-1 font-bold ${exhausted ? "text-stone-500 line-through decoration-stone-300" : "text-[#4a382f]"}">${esc(p.name || "套票")}</div>
               ${String(p.note||"").match(/分類：([^｜|]+)/)?`<div class="text-[10px] text-indigo-700 mt-0.5">分類：${esc(String(p.note).match(/分類：([^｜|]+)/)[1])}</div>`:""}
               <div class="text-[11px] text-[#8b7365] mt-0.5">
                 已用 ${used} 堂 · 總價 $${safeNumber(p.price, 0).toLocaleString()}
@@ -5675,7 +5748,17 @@
             </div>
             <button type="button" onclick="openPackageModal('${escJs(p.customerId)}', '${escJs(p.customerName || "")}', '${escJs(p.id)}')" class="px-3 py-1.5 rounded-xl bg-white border border-[#decbb9] text-[#5c4638] font-bold shrink-0">編輯</button>
           </div>`;
-      }).join("");
+      };
+      box.innerHTML = `
+        ${active.length ? `
+          <div class="text-[11px] font-extrabold text-[#6a4f3f] mb-1.5">使用中（${active.length}）</div>
+          <div class="space-y-2 mb-4">${active.map(p => renderCard(p, false)).join("")}</div>
+        ` : `<div class="text-[11px] text-[#8b7365] mb-3">目前沒有尚有餘堂的套票</div>`}
+        ${done.length ? `
+          <div class="text-[11px] font-extrabold text-stone-500 mb-1.5 pt-1 border-t border-stone-200">已用完（${done.length}）</div>
+          <div class="space-y-2">${done.map(p => renderCard(p, true)).join("")}</div>
+        ` : ""}
+      `;
     }
 
     function renderFinanceTab() {
