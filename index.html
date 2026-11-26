@@ -122,6 +122,10 @@
       border-color: #8c5e43 !important;
       box-shadow: 0 2px 8px rgba(140, 94, 67, 0.25);
     }
+    @media (max-width: 640px) {
+      #adminView { padding-left: 0.75rem; padding-right: 0.75rem; }
+      #customerDetailContent { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    }
   </style>
 </head>
 <body class="min-h-screen pb-14">
@@ -537,20 +541,20 @@
 
   <!-- ==================== 店家管理後台視圖 ==================== -->
   <main id="adminView" class="max-w-6xl mx-auto px-4 pt-4 hidden">
-    <nav class="flex items-center gap-2 overflow-x-auto pb-2 mb-4">
-      <button id="nav-home" onclick="switchAdminTab('home')" class="px-4 py-2 rounded-xl text-sm font-bold tab-active whitespace-nowrap">
-        🏠 首頁排程
+    <nav class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 -mx-1 px-1 sticky top-0 z-20 bg-[#faf7f4]/95 backdrop-blur pt-1">
+      <button id="nav-home" onclick="switchAdminTab('home')" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tab-active whitespace-nowrap shrink-0">
+        🏠 排程
       </button>
-      <button id="nav-customers" onclick="switchAdminTab('customers')" class="px-4 py-2 rounded-xl text-sm font-bold tab-inactive whitespace-nowrap">
-        👥 會員資料
+      <button id="nav-customers" onclick="switchAdminTab('customers')" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tab-inactive whitespace-nowrap shrink-0">
+        👥 會員
       </button>
-      <button id="nav-coupons" onclick="switchAdminTab('coupons')" class="px-4 py-2 rounded-xl text-sm font-bold tab-inactive whitespace-nowrap">
-        🎟️ 優惠券管理
+      <button id="nav-coupons" onclick="switchAdminTab('coupons')" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tab-inactive whitespace-nowrap shrink-0">
+        🎟️ 優惠券
       </button>
-      <button id="nav-finance" onclick="switchAdminTab('finance')" class="px-4 py-2 rounded-xl text-sm font-bold tab-inactive whitespace-nowrap">
+      <button id="nav-finance" onclick="switchAdminTab('finance')" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tab-inactive whitespace-nowrap shrink-0">
         💰 帳務
       </button>
-      <button id="nav-management" onclick="switchAdminTab('management')" class="px-4 py-2 rounded-xl text-sm font-bold tab-inactive whitespace-nowrap">
+      <button id="nav-management" onclick="switchAdminTab('management')" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tab-inactive whitespace-nowrap shrink-0">
         ⚙️ 管理
       </button>
     </nav>
@@ -682,9 +686,9 @@
       <div class="glass-card rounded-3xl p-4 sm:p-5">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
           <h3 class="text-sm font-extrabold text-[#33241d]">📋 優惠券擁有名單與使用紀錄</h3>
-          <div class="flex flex-wrap gap-2">
-            <input type="text" id="couponSearchInput" oninput="renderCouponsTab()" class="px-3 py-1.5 rounded-xl border border-[#decbb9] text-xs bg-white" placeholder="搜尋客戶或券名..." />
-            <select id="couponStatusFilter" onchange="renderCouponsTab()" class="px-3 py-1.5 rounded-xl border border-[#decbb9] text-xs font-bold text-[#4a382f] bg-white">
+          <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <input type="text" id="couponSearchInput" oninput="renderCouponsTab()" class="px-3 py-2 rounded-xl border border-[#decbb9] text-xs bg-white w-full sm:w-48" placeholder="搜尋客戶或券名..." />
+            <select id="couponStatusFilter" onchange="renderCouponsTab()" class="px-3 py-2 rounded-xl border border-[#decbb9] text-xs font-bold text-[#4a382f] bg-white w-full sm:w-auto">
               <option value="all">全部狀態</option>
               <option value="可使用">可使用</option>
               <option value="已使用">已使用</option>
@@ -718,24 +722,22 @@
             <p class="text-xs text-[#8b7365]">掌握每月與年度服務營收、來客數、營運支出與會員儲值流動</p>
           </div>
 
-          <div class="flex flex-wrap items-center gap-2">
-            <div class="inline-flex rounded-xl bg-[#f2e8de] p-1 text-xs font-extrabold">
-              <button type="button" id="finModeBtn-month" onclick="switchFinancePeriodMode('month')" class="px-3 py-1 rounded-lg bg-[#8c5e43] text-white transition">
+          <div class="flex flex-col gap-2 w-full sm:w-auto">
+            <div class="inline-flex rounded-xl bg-[#f2e8de] p-1 text-xs font-extrabold self-start">
+              <button type="button" id="finModeBtn-month" onclick="switchFinancePeriodMode('month')" class="px-3 py-1.5 rounded-lg bg-[#8c5e43] text-white transition">
                 📅 月統計
               </button>
-              <button type="button" id="finModeBtn-year" onclick="switchFinancePeriodMode('year')" class="px-3 py-1 rounded-lg text-[#6a4f3f] transition">
+              <button type="button" id="finModeBtn-year" onclick="switchFinancePeriodMode('year')" class="px-3 py-1.5 rounded-lg text-[#6a4f3f] transition">
                 📊 年分析
               </button>
             </div>
-
-            <div id="finMonthPickerWrap" class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-[#decbb9]">
-              <span class="text-xs font-bold text-[#6a4f3f]">月份</span>
-              <input type="month" id="financeMonthPicker" onchange="renderFinanceTab()" class="text-xs font-extrabold text-[#33241d] bg-transparent focus:outline-none" />
+            <div id="finMonthPickerWrap" class="flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[#decbb9] w-full">
+              <span class="text-xs font-bold text-[#6a4f3f] shrink-0">月份</span>
+              <input type="month" id="financeMonthPicker" onchange="renderFinanceTab()" class="text-xs font-extrabold text-[#33241d] bg-transparent focus:outline-none flex-1 min-w-0" />
             </div>
-
-            <div id="finYearPickerWrap" class="hidden flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-[#decbb9]">
-              <span class="text-xs font-bold text-[#6a4f3f]">年度</span>
-              <select id="financeYearPicker" onchange="renderFinanceTab()" class="text-xs font-extrabold text-[#33241d] bg-transparent focus:outline-none"></select>
+            <div id="finYearPickerWrap" class="hidden flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[#decbb9] w-full">
+              <span class="text-xs font-bold text-[#6a4f3f] shrink-0">年度</span>
+              <select id="financeYearPicker" onchange="renderFinanceTab()" class="text-xs font-extrabold text-[#33241d] bg-transparent focus:outline-none flex-1"></select>
             </div>
           </div>
         </div>
@@ -779,22 +781,22 @@
       </div>
 
       <div class="glass-card rounded-3xl p-4 sm:p-5 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#f0e5da]">
-          <div class="flex flex-wrap items-center gap-2">
-            <button type="button" id="finSubBtn-income" onclick="switchFinanceSubTab('income')" class="px-4 py-2 rounded-xl text-xs font-extrabold subtab-active">
-              💵 收入明細
+        <div class="flex flex-col gap-2 pb-3 border-b border-[#f0e5da]">
+          <div class="flex gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1">
+            <button type="button" id="finSubBtn-income" onclick="switchFinanceSubTab('income')" class="px-3 py-2 rounded-xl text-xs font-extrabold subtab-active whitespace-nowrap shrink-0">
+              💵 收入
             </button>
-            <button type="button" id="finSubBtn-expense" onclick="switchFinanceSubTab('expense')" class="px-4 py-2 rounded-xl text-xs font-extrabold subtab-inactive">
-              🧾 支出明細
+            <button type="button" id="finSubBtn-expense" onclick="switchFinanceSubTab('expense')" class="px-3 py-2 rounded-xl text-xs font-extrabold subtab-inactive whitespace-nowrap shrink-0">
+              🧾 支出
             </button>
-            <button type="button" id="finSubBtn-topup" onclick="switchFinanceSubTab('topup')" class="px-4 py-2 rounded-xl text-xs font-extrabold subtab-inactive">
-              💳 儲值金紀錄
+            <button type="button" id="finSubBtn-topup" onclick="switchFinanceSubTab('topup')" class="px-3 py-2 rounded-xl text-xs font-extrabold subtab-inactive whitespace-nowrap shrink-0">
+              💳 儲值
             </button>
-            <button type="button" id="finSubBtn-packages" onclick="switchFinanceSubTab('packages')" class="px-4 py-2 rounded-xl text-xs font-extrabold subtab-inactive">
-              🎫 套票紀錄
+            <button type="button" id="finSubBtn-packages" onclick="switchFinanceSubTab('packages')" class="px-3 py-2 rounded-xl text-xs font-extrabold subtab-inactive whitespace-nowrap shrink-0">
+              🎫 套票
             </button>
           </div>
-          <input type="text" id="financeSearchInput" oninput="renderFinanceTab()" placeholder="搜尋會員或項目說明..." class="px-3 py-1.5 rounded-xl border border-[#decbb9] text-xs bg-white w-full sm:w-52" />
+          <input type="text" id="financeSearchInput" oninput="renderFinanceTab()" placeholder="搜尋會員或項目..." class="px-3 py-2 rounded-xl border border-[#decbb9] text-xs bg-white w-full" />
         </div>
 
         <div id="finSubPanel-income" class="space-y-2.5">
@@ -1307,8 +1309,8 @@
   </div>
 
   <!-- ==================== 彈窗 4：會員詳情（含套票堂數管理 + 諮詢表紅旗 + 簽名按需載入） ==================== -->
-  <div id="customerDetailModal" class="fixed inset-0 z-40 modal-backdrop flex items-center justify-center p-4 overflow-y-auto hidden">
-    <div id="customerDetailContent" class="bg-white rounded-2xl max-w-2xl w-full p-5 shadow-xl my-8 max-h-[90vh] overflow-y-auto"></div>
+  <div id="customerDetailModal" class="fixed inset-0 z-40 modal-backdrop flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto hidden">
+    <div id="customerDetailContent" class="bg-white rounded-t-3xl sm:rounded-2xl max-w-2xl w-full p-4 sm:p-5 shadow-xl my-0 sm:my-8 max-h-[94vh] overflow-y-auto pb-8"></div>
   </div>
 
   
@@ -4936,31 +4938,44 @@
       const content = document.getElementById("customerDetailContent");
 
       content.innerHTML = `
-        <div class="flex items-start justify-between gap-2 pb-3 border-b border-[#f0e5da]">
-          <div>
-            <h3 class="text-lg font-bold text-[#33241d]">${esc(cust.name)} ${cust.nickname ? `(${esc(cust.nickname)})` : ""}</h3>
-            <p class="text-xs text-[#7c6557]">
-              電話：${esc(cust.contact || "未填")} · 生日：${esc(cust.birthday || "未填")} ·
-              儲值餘額：<strong class="text-[#8c5e43]">$${safeNumber(cust.balance, 0).toLocaleString()}</strong> ·
-              累計來店：<strong>${visits} 次</strong>
-            </p>
-            ${riskBadgesHtml ? `<div class="flex flex-wrap gap-1.5 mt-1.5">${riskBadgesHtml}</div>` : ""}
-            ${parseCustomerTags(cust.tags).length ? `<div class="flex flex-wrap gap-1 mt-1">${parseCustomerTags(cust.tags).map(t => `<span class="px-2 py-0.5 rounded-full bg-[#eef2ff] border border-indigo-200 text-[10px] font-extrabold text-indigo-800">#${esc(t)}</span>`).join("")}</div>` : ""}
-            ${cust.privateNote ? `<p class="text-xs text-[#9c5733] mt-1 font-semibold">📌 內部備註：${esc(cust.privateNote)}</p>` : ""}
+        <div class="sticky top-0 z-10 -mx-4 sm:-mx-5 px-4 sm:px-5 pt-1 pb-3 mb-1 bg-white/95 backdrop-blur border-b border-[#f0e5da]">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="text-lg font-bold text-[#33241d] leading-tight">${esc(cust.name)}</h3>
+                ${cust.nickname ? `<span class="text-[11px] px-2 py-0.5 rounded-full bg-[#f5ece3] text-[#7a5743] font-semibold">${esc(cust.nickname)}</span>` : ""}
+              </div>
+              <div class="mt-1 text-[11px] text-[#7c6557]">📞 ${esc(cust.contact || "未留電話")}${cust.birthday ? ` · 🎂 ${esc(cust.birthday)}` : ""}</div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button type="button" onclick="closeCustomerDetailModal(); openCustomerEditModal('${escJs(cust.id)}')" class="px-2.5 py-1.5 rounded-lg bg-[#f3ece5] text-[11px] font-bold text-[#5c4638]">編輯</button>
+              <button type="button" onclick="closeCustomerDetailModal()" class="w-8 h-8 rounded-full bg-[#f3ece5] text-[#6a4f3f] font-bold flex items-center justify-center">✕</button>
+            </div>
           </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <button type="button" onclick="closeCustomerDetailModal(); openCustomerEditModal('${escJs(cust.id)}')" class="px-3 py-1 rounded-lg bg-[#f3ece5] text-xs font-bold text-[#5c4638]">編輯資料</button>
-            <button type="button" onclick="closeCustomerDetailModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
+          <div class="mt-2.5 grid grid-cols-2 gap-2">
+            <div class="p-2.5 rounded-xl bg-[#faf6f2] border border-[#eadbc9]">
+              <div class="text-[10px] font-bold text-[#8b7365]">儲值餘額</div>
+              <div class="text-base font-extrabold text-[#8c5e43] tabular-nums">$${safeNumber(cust.balance, 0).toLocaleString()}</div>
+            </div>
+            <div class="p-2.5 rounded-xl bg-[#faf6f2] border border-[#eadbc9]">
+              <div class="text-[10px] font-bold text-[#8b7365]">累計來店</div>
+              <div class="text-base font-extrabold text-[#33241d] tabular-nums">${visits} 次</div>
+            </div>
           </div>
+          ${riskBadgesHtml ? `<div class="flex flex-wrap gap-1.5 mt-2">${riskBadgesHtml}</div>` : ""}
+          ${parseCustomerTags(cust.tags).length ? `<div class="flex flex-wrap gap-1 mt-1.5">${parseCustomerTags(cust.tags).map(t => `<span class="px-2 py-0.5 rounded-full bg-[#eef2ff] border border-indigo-200 text-[10px] font-extrabold text-indigo-800">#${esc(t)}</span>`).join("")}</div>` : ""}
+          ${cust.privateNote ? `<p class="text-[11px] text-[#9c5733] mt-1.5 font-semibold leading-snug">📌 ${esc(cust.privateNote)}</p>` : ""}
         </div>
 
-        <div class="mt-3 flex flex-wrap gap-2 text-xs">
-          <button type="button" onclick="closeCustomerDetailModal(); openBookingModal(state.selectedDate || formatTodayStr(), '${escJs(cust.id)}')" class="px-3.5 py-2 rounded-xl btn-primary font-extrabold shadow">📅 幫她預約</button>
-          <button onclick="openTopUpModal('${escJs(cust.id)}', 'topup')" class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white font-extrabold shadow">+ 儲值入帳</button>
-          <button onclick="openTopUpModal('${escJs(cust.id)}', 'refund')" class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 font-bold">退儲值金</button>
-          <button onclick="openTopUpModal('${escJs(cust.id)}', 'transfer')" class="px-3 py-1.5 rounded-xl bg-sky-50 text-sky-800 border border-sky-200 font-bold">轉移儲值金</button>
-          <button onclick="openPackageModal('${escJs(cust.id)}', '${escJs(cust.name)}')" class="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 font-bold">+ 新增套票堂數</button>
-          <button onclick="closeCustomerDetailModal(); switchAdminTab('coupons'); openIssueCouponModal('${escJs(cust.id)}');" class="px-3 py-1.5 rounded-xl bg-[#f3ece5] text-[#6a4f3f] font-bold">+ 發放優惠券</button>
+        <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+          <button type="button" onclick="closeCustomerDetailModal(); openBookingModal(state.selectedDate || formatTodayStr(), '${escJs(cust.id)}')" class="py-2.5 rounded-xl btn-primary font-extrabold shadow">📅 幫她預約</button>
+          <button type="button" onclick="openTopUpModal('${escJs(cust.id)}', 'topup')" class="py-2.5 rounded-xl bg-emerald-600 text-white font-extrabold shadow">💰 儲值入帳</button>
+          <button type="button" onclick="openPackageModal('${escJs(cust.id)}', '${escJs(cust.name)}')" class="py-2 rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 font-bold">🎫 新增套票</button>
+          <button type="button" onclick="closeCustomerDetailModal(); switchAdminTab('coupons'); openIssueCouponModal('${escJs(cust.id)}');" class="py-2 rounded-xl bg-[#f3ece5] text-[#6a4f3f] font-bold">🎟️ 發放優惠券</button>
+        </div>
+        <div class="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+          <button type="button" onclick="openTopUpModal('${escJs(cust.id)}', 'refund')" class="px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 font-bold">退儲值</button>
+          <button type="button" onclick="openTopUpModal('${escJs(cust.id)}', 'transfer')" class="px-2.5 py-1.5 rounded-lg bg-sky-50 text-sky-800 border border-sky-200 font-bold">轉移儲值</button>
         </div>
 
         <!-- 即將到來預約 -->
@@ -5083,10 +5098,10 @@
         </div>
 
         <div class="mt-4 pt-3 border-t border-[#f1e8df]">
-          <div class="grid grid-cols-3 gap-1.5 mb-2.5">
-            <button type="button" onclick="switchCustDetailSubTab('coupons')" id="cdSubTabCoupons" class="py-2 rounded-xl text-[11px] font-extrabold tab-active">🎟️ 優惠券（${custCoupons.length}）</button>
-            <button type="button" onclick="switchCustDetailSubTab('history')" id="cdSubTabHistory" class="py-2 rounded-xl text-[11px] font-extrabold tab-inactive">📅 歷史消費（${custBookings.length}）</button>
-            <button type="button" onclick="switchCustDetailSubTab('tx')" id="cdSubTabTx" class="py-2 rounded-xl text-[11px] font-extrabold tab-inactive">💳 儲值異動（${custTx.length}）</button>
+          <div class="flex gap-1.5 mb-2.5 overflow-x-auto pb-0.5 -mx-1 px-1">
+            <button type="button" onclick="switchCustDetailSubTab('coupons')" id="cdSubTabCoupons" class="py-2 px-3 rounded-xl text-[11px] font-extrabold tab-active whitespace-nowrap shrink-0">🎟️ 優惠券（${custCoupons.length}）</button>
+            <button type="button" onclick="switchCustDetailSubTab('history')" id="cdSubTabHistory" class="py-2 px-3 rounded-xl text-[11px] font-extrabold tab-inactive whitespace-nowrap shrink-0">📅 歷史（${custBookings.length}）</button>
+            <button type="button" onclick="switchCustDetailSubTab('tx')" id="cdSubTabTx" class="py-2 px-3 rounded-xl text-[11px] font-extrabold tab-inactive whitespace-nowrap shrink-0">💳 儲值（${custTx.length}）</button>
           </div>
 
           <div id="cdPanelCoupons" class="space-y-2 text-xs">
@@ -5443,24 +5458,26 @@
         const badgeText = isExpired ? "已過期" : cp.status;
 
         return `
-          <div class="p-3.5 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] flex items-center justify-between gap-2 text-xs">
-            <div class="min-w-0">
-              <div class="flex flex-wrap items-center gap-1.5">
-                <span class="font-bold text-sm text-[#33241d]">${esc(cp.customerName)}</span>
-                <span class="px-2 py-0.5 rounded-full bg-[#f3ece5] text-[#6a4f3f] text-[11px] font-semibold">${esc(cp.type)}</span>
-                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${badgeCls}">${esc(badgeText)}</span>
+          <div class="p-3.5 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] text-xs space-y-2">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="flex flex-wrap items-center gap-1.5">
+                  <span class="font-bold text-sm text-[#33241d]">${esc(cp.customerName)}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${badgeCls}">${esc(badgeText)}</span>
+                </div>
+                <div class="text-[#33241d] mt-1 font-extrabold leading-snug">${esc(cp.title)}</div>
+                <div class="text-[12px] text-[#8c5e43] font-bold mt-0.5">折抵 $${safeNumber(cp.discountAmount, 0).toLocaleString()} · ${esc(cp.type)}</div>
               </div>
-              <div class="text-[#4a382f] mt-1 font-bold">${esc(cp.title)} · 折抵 $${safeNumber(cp.discountAmount, 0).toLocaleString()}</div>
-              <div class="text-[11px] text-[#8b7365]">
-                發放：${esc(cp.issuedDate)} · 到期：${esc(cp.expiresDate)}
-                ${cp.usedAt ? ` · 已於 ${esc(cp.usedAt)} 使用（${esc(cp.usedService)}）` : ""}
+              <div class="flex gap-1 shrink-0">
+                ${cp.status === "可使用" && !isExpired ? `
+                  <button type="button" onclick="handleVoidCoupon('${escJs(cp.couponId)}')" class="px-2.5 py-1.5 rounded-lg bg-[#fdf2f2] text-[#b42318] font-bold">作廢</button>
+                ` : ""}
+                <button type="button" onclick="handleDeleteCoupon('${escJs(cp.couponId)}')" class="px-2.5 py-1.5 rounded-lg bg-stone-100 text-stone-700 font-bold border border-stone-200">刪除</button>
               </div>
             </div>
-            <div class="flex flex-col gap-1 shrink-0">
-              ${cp.status === "可使用" && !isExpired ? `
-                <button onclick="handleVoidCoupon('${escJs(cp.couponId)}')" class="px-2.5 py-1 rounded-lg bg-[#fdf2f2] text-[#b42318] font-bold">作廢</button>
-              ` : ""}
-              <button onclick="handleDeleteCoupon('${escJs(cp.couponId)}')" class="px-2.5 py-1 rounded-lg bg-stone-100 text-stone-700 font-bold border border-stone-200">刪除</button>
+            <div class="text-[11px] text-[#8b7365] leading-snug border-t border-[#f0e5da] pt-1.5">
+              發放 ${esc(cp.issuedDate)} · 到期 ${esc(cp.expiresDate)}
+              ${cp.usedAt ? `<br>已於 ${esc(cp.usedAt)} 使用${cp.usedService ? `（${esc(cp.usedService)}）` : ""}` : ""}
             </div>
           </div>
         `;
@@ -6017,13 +6034,13 @@
         ${allIncome.length === 0
           ? `<div class="text-xs text-[#8b7365] py-6 text-center">${periodLabel} 尚無收入紀錄</div>`
           : allIncome.map(r => `
-            <div class="p-3 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] flex items-center justify-between gap-2 text-xs">
-              <div class="min-w-0">
+            <div class="p-3 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] flex items-start justify-between gap-2 text-xs">
+              <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-1.5">
                   <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${tagCls[r.tag] || "bg-stone-100"}">${r.tag}</span>
                   <span class="font-extrabold text-[#33241d]">${esc(r.title)}</span>
                 </div>
-                <div class="text-[#5c4638] truncate mt-0.5">${esc(r.detail)}</div>
+                <div class="text-[#5c4638] mt-0.5 leading-snug break-words">${esc(r.detail)}</div>
               </div>
               <div class="text-sm font-extrabold text-emerald-700 tabular-nums shrink-0">+$${safeNumber(r.amount,0).toLocaleString()}</div>
             </div>`).join("")}
