@@ -5761,6 +5761,31 @@
       `;
     }
 
+    function isStrictCompletedStatus(st) {
+      return String(st || "").trim() === "已完成";
+    }
+    function getBookingServiceValueB(b) {
+      const pm = String((b && b.payMethod) || "");
+      if (pm === "三堂套票" || pm === "套票扣堂" || pm === "套票(扣堂)") return 0;
+      if ((pm.indexOf("三堂套票") !== -1 || pm.indexOf("套票扣堂") !== -1) &&
+          pm.indexOf("現金") === -1 && pm.indexOf("轉帳") === -1 && pm.indexOf("儲值") === -1) return 0;
+      return safeNumber(b && b.finalPrice, 0);
+    }
+    function getBookingCashIncomeA(b) {
+      const pm = String((b && b.payMethod) || "");
+      if (pm === "扣儲值金" || pm === "儲值金扣除") return 0;
+      if (pm.indexOf("扣儲值金") !== -1) return 0;
+      if (pm === "三堂套票" || pm === "套票扣堂" || pm === "套票(扣堂)") return 0;
+      if ((pm.indexOf("三堂套票") !== -1 || pm.indexOf("套票扣堂") !== -1) &&
+          pm.indexOf("現金") === -1 && pm.indexOf("轉帳") === -1) return 0;
+      return safeNumber(b && b.finalPrice, 0);
+    }
+    function transactionCountsAsCashA(t) {
+      const type = String((t && t.type) || "");
+      const cash = Math.max(0, safeNumber(t && t.cashPaid, 0));
+      if (cash <= 0) return false;
+      return type === "儲值入帳" || type === "套票售出" || type === "消費扣儲值";
+    }
     function renderFinanceTab() {
       const isYear = state.financePeriodMode === "year";
       const targetYm = document.getElementById("financeMonthPicker").value || formatTodayStr().slice(0, 7);
@@ -5769,35 +5794,35 @@
       const q = (document.getElementById("financeSearchInput").value || "").trim().toLowerCase();
 
       const completedInPeriod = state.bookings
-        .filter(b => b.status === "已完成" && String(b.date || "").startsWith(periodPrefix))
+        .filter(b => isStrictCompletedStatus(b.status) && String(b.date || "").startsWith(periodPrefix))
         .sort((a, b) => `${b.date} ${b.startTime}`.localeCompare(`${a.date} ${a.startTime}`));
 
       const periodVisits = completedInPeriod.length;
       const uniqueCustCount = new Set(completedInPeriod.map(b => b.customerId || b.customerName || b.id)).size;
 
-      // 混合付款（扣儲值金+現金）僅將現金差額計入現金入帳，避免重複計算
-      const serviceRev = completedInPeriod.reduce((s, b) => {
-        const pm = String(b.payMethod || "");
-        if (pm === "扣儲值金") return s;
-        if (pm.indexOf("扣儲值金+現金") !== -1) {
-          const m = String(b.note || "").match(/補現金\$(\d+)/);
-          return s + (m ? safeNumber(m[1], 0) : 0);
-        }
-        return s + safeNumber(b.finalPrice, 0);
+      // A 現金口：預約當場實收 + 異動實收（儲值入帳／套票售出／混合補現）
+      const bookingCashA = completedInPeriod.reduce((s, b) => s + getBookingCashIncomeA(b), 0);
+      const txCashA = (state.transactions || []).reduce((s, t) => {
+        if (!String(t.time || "").startsWith(periodPrefix)) return s;
+        if (!transactionCountsAsCashA(t)) return s;
+        return s + Math.max(0, safeNumber(t.cashPaid, 0));
       }, 0);
+      const serviceRev = bookingCashA + txCashA;
 
-      const totalServiceValue = completedInPeriod.reduce((s, b) => s + safeNumber(b.finalPrice, 0), 0);
+      // B 服務產值（純套票扣堂=0）
+      const totalServiceValue = completedInPeriod.reduce((s, b) => s + getBookingServiceValueB(b), 0);
       const avgTicket = periodVisits > 0 ? Math.round(totalServiceValue / periodVisits) : 0;
 
       const topupCashInPeriod = state.transactions
         .filter(t => String(t.time || "").startsWith(periodPrefix) && t.type === "儲值入帳")
-        .reduce((s, t) => s + safeNumber(t.cashPaid, 0), 0);
+        .reduce((s, t) => s + Math.max(0, safeNumber(t.cashPaid, 0)), 0);
 
       const packageCashInPeriod = state.transactions
         .filter(t => String(t.time || "").startsWith(periodPrefix) && t.type === "套票售出")
-        .reduce((s, t) => s + safeNumber(t.cashPaid, 0), 0);
+        .reduce((s, t) => s + Math.max(0, safeNumber(t.cashPaid, 0)), 0);
 
-      const totalPeriodIncome = serviceRev + topupCashInPeriod + packageCashInPeriod;
+      // serviceRev 已是完整現金口 A（含預約當場收 + 儲值／套票／混合補現），勿再加總一次
+      const totalPeriodIncome = serviceRev;
       const pkgPreEl = document.getElementById("finMonthPackagePrepay");
       if (pkgPreEl) pkgPreEl.textContent = `$${packageCashInPeriod.toLocaleString()}`;
       const pkgLabelEl = document.getElementById("finPackageLabel");
@@ -5811,14 +5836,14 @@
       const totalAllBalance = state.customers.reduce((s, c) => s + safeNumber(c.balance, 0), 0);
       const net = totalPeriodIncome - totalPeriodExp;
 
-      document.getElementById("finRevLabel").textContent = isYear ? `${targetYear}年總結算營收` : "當月結算營收";
-      document.getElementById("finVisitsLabel").textContent = isYear ? `${targetYear}年總來客數` : "當月來客數";
+      document.getElementById("finRevLabel").textContent = isYear ? `${targetYear}年現金口收入` : "當月現金口收入";
+      document.getElementById("finVisitsLabel").textContent = isYear ? `${targetYear}年完成人次` : "當月完成人次";
       document.getElementById("finExpLabel").textContent = isYear ? `${targetYear}年總營運支出` : "當月營運支出";
       document.getElementById("finNetLabel").textContent = isYear ? `${targetYear}年收支淨額` : "當月收支淨額";
 
       document.getElementById("finMonthRevenue").textContent = `$${totalPeriodIncome.toLocaleString()}`;
       document.getElementById("finPeriodVisits").textContent = `${periodVisits.toLocaleString()} 人次`;
-      document.getElementById("finAvgTicket").textContent = `不重複 ${uniqueCustCount} 客 · 均價 $${avgTicket.toLocaleString()}`;
+      document.getElementById("finAvgTicket").textContent = `不重複 ${uniqueCustCount} 客 · 產值均價 $${avgTicket.toLocaleString()}（產值合計 $${totalServiceValue.toLocaleString()}）`;
       document.getElementById("finMonthExpense").textContent = `-$${totalPeriodExp.toLocaleString()}`;
       document.getElementById("finMonthNet").textContent = `${net >= 0 ? "$" : "-$"}${Math.abs(net).toLocaleString()}`;
       document.getElementById("finMonthNet").className = `text-lg font-extrabold mt-1 tabular-nums ${net >= 0 ? "text-emerald-700" : "text-[#b42318]"}`;
@@ -5847,7 +5872,7 @@
               <div class="p-3 rounded-2xl bg-[#f8f1ea] border border-[#ead9c8]">
                 <div class="text-[11px] text-[#6a4f3f] font-bold">年淨額</div>
                 <div class="text-base font-extrabold tabular-nums mt-0.5 ${net>=0?"text-emerald-800":"text-rose-800"}">${net>=0?"$":"-$"}${Math.abs(net).toLocaleString()}</div>
-                <div class="text-[10px] text-[#8b7365]">服務$${serviceRev.toLocaleString()} · 儲值$${topupCashInPeriod.toLocaleString()} · 套票$${packageCashInPeriod.toLocaleString()}</div>
+                <div class="text-[10px] text-[#8b7365]">產值$${totalServiceValue.toLocaleString()} · 儲值入帳$${topupCashInPeriod.toLocaleString()} · 套票實收$${packageCashInPeriod.toLocaleString()}</div>
               </div>
             </div>`;
         }
@@ -5910,11 +5935,8 @@
 
       const incomeContainer = document.getElementById("incomeListContainer");
       const periodLabel = isYear ? `${targetYear}年` : targetYm;
-      const serviceCashRows = completedInPeriod.filter(b => {
-        const pm = String(b.payMethod || "");
-        if (pm === "扣儲值金" || pm === "三堂套票") return false;
-        return true;
-      }).filter(b => !q || `${b.customerName} ${b.service} ${b.payMethod}`.toLowerCase().includes(q));
+      const serviceCashRows = completedInPeriod.filter(b => getBookingCashIncomeA(b) > 0)
+        .filter(b => !q || `${b.customerName} ${b.service} ${b.payMethod}`.toLowerCase().includes(q));
       const topupRows = state.transactions
         .filter(t => String(t.time || "").startsWith(periodPrefix) && t.type === "儲值入帳")
         .filter(t => !q || `${t.customerName} ${t.note}`.toLowerCase().includes(q));
