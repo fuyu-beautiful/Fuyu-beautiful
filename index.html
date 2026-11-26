@@ -647,7 +647,7 @@
         </div>
       </div>
 
-      <div id="customersListContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      <div id="customersListContainer" class="grid grid-cols-1 gap-2.5"></div>
     </section>
 
     <!-- ---------- 分頁 3：優惠券管理 ---------- -->
@@ -4340,120 +4340,48 @@
         const privateNote = String(c.privateNote || "").trim();
         const portalLink = buildCustomerRebindLink(c.id, false);
 
+        const pkgSummary = activePkgs.length
+          ? activePkgs.slice(0, 2).map(p => `${p.name}剩${safeNumber(p.remainingSessions, 0)}`).join(" · ")
+            + (activePkgs.length > 2 ? ` +${activePkgs.length - 2}` : "")
+          : "";
+        const tagsShort = parseCustomerTags(c.tags).slice(0, 3);
+
         return `
-          <div class="glass-card rounded-3xl overflow-hidden flex flex-col justify-between hover:border-[#cfa888] hover:shadow-md transition">
-            <div class="h-1.5 w-full ${isLineBound ? "bg-gradient-to-r from-[#8c5e43] via-[#b88668] to-emerald-500" : "bg-gradient-to-r from-[#c7ab95] to-[#e5d4c3]"}"></div>
-
-            <div class="p-4 sm:p-5 flex-1 flex flex-col justify-between gap-3">
-              <div class="space-y-2.5">
-                <div class="flex items-start justify-between gap-2">
-                  <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#9f7156] to-[#744c36] text-white font-extrabold text-base flex items-center justify-center shrink-0 shadow-sm">
-                      ${avatarChar}
-                    </div>
-                    <div class="min-w-0">
-                      <div class="flex items-center gap-1.5 flex-wrap">
-                        <span class="font-extrabold text-base text-[#33241d] leading-snug">${esc(c.name)}</span>
-                        ${c.nickname ? `<span class="text-[11px] px-2 py-0.5 rounded-full bg-[#f5ece3] text-[#7a5743] font-semibold">${esc(c.nickname)}</span>` : ""}
-                      </div>
-                      ${lineClean ? `
-                        <div class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50/90 border border-emerald-200/80 text-[11px] font-semibold text-emerald-900 max-w-full">
-                          <span class="shrink-0">LINE</span>
-                          <span class="truncate">${esc(lineClean)}</span>
-                        </div>
-                      ` : `
-                        <div class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-stone-100 text-[11px] text-stone-500">
-                          <span>${c.lineUserId ? "已綁定 LINE" : "尚未串連 LINE"}</span>
-                        </div>
-                      `}
-                    </div>
-                  </div>
-
-                  <span class="px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 whitespace-nowrap ${
-                    cons ? "bg-emerald-50 text-emerald-800 border border-emerald-200" : "bg-stone-100 text-stone-500"
-                  }">
-                    ${cons ? "✓ 諮詢歸檔" : "未填諮詢"}
-                  </span>
+          <div class="glass-card rounded-2xl border border-[#eee3d8] p-3 flex flex-col gap-2 hover:border-[#cfa888] transition">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="font-extrabold text-[15px] text-[#33241d]">${esc(c.name)}</span>
+                  ${c.nickname ? `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-[#f5ece3] text-[#7a5743] font-semibold">${esc(c.nickname)}</span>` : ""}
+                  ${riskBadgesHtml || ""}
                 </div>
-
-                ${riskBadgesHtml ? `
-                  <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
-                    ${riskBadgesHtml}
-                  </div>
-                ` : ""}
-
-                ${activePkgs.length > 0 ? `
-                  <div class="flex flex-wrap gap-1.5">
-                    ${activePkgs.map(p => `
-                      <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-indigo-50 text-indigo-800 border border-indigo-200">
-                        🎫 ${esc(p.name)}：剩 ${safeNumber(p.remainingSessions, 0)}/${safeNumber(p.totalSessions, 3)} 堂
-                      </span>
-                    `).join("")}
-                  </div>
-                ` : ""}
-
-                <div class="grid grid-cols-3 gap-2 text-center pt-1">
-                  <div class="p-2 rounded-2xl bg-[#fbf6f1] border border-[#efe2d5]">
-                    <div class="text-[10px] text-[#8b7365]">儲值金</div>
-                    <div class="text-sm font-extrabold text-[#8c5e43] tabular-nums mt-0.5">$${bal.toLocaleString()}</div>
-                  </div>
-                  <div class="p-2 rounded-2xl bg-[#fbf6f1] border border-[#efe2d5]">
-                    <div class="text-[10px] text-[#8b7365]">來店次數</div>
-                    <div class="text-sm font-extrabold text-[#3a2a22] tabular-nums mt-0.5">${visits} 次</div>
-                  </div>
-                  <div class="p-2 rounded-2xl bg-[#fbf6f1] border border-[#efe2d5]">
-                    <div class="text-[10px] text-[#8b7365]">可用券</div>
-                    <div class="text-sm font-extrabold text-emerald-700 tabular-nums mt-0.5">${availCpCount} 張</div>
-                  </div>
-                </div>
-
-                <div class="text-xs text-[#6d5648] space-y-1 px-0.5">
-                  <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                    <span>📞 ${esc(c.contact || "未留電話")}</span>
-                    <span>🎂 ${esc(c.birthday || "未填生日")}</span>
-                  </div>
-                  ${lastVisit ? `
-                    <div class="text-[11px] text-[#8b7365] truncate">
-                      🕒 最近完成：${esc(lastVisit.date)} · ${esc(lastVisit.service)}
-                    </div>
-                  ` : ""}
-                </div>
-
-                ${parseCustomerTags(c.tags).length ? `
-                  <div class="flex flex-wrap gap-1">
-                    ${parseCustomerTags(c.tags).map(t => `<span class="px-2 py-0.5 rounded-full bg-[#eef2ff] border border-indigo-200 text-[10px] font-extrabold text-indigo-800">#${esc(t)}</span>`).join("")}
-                  </div>
-                ` : ""}
-                ${privateNote ? `
-                  <div class="p-2.5 rounded-2xl bg-[#fff8eb] border border-[#f5d8a7] text-xs text-[#7c4a1e] flex items-start gap-2">
-                    <span class="shrink-0 font-bold">📌</span>
-                    <span class="leading-snug break-words">${esc(privateNote)}</span>
-                  </div>
-                ` : ""}
-              </div>
-
-              <div class="space-y-2 pt-2.5 border-t border-[#f2e8df]">
-                <div class="grid grid-cols-2 gap-1.5">
-                  <button onclick="openCustomerDetailModal('${escJs(c.id)}')" class="py-2 px-2.5 rounded-xl text-xs font-extrabold btn-primary shadow-sm text-center">
-                    檔案／諮詢／套票
-                  </button>
-                  <button onclick="openBookingModal('', '${escJs(c.id)}')" class="py-2 px-2.5 rounded-xl text-xs font-bold bg-[#f6efe8] text-[#6a4f3f] hover:bg-[#ebe0d5] text-center">
-                    ＋ 幫約服務
-                  </button>
-                </div>
-
-                <div class="grid grid-cols-3 gap-1.5 text-[11px]">
-                  <button onclick="openTopUpModal('${escJs(c.id)}', 'topup')" class="py-1.5 px-2 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold hover:bg-emerald-100">
-                    💰 儲值
-                  </button>
-                  <button onclick="openPackageModal('${escJs(c.id)}', '${escJs(c.name)}')" class="py-1.5 px-2 rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 font-bold hover:bg-indigo-100">
-                    🎫 套票
-                  </button>
-                  <button onclick="copyText('${escJs(portalLink)}', '已複製會員專屬連結（含諮詢表與預約）')" class="py-1.5 px-2 rounded-xl bg-[#f4ece4] text-[#5c4638] font-bold hover:bg-[#e8ddd0]">
-                    🔗 複製連結
-                  </button>
+                <div class="mt-0.5 text-[12px] text-[#6d5648] flex flex-wrap gap-x-2 gap-y-0.5">
+                  <span>📞 ${esc(c.contact || "未留電話")}</span>
+                  ${lineClean ? `<span class="text-emerald-800">LINE ${esc(lineClean)}</span>` : ""}
                 </div>
               </div>
+              <div class="text-right shrink-0">
+                <div class="text-[10px] text-[#8b7365] font-bold">儲值金</div>
+                <div class="text-base font-extrabold text-[#8c5e43] tabular-nums">$${bal.toLocaleString()}</div>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-1 text-[11px]">
+              ${pkgSummary
+                ? `<span class="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-800 border border-indigo-200 font-bold">🎫 ${esc(pkgSummary)}</span>`
+                : `<span class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-500">無有效套票</span>`}
+              <span class="px-2 py-0.5 rounded-full bg-[#f5efe9] text-[#6a4f3f] font-semibold">${visits}次</span>
+              ${availCpCount ? `<span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 font-semibold">券${availCpCount}</span>` : ""}
+              ${tagsShort.map(t => `<span class="px-1.5 py-0.5 rounded-md bg-[#eef2ff] text-indigo-800 text-[10px] font-extrabold">#${esc(t)}</span>`).join("")}
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-[#f2e8df]">
+              <button type="button" onclick="openCustomerDetailModal('${escJs(c.id)}')" class="py-2.5 rounded-xl text-xs font-extrabold bg-[#f4ece4] text-[#5c4638] hover:bg-[#e8ddd0]">
+                詳情
+              </button>
+              <button type="button" onclick="openTopUpModal('${escJs(c.id)}', 'topup')" class="py-2.5 rounded-xl text-xs font-extrabold bg-emerald-600 text-white shadow hover:bg-emerald-700">
+                💰 儲值
+              </button>
             </div>
           </div>
         `;
@@ -4987,7 +4915,7 @@
         </div>
 
         <div class="mt-3 flex flex-wrap gap-2 text-xs">
-          <button onclick="openTopUpModal('${escJs(cust.id)}', 'topup')" class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold">+ 儲值入帳</button>
+          <button onclick="openTopUpModal('${escJs(cust.id)}', 'topup')" class="px-3.5 py-2 rounded-xl bg-emerald-600 text-white font-extrabold shadow">+ 儲值入帳</button>
           <button onclick="openTopUpModal('${escJs(cust.id)}', 'refund')" class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 font-bold">退儲值金</button>
           <button onclick="openTopUpModal('${escJs(cust.id)}', 'transfer')" class="px-3 py-1.5 rounded-xl bg-sky-50 text-sky-800 border border-sky-200 font-bold">轉移儲值金</button>
           <button onclick="openPackageModal('${escJs(cust.id)}', '${escJs(cust.name)}')" class="px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 font-bold">+ 新增套票堂數</button>
