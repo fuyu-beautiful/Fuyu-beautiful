@@ -217,6 +217,7 @@
 
     <!-- 會員資料與我的預約、套票堂數、過去預約 -->
     <div id="customerProfileCard" class="glass-card rounded-2xl p-5 mb-4 hidden">
+      <div id="custNextBookingBanner" class="hidden mb-3 p-3 rounded-2xl bg-[#fff7ef] border border-[#ead2b8] text-xs"></div>
       <div class="flex items-start justify-between gap-2">
         <div>
           <span class="inline-block text-[11px] px-2.5 py-0.5 rounded-full bg-[#f4e8de] text-[#8c5e43] font-semibold mb-1">
@@ -815,7 +816,10 @@
         </div>
 
         <div id="finSubPanel-expense" class="space-y-3 hidden">
-          <form onsubmit="handleAddExpense(event)" class="p-3.5 rounded-2xl bg-[#fcf8f4] border border-[#ebd9c7] grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
+          <button type="button" id="expenseFormToggleBtn" onclick="toggleExpenseForm()" class="w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-extrabold btn-primary shadow">
+            ＋ 記一筆支出
+          </button>
+          <form id="expenseFormPanel" onsubmit="handleAddExpense(event)" class="hidden p-3.5 rounded-2xl bg-[#fcf8f4] border border-[#ebd9c7] grid grid-cols-1 sm:grid-cols-12 gap-2 text-xs">
             <input type="date" id="exp_date" required class="sm:col-span-3 px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
             <select id="exp_category" class="sm:col-span-2 px-3 py-2 rounded-xl border border-[#decbb9] bg-white">
               <option value="耗材進貨">耗材進貨</option>
@@ -826,7 +830,7 @@
             </select>
             <input type="number" id="exp_amount" required min="1" placeholder="支出金額 *" class="sm:col-span-2 px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
             <input type="text" id="exp_note" placeholder="支出項目說明" class="sm:col-span-3 px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
-            <button type="submit" id="exp_submitBtn" class="sm:col-span-2 py-2 rounded-xl font-bold btn-primary">+ 新增支出</button>
+            <button type="submit" id="exp_submitBtn" class="sm:col-span-2 py-2 rounded-xl font-bold btn-primary">確認新增</button>
           </form>
           <div id="expensesListContainer" class="space-y-2"></div>
         </div>
@@ -873,18 +877,23 @@
       </div>
 
       <div id="subtab-catalog" class="space-y-4">
-        <div class="glass-card rounded-2xl p-4 bg-gradient-to-r from-[#fffdfb] to-[#faf4ee]">
-          <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
-            <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-[#8c5e43]"></span>
-              <span class="text-xs font-extrabold text-[#33241d]">項目大分類總覽</span>
-            </div>
-            <span class="text-[11px] text-[#8b7365]">點擊切換檢視分類</span>
-          </div>
-          <div id="catalogCategoryBar" class="flex flex-wrap items-center gap-2"></div>
+        <div class="flex gap-2 overflow-x-auto pb-0.5 -mx-1 px-1">
+          <a href="#mgmtSectionServices" class="px-3 py-2 rounded-xl text-xs font-extrabold bg-[#f3ece5] text-[#5c4638] whitespace-nowrap shrink-0">💆 服務與產品</a>
+          <a href="#mgmtSectionPackages" class="px-3 py-2 rounded-xl text-xs font-extrabold bg-indigo-50 text-indigo-800 whitespace-nowrap shrink-0">🎫 套票品項</a>
         </div>
-
-        <div id="catalogGroupedContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <div id="mgmtSectionServices" class="space-y-4 scroll-mt-16">
+          <div class="glass-card rounded-2xl p-4 bg-gradient-to-r from-[#fffdfb] to-[#faf4ee]">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-[#8c5e43]"></span>
+                <span class="text-xs font-extrabold text-[#33241d]">服務與產品 · 大分類</span>
+              </div>
+              <span class="text-[11px] text-[#8b7365]">點擊切換檢視分類</span>
+            </div>
+            <div id="catalogCategoryBar" class="flex flex-wrap items-center gap-2"></div>
+          </div>
+          <div id="catalogGroupedContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        </div>
       </div>
 
       <div id="subtab-blocked" class="space-y-4 hidden">
@@ -925,11 +934,11 @@
     
       
       <div id="subtab-pkgcat" class="space-y-4 hidden">
-        <div class="glass-card rounded-3xl p-5 space-y-4">
+        <div id="mgmtSectionPackages" class="glass-card rounded-3xl p-5 space-y-4 scroll-mt-16">
           <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#efe5da]">
             <div>
-              <h3 class="text-base font-extrabold text-[#33241d]">🎫 套票分類與項目</h3>
-              <p class="text-[11px] text-[#8b7365] mt-0.5">存在雲端試算表，清除瀏覽器資料也不會消失</p>
+              <h3 class="text-base font-extrabold text-[#33241d]">🎫 套票品項（模板）</h3>
+              <p class="text-[11px] text-[#8b7365] mt-0.5">賣給客人前的品項設定；與會員持有堂數不同</p>
             </div>
             <button type="button" onclick="openPackageCatalogItemModal()" class="px-3.5 py-2 rounded-xl text-xs font-extrabold btn-primary shadow">+ 新增項目</button>
           </div>
@@ -1818,6 +1827,11 @@
       couponRules: {},
       financeSubTab: "income",
       financePeriodMode: "month",
+      finListLimits: { income: 40, expense: 40, topup: 40, packages: 40 },
+      _finPeriodKey: "",
+      expenseFormOpen: false,
+      custHistoryLimit: 20,
+      custNoticeExpanded: false,
       calYear: new Date().getFullYear(),
       calMonth: new Date().getMonth(),
       blockedCalYear: new Date().getFullYear(),
@@ -5834,15 +5848,21 @@
             <button type="button" onclick="openPackageModal('${escJs(p.customerId)}', '${escJs(p.customerName || "")}', '${escJs(p.id)}')" class="px-3 py-1.5 rounded-xl bg-white border border-[#decbb9] text-[#5c4638] font-bold shrink-0">編輯</button>
           </div>`;
       };
+      const pkgLimit = (typeof finListLimit === "function" ? finListLimit("packages") : 40);
+      const activeView = active.slice(0, pkgLimit);
+      const remainSlots = Math.max(0, pkgLimit - activeView.length);
+      const doneView = done.slice(0, Math.max(10, remainSlots));
+      const hiddenCount = Math.max(0, active.length - activeView.length) + Math.max(0, done.length - doneView.length);
       box.innerHTML = `
         ${active.length ? `
           <div class="text-[11px] font-extrabold text-[#6a4f3f] mb-1.5">使用中（${active.length}）</div>
-          <div class="space-y-2 mb-4">${active.map(p => renderCard(p, false)).join("")}</div>
+          <div class="space-y-2 mb-4">${activeView.map(p => renderCard(p, false)).join("")}</div>
         ` : `<div class="text-[11px] text-[#8b7365] mb-3">目前沒有尚有餘堂的套票</div>`}
-        ${done.length ? `
+        ${doneView.length ? `
           <div class="text-[11px] font-extrabold text-stone-500 mb-1.5 pt-1 border-t border-stone-200">已用完（${done.length}）</div>
-          <div class="space-y-2">${done.map(p => renderCard(p, true)).join("")}</div>
+          <div class="space-y-2">${doneView.map(p => renderCard(p, true)).join("")}</div>
         ` : ""}
+        ${hiddenCount > 0 ? `<button type="button" onclick="expandFinList('packages')" class="w-full mt-2 py-2.5 rounded-xl text-xs font-extrabold bg-[#f3ece5] text-[#6a4f3f]">載入更多套票（還有約 ${hiddenCount} 筆）</button>` : ""}
       `;
     }
 
@@ -5871,11 +5891,38 @@
       if (cash <= 0) return false;
       return type === "儲值入帳" || type === "套票售出" || type === "消費扣儲值";
     }
+    function toggleExpenseForm() {
+      state.expenseFormOpen = !state.expenseFormOpen;
+      const panel = document.getElementById("expenseFormPanel");
+      const btn = document.getElementById("expenseFormToggleBtn");
+      if (panel) panel.classList.toggle("hidden", !state.expenseFormOpen);
+      if (btn) btn.textContent = state.expenseFormOpen ? "收合表單" : "＋ 記一筆支出";
+      if (state.expenseFormOpen) {
+        const d = document.getElementById("exp_date");
+        if (d && !d.value) d.value = formatTodayStr();
+      }
+    }
+
+    function expandFinList(kind) {
+      if (!state.finListLimits) state.finListLimits = { income: 40, expense: 40, topup: 40, packages: 40 };
+      state.finListLimits[kind] = (state.finListLimits[kind] || 40) + 40;
+      renderFinanceTab();
+    }
+
+    function finListLimit(kind) {
+      if (!state.finListLimits) state.finListLimits = { income: 40, expense: 40, topup: 40, packages: 40 };
+      return state.finListLimits[kind] || 40;
+    }
+
     function renderFinanceTab() {
       const isYear = state.financePeriodMode === "year";
       const targetYm = document.getElementById("financeMonthPicker").value || formatTodayStr().slice(0, 7);
       const targetYear = (document.getElementById("financeYearPicker").value || targetYm.slice(0, 4));
       const periodPrefix = isYear ? targetYear : targetYm;
+      if (state._finPeriodKey !== periodPrefix) {
+        state._finPeriodKey = periodPrefix;
+        state.finListLimits = { income: 40, expense: 40, topup: 40, packages: 40 };
+      }
       const q = (document.getElementById("financeSearchInput").value || "").trim().toLowerCase();
 
       const completedInPeriod = state.bookings
@@ -6072,11 +6119,13 @@
         "套票收入": "bg-indigo-50 text-indigo-800"
       };
 
+      const incomeLimit = finListLimit("income");
+      const incomeView = allIncome.slice(0, incomeLimit);
       incomeContainer.innerHTML = `
-        <div class="text-xs font-extrabold text-[#33241d] mb-1.5">全部收入明細（${allIncome.length} 筆）</div>
+        <div class="text-xs font-extrabold text-[#33241d] mb-1.5">收入明細（顯示 ${Math.min(incomeLimit, allIncome.length)}／${allIncome.length} 筆）</div>
         ${allIncome.length === 0
           ? `<div class="text-xs text-[#8b7365] py-6 text-center">${periodLabel} 尚無收入紀錄</div>`
-          : allIncome.map(r => `
+          : incomeView.map(r => `
             <div class="p-3 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] flex items-start justify-between gap-2 text-xs">
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-1.5">
@@ -6086,7 +6135,8 @@
                 <div class="text-[#5c4638] mt-0.5 leading-snug break-words">${esc(r.detail)}</div>
               </div>
               <div class="text-sm font-extrabold text-emerald-700 tabular-nums shrink-0">+$${safeNumber(r.amount,0).toLocaleString()}</div>
-            </div>`).join("")}
+            </div>`).join("") + (allIncome.length > incomeLimit ? `
+            <button type="button" onclick="expandFinList('income')" class="w-full py-2.5 rounded-xl text-xs font-extrabold bg-[#f3ece5] text-[#6a4f3f] hover:bg-[#e7dcd0]">載入更多（還有 ${allIncome.length - incomeLimit} 筆）</button>` : "")}
       `;
 
       const expContainer = document.getElementById("expensesListContainer");
@@ -6128,7 +6178,9 @@
       if (periodTx.length === 0) {
         txContainer.innerHTML = `<div class="text-xs text-[#8b7365] py-6 text-center">${isYear ? `${targetYear}年` : targetYm} 尚無儲值金異動紀錄</div>`;
       } else {
-        txContainer.innerHTML = periodTx.map(t => {
+        const topupLimit = finListLimit("topup");
+        const topupView = periodTx.slice(0, topupLimit);
+        txContainer.innerHTML = `<div class="text-xs font-extrabold text-[#33241d] mb-1.5">儲值異動（顯示 ${Math.min(topupLimit, periodTx.length)}／${periodTx.length} 筆）</div>` + topupView.map(t => {
           const pts = safeNumber(t.pointsChange, 0);
           return `
             <div class="p-3 rounded-2xl bg-[#fcfaf8] border border-[#eee3d8] flex items-center justify-between gap-2 text-xs">
@@ -6144,7 +6196,8 @@
               </div>
             </div>
           `;
-        }).join("");
+        }).join("") + (periodTx.length > topupLimit ? `
+          <button type="button" onclick="expandFinList('topup')" class="w-full py-2.5 rounded-xl text-xs font-extrabold bg-[#f3ece5] text-[#6a4f3f] mt-1">載入更多（還有 ${periodTx.length - topupLimit} 筆）</button>` : "");
       }
     }
 
@@ -6735,6 +6788,23 @@
         const pastBookings = bookings.filter(b =>
           ["已完成", "取消", "已取消"].indexOf(String(b.status || "").trim()) !== -1
         );
+        const nextBanner = document.getElementById("custNextBookingBanner");
+        if (nextBanner) {
+          const upcoming = activeBookings.slice().sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`));
+          const next = upcoming[0];
+          if (next) {
+            nextBanner.classList.remove("hidden");
+            const st = String(next.status || "").trim();
+            const stHint = st === "待審核" ? "待店家確認" : st === "改期申請中" ? "改期審核中" : st === "取消申請中" ? "取消審核中" : st === "已報到" ? "已報到" : "已排程";
+            nextBanner.innerHTML = `
+              <div class="font-extrabold text-[#8c5e43] mb-0.5">下一個預約 · ${esc(stHint)}</div>
+              <div class="text-[#33241d] font-bold">${esc(next.date)} ${esc(next.startTime)}${next.endTime ? `–${esc(next.endTime)}` : ""}</div>
+              <div class="text-[11px] text-[#6a4f3f] mt-0.5 leading-snug">${esc(next.service || "")}</div>`;
+          } else {
+            nextBanner.classList.add("hidden");
+            nextBanner.innerHTML = "";
+          }
+        }
 
         const activeBox = document.getElementById("custPortalBookingsActive");
         const pastBox = document.getElementById("custPortalBookingsPast");
@@ -6944,7 +7014,29 @@
       if (!el) return;
       const text = (state.portalData && state.portalData.siteSettings && state.portalData.siteSettings.noticeText)
         || DEFAULT_NOTICE_TEXT;
-      el.textContent = text;
+      const expanded = !!state.custNoticeExpanded;
+      const limit = 220;
+      const needsClamp = text.length > limit;
+      const shown = (!needsClamp || expanded) ? text : (text.slice(0, limit).trim() + "…");
+      el.textContent = shown;
+      let btn = document.getElementById("customerNoticeExpandBtn");
+      if (!btn) {
+        btn = document.createElement("button");
+        btn.id = "customerNoticeExpandBtn";
+        btn.type = "button";
+        btn.className = "mt-2 text-xs font-extrabold text-[#8c5e43] underline";
+        el.parentNode && el.parentNode.appendChild(btn);
+      }
+      if (!needsClamp) {
+        btn.classList.add("hidden");
+      } else {
+        btn.classList.remove("hidden");
+        btn.textContent = expanded ? "收合注意事項" : "展開全文";
+        btn.onclick = () => {
+          state.custNoticeExpanded = !state.custNoticeExpanded;
+          renderCustomerNoticeContent();
+        };
+      }
     }
 
     function renderCustomerHistoryList() {
@@ -6998,7 +7090,9 @@
         box.innerHTML = `<div class="text-center py-8 text-[#8b7365]">尚無消費或儲值紀錄</div>`;
         return;
       }
-      box.innerHTML = rows.slice(0, 100).map(r => `
+      const histLimit = state.custHistoryLimit || 20;
+      const histView = rows.slice(0, histLimit);
+      box.innerHTML = histView.map(r => `
         <div class="p-3 rounded-2xl bg-[#fcfaf8] border border-[#efe4d8] flex items-start justify-between gap-3">
           <div class="min-w-0">
             <div class="font-extrabold text-[#33241d]">${esc(r.title)}</div>
@@ -7006,7 +7100,8 @@
             <div class="text-[10px] text-[#9b8577] mt-1">${esc(r.time)}${r.sub ? ` · ${esc(r.sub)}` : ""}</div>
           </div>
           ${r.moneyText ? `<div class="text-right shrink-0 font-extrabold tabular-nums ${r.moneyCls}">${esc(r.moneyText)}</div>` : ""}
-        </div>`).join("");
+        </div>`).join("") + (rows.length > histLimit ? `
+        <button type="button" onclick="state.custHistoryLimit=(state.custHistoryLimit||20)+20; renderCustomerHistoryList();" class="w-full py-2.5 rounded-xl text-xs font-extrabold bg-[#f3ece5] text-[#6a4f3f]">看更多紀錄（還有 ${rows.length - histLimit} 筆）</button>` : "");
     }
 
     const DEFAULT_NOTICE_TEXT = `本預約系統為管理客人資料用，
