@@ -250,6 +250,11 @@
     </div>
 
     <!-- 客戶分頁切換：注意事項 / 諮詢表 / 消費紀錄 -->
+    <div id="customerLineCtaBanner" class="hidden glass-card rounded-2xl p-4 mb-4 border border-[#cfe8d8] bg-emerald-50/80">
+      <div class="text-sm font-extrabold text-emerald-950">預約請透過官方 LINE</div>
+      <p class="text-[11px] text-emerald-900 mt-1 leading-snug">目前未開放線上直接預約。點下方可開啟官方 LINE 詢問空檔與預約。</p>
+      <a id="customerLineCtaLink" href="https://line.me/" target="_blank" rel="noopener" class="mt-2.5 inline-flex items-center justify-center w-full py-2.5 rounded-xl text-xs font-extrabold bg-[#06C755] text-white shadow">開啟官方 LINE</a>
+    </div>
     <div id="customerSubTabs" class="grid grid-cols-3 gap-2 mb-4 hidden">
       <button id="cTabNoticeBtn" onclick="switchCustomerTab('notice')" class="py-2.5 rounded-xl text-sm font-bold tab-active">
         📌 注意事項
@@ -2553,7 +2558,7 @@
                     <div class="text-[#5c4638] mt-0.5">${esc(b.service || "")}${b.note ? `（${esc(b.note)}）` : ""}</div>
                   </div>
                   <div class="flex items-center gap-1.5 shrink-0">
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${String(b.status)==="已報到" ? "bg-sky-600 text-white" : "bg-emerald-600 text-white"}">${esc(b.status)}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold ${String(b.status)==="已報到" ? "bg-sky-600 text-white" : "bg-emerald-600 text-white"}">${esc(customerStatusLabel(b.status))}</span>
                     <button type="button" onclick="closeReminderModal(); state.selectedDate='${escJs(b.date)}'; renderCalendar(); renderDayBookings();" class="px-2.5 py-1 rounded-lg bg-white border border-emerald-300 text-emerald-800 font-bold">查看當日</button>
                   </div>
                 </div>`).join("")}</div>`}
@@ -3326,15 +3331,23 @@
       if (priceLabel) priceLabel.textContent = isCreate ? "預估金額 ($)" : "金額 ($)";
       if (priceHint) priceHint.classList.toggle("hidden", !isCreate);
       if (submitBtn) submitBtn.textContent = isCreate ? "確認預約" : "儲存修改";
+      const completedOpt = document.getElementById("bk_statusCompletedOpt");
+      const settleHint = document.getElementById("bk_statusSettleHint");
+      const st = document.getElementById("bk_status");
       if (isCreate) {
-        const st = document.getElementById("bk_status");
         if (st) st.value = "尚未到來";
         const pay = document.getElementById("bk_payMethod");
         if (pay) pay.value = "現金";
+        if (completedOpt) completedOpt.disabled = true;
+        if (settleHint) settleHint.classList.add("hidden");
+      } else {
+        const alreadyDone = st && st.value === "已完成";
+        if (completedOpt) completedOpt.disabled = !alreadyDone;
+        if (settleHint) settleHint.classList.toggle("hidden", !!alreadyDone);
       }
     }
 
-    /* ==================== 新增／編輯預約彈窗 ==================== */
+
     function openBookingModal(prefillDate = null, prefillCustomerId = "") {
       document.getElementById("bk_id").value = "";
       const _pkgH = document.getElementById("bk_packageId"); if (_pkgH) _pkgH.value = "";
@@ -4056,6 +4069,11 @@
       let newStatus = document.getElementById("bk_status").value;
       // 新增預約一律「尚未到來」；結帳請走完成結算
       if (!bookingId) newStatus = "尚未到來";
+      const prevStatus = prevBooking ? String(prevBooking.status || "").trim() : "";
+      if (newStatus === "已完成" && prevStatus !== "已完成") {
+        showToast("請使用「完成結算」完成預約並入帳，不可在編輯中直接改為已完成", true);
+        return;
+      }
       const customerId = document.getElementById("bk_customerId").value || "";
       const customerName = document.getElementById("bk_customerName").value.trim();
       const dateStr = document.getElementById("bk_date").value;
@@ -5163,7 +5181,7 @@
                 <div>
                   <strong>${esc(b.date)} ${esc(b.startTime)}</strong> · ${esc(b.service)}（$${safeNumber(b.finalPrice, 0).toLocaleString()} / ${esc(b.payMethod)}）
                 </div>
-                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#f1e7dd] text-[#6a4f3f]">${esc(b.status)}</span>
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#f1e7dd] text-[#6a4f3f]">${esc(customerStatusLabel(b.status))}</span>
               </div>
             `).join("")}
           </div>
@@ -6851,7 +6869,7 @@
             pastBox.innerHTML = viewList.map(b => `
               <div class="text-xs p-2 rounded-xl bg-[#f7f4f0] border border-[#ece3da] flex items-center justify-between opacity-90">
                 <span>${esc(b.date)} ${esc(b.startTime)} · ${esc(b.service)}</span>
-                <span class="px-2 py-0.5 rounded-full font-bold text-[11px] ${b.status === "已完成" ? "bg-stone-200 text-stone-700" : "bg-rose-100 text-rose-700"}">${esc(b.status)}</span>
+                <span class="px-2 py-0.5 rounded-full font-bold text-[11px] ${b.status === "已完成" ? "bg-stone-200 text-stone-700" : "bg-rose-100 text-rose-700"}">${esc(customerStatusLabel(b.status))}</span>
               </div>
             `).join("") + (pastBookings.length > limit ? `
               <button type="button" onclick="state.custShowAllPastBookings=${showAll ? "false" : "true"}; renderCustomerPortalView();" class="w-full py-2 rounded-xl text-xs font-extrabold bg-[#f3ece5] text-[#6a4f3f] hover:bg-[#e7dcd0]">
@@ -6865,6 +6883,11 @@
       }
 
       document.getElementById("customerSubTabs").classList.remove("hidden");
+      const lineCta = document.getElementById("customerLineCtaBanner");
+      if (lineCta) {
+        const onlineOn = !!(state.portalData && state.portalData.siteSettings && state.portalData.siteSettings.onlineBookingEnabled);
+        lineCta.classList.toggle("hidden", onlineOn);
+      }
 
       const hiddenNotice = document.getElementById("customerConsultHiddenNotice");
       const lockedCard = document.getElementById("customerConsultLockedCard");
@@ -7767,6 +7790,21 @@
         document.body.removeChild(ta);
         showToast(successMsg);
       }
+    }
+
+    function customerStatusLabel(st) {
+      const s = String(st || "").trim();
+      const map = {
+        "待審核": "待店家確認",
+        "改期申請中": "改期審核中",
+        "取消申請中": "取消審核中",
+        "尚未到來": "已排程",
+        "已報到": "已報到",
+        "已完成": "已完成",
+        "取消": "已取消",
+        "已取消": "已取消"
+      };
+      return map[s] || s;
     }
 
     function esc(s) {
