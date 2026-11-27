@@ -126,7 +126,30 @@
       #adminView { padding-left: 0.75rem; padding-right: 0.75rem; }
       #customerDetailContent { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
     }
-  </style>
+  
+    body.admin-preview #customerView {
+      display:block !important; position:fixed; inset:0; z-index:80;
+      width:100%; max-width:none; margin:0; overflow-y:auto;
+      background:#fbf8f4; padding:0 14px 28px;
+    }
+    body.admin-preview #customerBookSection,
+    body.admin-preview #customerRebindBanner,
+    body.admin-preview #customerConsultFormBox,
+    body.admin-preview #customerConsultLockedCard button,
+    body.admin-preview #customerConsultSection form button[type="submit"],
+    body.admin-preview #customerOnboardingGate input,
+    body.admin-preview #customerOnboardingGate button {
+      display:none !important;
+    }
+    body.admin-preview #customerView button[onclick*="openCustChangeBookingModal"] {
+      display:none !important;
+    }
+    body.admin-preview #customerView input,
+    body.admin-preview #customerView textarea,
+    body.admin-preview #customerView select {
+      pointer-events:none !important;
+    }
+</style>
 </head>
 <body class="min-h-screen pb-14">
 
@@ -920,8 +943,9 @@
             </button>
           </div>
           <div class="p-3.5 rounded-2xl bg-[#faf7f4] border border-[#eee3d8] space-y-2">
-            <div class="font-extrabold text-[#33241d] text-sm">📝 最近操作紀錄（最多 80 筆）</div>
+            <div class="font-extrabold text-[#33241d] text-sm">📝 永久操作紀錄（完整歷史保存在試算表；此處顯示最近 300 筆）</div>
             <div id="operationLogsList" class="max-h-48 overflow-y-auto space-y-1 text-[11px]"></div>
+            <p class="text-[10px] text-[#8b7365]">完整紀錄持續追加保存於 Google 試算表「永久操作紀錄」工作表；此處僅顯示最近 300 筆，不會自動清除舊紀錄。</p>
           </div>
           <div class="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 space-y-2">
             <div class="font-extrabold text-indigo-950 text-sm">完整資料備份（JSON）</div>
@@ -1941,7 +1965,7 @@
       // 客戶端請求附帶 LIFF ID Token，供 GAS 後端驗證；保留既有欄位以維持舊版 API 相容。
       const customerAuthActions = [
         "getCustomerPortalData", "rebindCustomerLineSelf",
-        "submitCustomerConsultation", "submitCustomerBookingRequest",
+        "submitCustomerConsultation",
         "requestCustomerBookingChange"
       ];
       if (state.portalLineIdToken && customerAuthActions.indexOf(actionKey) !== -1) {
@@ -1957,7 +1981,7 @@
         "settleBookingAdmin", "saveBookingAdmin", "deleteBookingAdmin",
         "addTopUpAdmin", "refundTopUpAdmin", "transferBalanceAdmin",
         "addExpenseAdmin", "savePackageAdmin", "usePackageSessionAdmin",
-        "submitCustomerBookingRequest", "submitCustomerConsultation",
+        "submitCustomerConsultation",
         "requestCustomerBookingChange"
       ].indexOf(actionKey) !== -1;
 
@@ -2299,8 +2323,10 @@
       state.consultQuestions = snap.consultQuestions || state.consultQuestions || [];
       state.consultations = snap.consultations || [];
       state.consultationLogs = snap.consultationLogs || [];
+      state.operationLogs = snap.operationLogs || [];
       state.coupons = getVisibleCoupons(snap.coupons || []);
       state.couponRules = snap.couponRules || {};
+      renderOperationLogs();
       if (document.getElementById("consultQuestionEditorList")) renderConsultQuestionEditor();
 
       state.customers.forEach(c => {
@@ -2393,7 +2419,8 @@
         expenses: state.expenses || [],
         blockedSlots: state.blockedSlots || [],
         consultations: state.consultations || [],
-        consultQuestions: state.consultQuestions || []
+        consultQuestions: state.consultQuestions || [],
+        operationLogs: state.operationLogs || []
       };
       downloadTextFile(`fuyu_backup_${stamp}.json`, JSON.stringify(payload, null, 2), "application/json;charset=utf-8");
       showToast("已下載完整備份 JSON");
@@ -2562,7 +2589,7 @@
         await apiPost({ action: "saveSiteSettingsAdmin", password: state.adminPassword, payload });
         state.siteSettings = payload;
         showToast("前台設定已儲存");
-        await refreshAdminData(false, true);
+        try { await refreshAdminData(false, true); } catch (_) {}
       } catch (err) {
         showToast(err.message || "儲存失敗", true);
       } finally {
@@ -4433,7 +4460,7 @@
       if (!box) return;
       const logs = state.operationLogs || [];
       box.innerHTML = logs.length
-        ? logs.map(l => `<div class="px-2 py-1 rounded-lg bg-white border border-[#efe5da]"><span class="font-bold text-[#6a4f3f]">${esc(l.time || "")}</span> · <span class="font-extrabold">${esc(l.action || "")}</span> <span class="text-[#8b7365]">${esc(l.detail || "")}</span></div>`).join("")
+        ? logs.map(l => `<div class="px-2.5 py-2 rounded-lg bg-white border border-[#efe5da]"><div><span class="font-bold text-[#6a4f3f]">${esc(l.time || "")}</span> · <span class="font-extrabold">${esc(l.action || "")}</span></div><div class="text-[#8b7365] mt-0.5">${esc(l.detail || "")}</div>${l.customerId ? `<div class="text-[10px] text-[#9b8879] mt-0.5">會員：${esc(l.customerName || "")}（${esc(l.customerId)}）${l.beforeValue || l.afterValue ? `｜${esc(l.beforeValue || "")} → ${esc(l.afterValue || "")}` : ""}</div>` : ""}</div>`).join("")
         : `<div class="text-[#8b7365]">尚無操作紀錄</div>`;
     }
 
@@ -4714,7 +4741,8 @@
         setLoading(true, linkType === "rebind" ? "產生一次性換機連結中..." : "產生首次綁定連結中...");
         const result = await apiPost({ action: "createCustomerPortalLinkAdmin", password: state.adminPassword, customerId, linkType });
         const link = buildCustomerRebindLink(customerId, linkType === "rebind", result.token);
-        await copyText(link, linkType === "rebind" ? "已複製一次性換機重綁連結（48 小時內有效）" : "已複製首次綁定連結（48 小時內有效）");
+        await copyText(link, linkType === "rebind" ? "已複製一次性換機重綁連結（24 小時內有效）" : "已複製首次綁定連結（24 小時內有效）");
+        await refreshAdminData(false, true);
       } catch (err) { showToast(err.message || "連結產生失敗", true); }
       finally { setLoading(false); }
     }
@@ -5370,7 +5398,7 @@
             </div>
           </div>
           <p class="text-[11px] text-[#687d73]">
-            💡 一般連結僅供已綁定的 LINE 帳號使用；首次綁定／換機連結為一次性憑證，48 小時有效。換機成功後會保留原會員儲值與紀錄。
+            💡 一般連結僅供已綁定的 LINE 帳號使用；首次綁定／換機連結為一次性憑證，24 小時有效。換機成功後會保留原會員儲值與紀錄。
           </p>
         </div>
 
@@ -5379,34 +5407,93 @@
       modal.classList.remove("hidden");
     }
 
-    function openCustomerPersonalPreview(customerId) {
-      const cust = state.customers.find(c => String(c.id) === String(customerId));
-      if (!cust) return;
-      const bookings = (state.bookings || []).filter(b => String(b.customerId || "") === String(cust.id) || (!b.customerId && String(b.customerName || "").trim() === String(cust.name || "").trim())).sort((a,b) => `${b.date} ${b.startTime}`.localeCompare(`${a.date} ${a.startTime}`));
-      const packages = (state.packages || []).filter(x => String(x.customerId) === String(cust.id) && Number(x.remainingSessions || 0) > 0);
-      const coupons = getVisibleCoupons().filter(x => String(x.customerId) === String(cust.id) && String(x.status || "") === "可使用");
-      const next = bookings.filter(b => ["尚未到來", "已報到", "待審核", "改期申請中", "取消申請中"].includes(String(b.status || ""))).slice().sort((a,b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`));
-      const done = bookings.filter(b => String(b.status || "") === "已完成");
-      const balance = safeNumber(cust.balance, 0);
-      const content = document.getElementById("customerPersonalPreviewContent");
-      content.innerHTML = `
-        <div class="rounded-3xl bg-white border border-[#eee3d8] p-5 shadow-sm">
-          <div class="text-[11px] text-[#9a7d68] font-bold tracking-widest">F U Y U  B E A U T Y</div>
-          <div class="mt-2 text-xl font-extrabold text-[#33241d]">${esc(cust.nickname || cust.name || "貴賓")}，您好 💛</div>
-          <div class="text-xs text-[#8b7365] mt-1">${esc(cust.contact || "尚無電話")} · 生日：${esc(cust.birthday || "未填寫")}</div>
-          <div class="grid grid-cols-2 gap-2 mt-4">
-            <div class="rounded-2xl bg-[#f8f2ec] p-3"><div class="text-[10px] text-[#8b7365]">我的儲值餘額</div><div class="text-2xl font-extrabold text-[#6a4f3f]">$${balance.toLocaleString()}</div></div>
-            <div class="rounded-2xl bg-[#f8f2ec] p-3"><div class="text-[10px] text-[#8b7365]">累計完成來店</div><div class="text-2xl font-extrabold text-[#6a4f3f]">${Math.max(done.length, safeNumber(cust.visitCount,0))} 次</div></div>
-          </div>
-        </div>
-        ${packages.length ? `<div class="rounded-2xl bg-white border border-[#eee3d8] p-4"><div class="font-extrabold text-sm text-[#4a382f] mb-2">🎫 我的套票方案</div>${packages.map(x=>`<div class="text-xs py-1.5 flex justify-between gap-2"><b>${esc(x.name)}</b><span>剩 ${safeNumber(x.remainingSessions,0)}/${safeNumber(x.totalSessions,3)} 堂</span></div>`).join("")}</div>` : ""}
-        ${coupons.length ? `<div class="rounded-2xl bg-white border border-[#eee3d8] p-4"><div class="font-extrabold text-sm text-[#4a382f] mb-2">🎟️ 我的可用優惠券</div>${coupons.map(x=>`<div class="text-xs py-1">${esc(x.title)}（折抵 $${safeNumber(x.discountAmount,0)}）</div>`).join("")}</div>` : ""}
-        <div class="rounded-2xl bg-white border border-[#eee3d8] p-4"><div class="font-extrabold text-sm text-[#4a382f] mb-2">📅 我的預約紀錄</div>${next.length ? next.slice(0,5).map(b=>`<div class="text-xs py-2 border-t border-[#f2ebe5] flex justify-between gap-2"><span>${esc(b.date)} ${esc(b.startTime)}<br><span class="text-[#8b7365]">${esc(b.service || "服務")}</span></span><b>${esc(b.status || "")}</b></div>`).join("") : `<div class="text-xs text-[#8b7365]">目前沒有待到店預約</div>`}</div>
-        <div class="text-center text-[10px] text-[#a18a79] py-2">此畫面為店家預覽，實際顯示仍依會員登入狀態與資料設定為準</div>
-      `;
-      document.getElementById("customerPersonalPreviewModal").classList.remove("hidden");
+    let adminPreviewPreviousState = null;
+
+    async function openCustomerPersonalPreview(customerId) {
+      const cust = (state.customers || []).find(c => String(c.id) === String(customerId));
+      if (!cust) { showToast("找不到會員資料", true); return; }
+      if (adminPreviewPreviousState) closeCustomerPersonalPreview();
+
+      try {
+        setLoading(true, "載入會員實際可見畫面...");
+        // 由已驗證管理員權限的後端依會員編號讀取完整會員端資料，不使用前端快照拼湊。
+        const portalData = await apiPost({
+          action: "getCustomerPortalPreviewDataAdmin",
+          password: state.adminPassword,
+          customerId: cust.id
+        });
+        if (!portalData || !portalData.customer || String(portalData.customer.id) !== String(cust.id)) {
+          throw new Error("無法載入此會員的預覽資料");
+        }
+
+        adminPreviewPreviousState = {
+          portalData: state.portalData,
+          portalLineUserId: state.portalLineUserId,
+          portalLineDisplayName: state.portalLineDisplayName,
+          isEditingConsultation: state.isEditingConsultation,
+          custShowAllActiveBookings: state.custShowAllActiveBookings,
+          custShowAllPastBookings: state.custShowAllPastBookings,
+          portalOnboardingRequired: state.portalOnboardingRequired,
+          portalCid: state.portalCid,
+          qAnswers: Object.assign({}, state.qAnswers || {})
+        };
+
+        // 正式會員頁面與店家預覽共用同一份後端資料結構、同一個 renderCustomerPortalView()。
+        state.portalData = portalData;
+        state.portalLineUserId = portalData.customer.lineUserId || "";
+        state.portalLineDisplayName = portalData.customer.lineDisplayName || "";
+        state.isEditingConsultation = false;
+        state.portalOnboardingRequired = !!portalData.onboardingRequired;
+        state.portalCid = cust.id;
+        state.custShowAllActiveBookings = false;
+        state.custShowAllPastBookings = false;
+
+        document.getElementById("adminView")?.classList.add("hidden");
+        document.getElementById("adminHeaderActions")?.classList.add("hidden");
+        document.getElementById("adminLoginPage")?.classList.add("hidden");
+        const customerView = document.getElementById("customerView");
+        customerView.classList.remove("hidden");
+        document.body.classList.add("admin-preview");
+
+        const banner = document.createElement("div");
+        banner.id = "adminCustomerPreviewBanner";
+        banner.className = "sticky top-0 z-[90] -mx-3 px-4 py-3 mb-4 bg-[#2b4438] text-white shadow-lg flex items-center justify-between gap-3";
+        const previewHint = portalData.onboardingRequired
+          ? "會員尚未完成首次使用流程；此處顯示會員實際會看到的首次使用畫面"
+          : "唯讀預覽，不會修改會員資料";
+        banner.innerHTML = `<div><div class="font-extrabold text-sm">店家預覽模式</div><div class="text-[11px] opacity-85">目前查看：${esc(cust.nickname || cust.name || "會員")}｜${previewHint}</div></div><button type="button" id="adminPreviewExitBtn" class="shrink-0 px-3 py-2 rounded-xl bg-white text-[#2b4438] text-xs font-extrabold">返回店家後台</button>`;
+        customerView.insertBefore(banner, customerView.firstChild);
+        document.getElementById("adminPreviewExitBtn").addEventListener("click", closeCustomerPersonalPreview);
+
+        renderCustomerPortalView();
+        switchCustomerTab("notice");
+        showToast("已切換至會員實際畫面預覽");
+      } catch (err) {
+        if (adminPreviewPreviousState) closeCustomerPersonalPreview();
+        showToast(err.message || "會員預覽載入失敗", true);
+      } finally {
+        setLoading(false);
+      }
     }
-    function closeCustomerPersonalPreview() { document.getElementById("customerPersonalPreviewModal").classList.add("hidden"); }
+
+    function closeCustomerPersonalPreview() {
+      if (!adminPreviewPreviousState) return;
+      document.body.classList.remove("admin-preview");
+      document.getElementById("adminCustomerPreviewBanner")?.remove();
+      document.getElementById("customerView")?.classList.add("hidden");
+      document.getElementById("adminView")?.classList.remove("hidden");
+      document.getElementById("adminHeaderActions")?.classList.remove("hidden");
+      state.portalData = adminPreviewPreviousState.portalData;
+      state.portalLineUserId = adminPreviewPreviousState.portalLineUserId;
+      state.portalLineDisplayName = adminPreviewPreviousState.portalLineDisplayName;
+      state.isEditingConsultation = adminPreviewPreviousState.isEditingConsultation;
+      state.custShowAllActiveBookings = adminPreviewPreviousState.custShowAllActiveBookings;
+      state.custShowAllPastBookings = adminPreviewPreviousState.custShowAllPastBookings;
+      state.portalOnboardingRequired = adminPreviewPreviousState.portalOnboardingRequired;
+      state.portalCid = adminPreviewPreviousState.portalCid;
+      state.qAnswers = adminPreviewPreviousState.qAnswers;
+      adminPreviewPreviousState = null;
+    }
 
     function closeCustomerDetailModal() {
       document.getElementById("customerDetailModal").classList.add("hidden");
