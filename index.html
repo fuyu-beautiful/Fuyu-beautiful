@@ -866,6 +866,9 @@
           <button id="subtab-consult-btn" onclick="switchManagementSubTab('consult')" class="px-3 py-2 rounded-xl text-xs font-bold subtab-inactive whitespace-nowrap shrink-0">
             📝 諮詢表
           </button>
+          <button id="subtab-tags-btn" onclick="switchManagementSubTab('tags')" class="px-3 py-2 rounded-xl text-xs font-bold subtab-inactive whitespace-nowrap shrink-0">
+            🏷️ 標籤庫
+          </button>
           <button id="subtab-logs-btn" onclick="switchManagementSubTab('logs')" class="px-3 py-2 rounded-xl text-xs font-bold subtab-inactive whitespace-nowrap shrink-0">
             🗒️ 操作紀錄
           </button>
@@ -1028,7 +1031,47 @@
         </div>
       </div>
 
-      <div id="subtab-settings" class="space-y-4 hidden">
+      
+      <div id="subtab-tags" class="space-y-4 hidden">
+        <div class="glass-card rounded-3xl p-5 sm:p-6 space-y-5">
+          <div class="flex flex-wrap items-start justify-between gap-3 pb-3 border-b border-[#efe5da]">
+            <div>
+              <h3 class="text-base font-extrabold text-[#33241d]">🏷️ 內部標籤庫</h3>
+              <p class="text-[11px] text-[#8b7365] mt-0.5 leading-relaxed">
+                統一管理店家專用標籤（僅後台可見）。在會員詳情可快速套用；此處負責新增、重新命名與刪除清單項目。
+              </p>
+            </div>
+            <div class="text-[11px] font-bold text-[#8b7365] bg-[#f8f3ee] border border-[#eadfd4] rounded-xl px-3 py-1.5">
+              共 <span id="tagCatalogCountBadge" class="text-[#8c5e43] font-extrabold">0</span> 個標籤
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+            <div class="relative flex-1">
+              <input type="search" id="tagCatalogSearchInput" oninput="renderTagCatalogManager()" placeholder="搜尋標籤名稱…"
+                class="w-full px-3.5 py-2.5 rounded-2xl border border-[#decbb9] text-sm bg-white focus:outline-none focus:border-[#8c5e43]" />
+            </div>
+            <p class="text-[10px] text-[#9b8577] sm:max-w-[14rem] leading-snug">重新命名會同步更新所有已套用該標籤的會員；刪除只從清單移除，不強制清除會員身上的標籤。</p>
+          </div>
+
+          <div id="tagCatalogAdminList" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 min-h-[4rem]"></div>
+
+          <div class="pt-3 border-t border-[#efe5da] space-y-2">
+            <div class="text-xs font-extrabold text-[#33241d]">新增標籤</div>
+            <div class="flex gap-2">
+              <input type="text" id="tagCatalogNewInput" maxlength="20" placeholder="例如：敏感肌、週六偏好、VIP…"
+                class="flex-1 px-3.5 py-2.5 rounded-2xl border border-[#decbb9] text-sm bg-white focus:outline-none focus:border-[#8c5e43]"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();handleAddTagCatalog();}" />
+              <button type="button" onclick="handleAddTagCatalog()" class="px-4 py-2.5 rounded-2xl text-sm font-extrabold btn-primary shadow shrink-0">
+                ＋ 加入標籤庫
+              </button>
+            </div>
+            <p class="text-[10px] text-[#9b8577]">標籤名稱建議簡短清楚，會員端看不到這些標籤。</p>
+          </div>
+        </div>
+      </div>
+
+<div id="subtab-settings" class="space-y-4 hidden">
         <div class="glass-card rounded-3xl p-5 space-y-5">
           <div class="flex items-start justify-between gap-3 pb-3 border-b border-[#efe5da]">
             <div>
@@ -2533,13 +2576,14 @@
     }
 
     function switchManagementSubTab(sub) {
-      // 管理分頁：價目／禁約／前台顯示／諮詢表／操作紀錄
+      // 管理分頁：價目／禁約／前台顯示／諮詢表／標籤庫／操作紀錄
       if (sub === "pkgcat") sub = "catalog";
       if (sub === "reports") sub = "settings";
       const isCatalog = sub === "catalog";
       const isBlocked = sub === "blocked";
       const isSettings = sub === "settings";
       const isConsult = sub === "consult";
+      const isTags = sub === "tags";
       const isLogs = sub === "logs";
       document.getElementById("subtab-catalog").classList.toggle("hidden", !isCatalog);
       document.getElementById("subtab-blocked").classList.toggle("hidden", !isBlocked);
@@ -2549,10 +2593,14 @@
       if (settingsEl) settingsEl.classList.toggle("hidden", !isSettings);
       const consultEl = document.getElementById("subtab-consult");
       if (consultEl) consultEl.classList.toggle("hidden", !isConsult);
+      const tagsEl = document.getElementById("subtab-tags");
+      if (tagsEl) tagsEl.classList.toggle("hidden", !isTags);
       const logsEl = document.getElementById("subtab-logs");
       if (logsEl) logsEl.classList.toggle("hidden", !isLogs);
       const consultBtn = document.getElementById("subtab-consult-btn");
       if (consultBtn) consultBtn.className = "px-3 py-2 rounded-xl text-xs font-bold " + (isConsult ? "subtab-active" : "subtab-inactive") + " whitespace-nowrap shrink-0";
+      const tagsBtn = document.getElementById("subtab-tags-btn");
+      if (tagsBtn) tagsBtn.className = "px-3 py-2 rounded-xl text-xs font-bold " + (isTags ? "subtab-active" : "subtab-inactive") + " whitespace-nowrap shrink-0";
       const logsBtn = document.getElementById("subtab-logs-btn");
       if (logsBtn) logsBtn.className = "px-3 py-2 rounded-xl text-xs font-bold " + (isLogs ? "subtab-active" : "subtab-inactive") + " whitespace-nowrap shrink-0";
       const reportsEl = document.getElementById("subtab-reports");
@@ -2576,9 +2624,9 @@
       }
       if (isSettings) {
         if (typeof fillSettingsForm === "function") fillSettingsForm();
-        if (typeof renderTagCatalogManager === "function") renderTagCatalogManager();
         switchSiteSettingsChild("line");
       }
+      if (isTags && typeof renderTagCatalogManager === "function") renderTagCatalogManager();
       if (isConsult) renderConsultQuestionEditor();
       if (isLogs) renderOperationLogs();
     }
@@ -4607,27 +4655,135 @@
     function renderTagCatalogManager() {
       const box = document.getElementById("tagCatalogAdminList");
       if (!box) return;
-      const tags = (state.tagCatalog && state.tagCatalog.length) ? state.tagCatalog.slice() : getAllUsedCustomerTags();
-      box.innerHTML = tags.length
-        ? tags.map(t => `
-          <div class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#eef2ff] border border-indigo-200 text-[11px] font-extrabold text-indigo-900">
-            #${esc(t)}
-            <button type="button" onclick="handleDeleteTagCatalog('${escJs(t)}')" class="text-rose-600 ml-0.5" title="從標籤庫移除">✕</button>
-          </div>`).join("")
-        : `<span class="text-[11px] text-[#8b7365]">尚無標籤，請新增</span>`;
+      const q = ((document.getElementById("tagCatalogSearchInput") || {}).value || "").trim().toLowerCase();
+      const catalog = (state.tagCatalog && state.tagCatalog.length)
+        ? state.tagCatalog.slice()
+        : [];
+      const usage = {};
+      (state.customers || []).forEach(c => {
+        parseCustomerTags(c.tags).forEach(t => {
+          usage[t] = (usage[t] || 0) + 1;
+        });
+      });
+      const orphan = Object.keys(usage).filter(t => catalog.indexOf(t) === -1);
+      const allTags = catalog.concat(orphan);
+      const filtered = q ? allTags.filter(t => String(t).toLowerCase().indexOf(q) !== -1) : allTags;
+      const badge = document.getElementById("tagCatalogCountBadge");
+      if (badge) badge.textContent = String(catalog.length);
+
+      if (!filtered.length) {
+        box.innerHTML = `<div class="sm:col-span-2 text-center py-10 text-sm text-[#8b7365]">${
+          q ? "沒有符合搜尋的標籤" : "標籤庫是空的，請在下方新增第一個標籤"
+        }</div>`;
+        return;
+      }
+
+      const editing = state._editingTagName || "";
+      box.innerHTML = filtered.map(t => {
+        const cnt = usage[t] || 0;
+        const inCatalog = catalog.indexOf(t) !== -1;
+        if (editing === t) {
+          return `
+            <div class="p-3.5 rounded-2xl border-2 border-[#8c5e43] bg-[#fffaf5] space-y-2.5">
+              <div class="text-[10px] font-bold text-[#8b7365]">重新命名標籤</div>
+              <input type="text" id="tagRenameInput" maxlength="20" value="${esc(t)}"
+                class="w-full px-3 py-2 rounded-xl border border-[#decbb9] text-sm font-bold bg-white focus:outline-none focus:border-[#8c5e43]"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();commitRenameTagCatalog();} if(event.key==='Escape'){cancelRenameTagCatalog();}" />
+              <div class="flex gap-2">
+                <button type="button" onclick="commitRenameTagCatalog()" class="flex-1 py-2 rounded-xl text-xs font-extrabold btn-primary">儲存</button>
+                <button type="button" onclick="cancelRenameTagCatalog()" class="px-3 py-2 rounded-xl text-xs font-bold bg-[#f3ece5] text-[#5c4638]">取消</button>
+              </div>
+              <p class="text-[10px] text-[#9b8577]">會同步更新 ${cnt} 位會員身上的同名標籤</p>
+            </div>`;
+        }
+        return `
+          <div class="p-3.5 rounded-2xl border border-[#e8ddd0] bg-white hover:border-indigo-200 transition flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full bg-[#eef2ff] border border-indigo-200 text-[12px] font-extrabold text-indigo-900">#${esc(t)}</span>
+                ${!inCatalog ? `<span class="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-md">僅存在於會員</span>` : ""}
+              </div>
+              <div class="text-[11px] text-[#8b7365] mt-1.5">
+                ${cnt > 0 ? `已套用在 <strong class="text-[#5c4638]">${cnt}</strong> 位會員` : "尚未套用到任何會員"}
+              </div>
+            </div>
+            <div class="flex flex-col gap-1 shrink-0">
+              <button type="button" onclick="startRenameTagCatalog('${escJs(t)}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#f8f3ee] text-[#6a4f3f] border border-[#e7d9cb] hover:bg-[#f0e6db]">重新命名</button>
+              ${inCatalog
+                ? `<button type="button" onclick="handleDeleteTagCatalog('${escJs(t)}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100">刪除</button>`
+                : `<button type="button" onclick="handleAddTagCatalogName('${escJs(t)}')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200 hover:bg-indigo-100">加入庫</button>`
+              }
+            </div>
+          </div>`;
+      }).join("");
+
+      if (editing) {
+        setTimeout(() => {
+          const inp = document.getElementById("tagRenameInput");
+          if (inp) { inp.focus(); inp.select(); }
+        }, 30);
+      }
+    }
+
+    function startRenameTagCatalog(tag) {
+      state._editingTagName = String(tag || "");
+      renderTagCatalogManager();
+    }
+
+    function cancelRenameTagCatalog() {
+      state._editingTagName = "";
+      renderTagCatalogManager();
+    }
+
+    async function commitRenameTagCatalog() {
+      const oldTag = state._editingTagName || "";
+      const inp = document.getElementById("tagRenameInput");
+      const neu = (inp && inp.value || "").trim();
+      if (!oldTag) return;
+      if (!neu) return showToast("名稱不可空白", true);
+      if (neu === oldTag) {
+        state._editingTagName = "";
+        renderTagCatalogManager();
+        return;
+      }
+      try {
+        setLoading(true, "重新命名標籤...");
+        const snap = await apiPost({
+          action: "renameTagCatalogAdmin",
+          password: state.adminPassword,
+          oldTag: oldTag,
+          newTag: neu
+        });
+        state._editingTagName = "";
+        applyAdminSnapshot(snap);
+        renderTagCatalogManager();
+        showToast("已重新命名，並同步更新會員標籤");
+      } catch (err) {
+        showToast(err.message || "重新命名失敗", true);
+      } finally {
+        setLoading(false);
+      }
     }
 
     async function handleAddTagCatalog() {
       const el = document.getElementById("tagCatalogNewInput");
       const t = (el && el.value || "").trim();
       if (!t) return showToast("請輸入標籤名稱", true);
+      await handleAddTagCatalogName(t, el);
+    }
+
+    async function handleAddTagCatalogName(t, clearEl) {
+      const name = String(t || "").trim();
+      if (!name) return showToast("請輸入標籤名稱", true);
       try {
         setLoading(true, "儲存標籤庫...");
-        const snap = await apiPost({ action: "saveTagCatalogAdmin", password: state.adminPassword, tag: t, mode: "add" });
+        const snap = await apiPost({ action: "saveTagCatalogAdmin", password: state.adminPassword, tag: name, mode: "add" });
         applyAdminSnapshot(snap);
-        if (el) el.value = "";
+        if (clearEl) clearEl.value = "";
+        const newInp = document.getElementById("tagCatalogNewInput");
+        if (newInp && (!clearEl || clearEl === newInp)) newInp.value = "";
         renderTagCatalogManager();
-        showToast("已新增標籤（雲端保存）");
+        showToast("已新增「#" + name + "」至標籤庫");
       } catch (err) {
         showToast(err.message || "新增失敗", true);
       } finally {
@@ -4636,7 +4792,11 @@
     }
 
     async function handleDeleteTagCatalog(tag) {
-      if (!confirm("從標籤庫移除「" + tag + "」？\n（不會自動清除已套在會員上的標籤）")) return;
+      const usage = (state.customers || []).filter(c => parseCustomerTags(c.tags).indexOf(tag) !== -1).length;
+      const msg = usage > 0
+        ? "從標籤庫移除「" + tag + "」？\n\n目前有 " + usage + " 位會員仍使用此標籤，移除後他們身上的標籤不會自動清除，可之後在會員詳情個別調整。"
+        : "從標籤庫移除「" + tag + "」？";
+      if (!confirm(msg)) return;
       try {
         setLoading(true, "更新標籤庫...");
         const snap = await apiPost({ action: "saveTagCatalogAdmin", password: state.adminPassword, tag: tag, mode: "remove" });
@@ -4907,69 +5067,15 @@
       const el = document.getElementById("detailTagCustomInput");
       const t = (el && el.value || "").trim();
       if (!t) return showToast("請輸入標籤名稱", true);
-      // 先寫入標籤庫（若已存在則略過）
+      // 先寫入標籤庫（若已存在則略過），並更新本地快照
       try {
-        await apiPost({ action: "saveTagCatalogAdmin", password: state.adminPassword, tag: t, mode: "add" });
+        const snap = await apiPost({ action: "saveTagCatalogAdmin", password: state.adminPassword, tag: t, mode: "add" });
+        if (snap && snap.ok !== false) applyAdminSnapshot(snap);
       } catch (_) {}
+      if (el) el.value = "";
       await addCustomerDetailTag(customerId, t);
     }
 
-    async function addTagCatalogFromDetail(customerId) {
-      const el = document.getElementById("detailTagCatalogInput");
-      const t = (el && el.value || "").trim();
-      if (!t) return showToast("請輸入標籤名稱", true);
-      try {
-        setLoading(true, "新增標籤庫...");
-        const snap = await apiPost({ action: "saveTagCatalogAdmin", password: state.adminPassword, tag: t, mode: "add" });
-        await ensureSnapshotFresh(snap, {});
-        if (el) el.value = "";
-        openCustomerDetailModal(customerId);
-        showToast("已加入標籤庫");
-      } catch (err) {
-        showToast(err.message || "新增失敗", true);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    async function deleteTagCatalogFromDetail(tag, customerId) {
-      if (!confirm("從標籤庫刪除「" + tag + "」？\n已套在會員身上的標籤不會自動清除，可再於上方個別移除。")) return;
-      try {
-        setLoading(true, "更新標籤庫...");
-        const snap = await apiPost({ action: "saveTagCatalogAdmin", password: state.adminPassword, tag: tag, mode: "remove" });
-        await ensureSnapshotFresh(snap, {});
-        openCustomerDetailModal(customerId);
-        showToast("已從標籤庫刪除");
-      } catch (err) {
-        showToast(err.message || "刪除失敗", true);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    async function renameTagCatalogFromDetail(oldTag, customerId) {
-      const neu = prompt("重新命名標籤\n原名稱：" + oldTag, oldTag);
-      if (neu === null) return;
-      const t = String(neu).trim();
-      if (!t) return showToast("名稱不可空白", true);
-      if (t === oldTag) return;
-      try {
-        setLoading(true, "重新命名標籤...");
-        const snap = await apiPost({
-          action: "renameTagCatalogAdmin",
-          password: state.adminPassword,
-          oldTag: oldTag,
-          newTag: t
-        });
-        await ensureSnapshotFresh(snap, {});
-        openCustomerDetailModal(customerId);
-        showToast("已重新命名標籤");
-      } catch (err) {
-        showToast(err.message || "重新命名失敗", true);
-      } finally {
-        setLoading(false);
-      }
-    }
 
     async function handleSaveCustomer(e) {
       e.preventDefault();
@@ -5599,16 +5705,18 @@
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div>
               <span class="font-extrabold text-[#33241d]">🏷️ 內部標籤</span>
-              <span class="text-[10px] text-[#8b7365] ml-1">僅店家可見</span>
+              <span class="text-[10px] text-[#8b7365] ml-1">僅店家可見 · 點選套用或移除</span>
             </div>
+            <button type="button" onclick="closeCustomerDetailModal(); switchAdminTab('management'); switchManagementSubTab('tags');"
+              class="text-[10px] font-bold text-indigo-700 underline hover:text-indigo-900">管理標籤庫</button>
           </div>
 
           <div>
-            <div class="text-[10px] font-extrabold text-indigo-900 mb-1">此會員的標籤（點 ✕ 從本會員移除）</div>
+            <div class="text-[10px] font-extrabold text-indigo-900 mb-1.5">已套用</div>
             <div class="flex flex-wrap gap-1.5 min-h-[28px]">
               ${(() => {
                 const cur = parseCustomerTags(cust.tags);
-                if (!cur.length) return `<span class="text-[11px] text-[#9b8879]">尚未設定</span>`;
+                if (!cur.length) return `<span class="text-[11px] text-[#9b8879]">尚未設定標籤</span>`;
                 return cur.map(t => `
                   <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white border border-indigo-200 text-[11px] font-extrabold text-indigo-900">
                     #${esc(t)}
@@ -5616,14 +5724,19 @@
                   </span>`).join("");
               })()}
             </div>
-            <div class="flex flex-wrap gap-1.5 mt-2">
+          </div>
+
+          <div>
+            <div class="text-[10px] font-extrabold text-indigo-900 mb-1.5">從標籤庫快速套用</div>
+            <div class="flex flex-wrap gap-1.5">
               ${(() => {
                 const cur = new Set(parseCustomerTags(cust.tags));
                 const pool = (state.tagCatalog && state.tagCatalog.length)
                   ? state.tagCatalog.slice()
                   : getAllUsedCustomerTags();
                 const unused = pool.filter(t => t && !cur.has(t));
-                if (!unused.length) return `<span class="text-[10px] text-[#9b8879]">標籤庫已全部套用，或請下方新增標籤</span>`;
+                if (!pool.length) return `<span class="text-[10px] text-[#9b8879]">標籤庫是空的，請先至「管理 → 標籤庫」新增</span>`;
+                if (!unused.length) return `<span class="text-[10px] text-[#9b8879]">標籤庫項目皆已套用</span>`;
                 return unused.map(t => `
                   <button type="button" onclick="addCustomerDetailTag('${escJs(cust.id)}', '${escJs(t)}')"
                     class="px-2.5 py-1 rounded-full bg-white border border-dashed border-indigo-300 text-[10px] font-bold text-indigo-800 hover:bg-indigo-50">
@@ -5631,38 +5744,14 @@
                   </button>`).join("");
               })()}
             </div>
-            <div class="flex gap-1.5 mt-2">
-              <input type="text" id="detailTagCustomInput" maxlength="20" placeholder="輸入標籤套到此會員（也會加入標籤庫）"
+            <div class="flex gap-1.5 mt-2.5">
+              <input type="text" id="detailTagCustomInput" maxlength="20" placeholder="自訂標籤並套用到此會員"
                 class="flex-1 px-3 py-2 rounded-xl border border-indigo-200 bg-white text-xs"
                 onkeydown="if(event.key==='Enter'){event.preventDefault();addCustomerDetailTagFromInput('${escJs(cust.id)}');}" />
               <button type="button" onclick="addCustomerDetailTagFromInput('${escJs(cust.id)}')"
-                class="px-3 py-2 rounded-xl bg-indigo-600 text-white text-[11px] font-extrabold shrink-0">套用</button>
+                class="px-3 py-2 rounded-xl bg-indigo-600 text-white text-[11px] font-extrabold shrink-0 hover:bg-indigo-700">套用</button>
             </div>
-          </div>
-
-          <div class="pt-2 border-t border-indigo-100">
-            <div class="text-[10px] font-extrabold text-[#5c4638] mb-1.5">標籤庫管理（新增／編輯／刪除 · 影響所有會員可選清單）</div>
-            <div class="flex flex-wrap gap-1.5 mb-2">
-              ${(() => {
-                const pool = (state.tagCatalog && state.tagCatalog.length)
-                  ? state.tagCatalog.slice()
-                  : getAllUsedCustomerTags();
-                if (!pool.length) return `<span class="text-[11px] text-[#9b8879]">標籤庫是空的</span>`;
-                return pool.map(t => `
-                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-[#f3ece5] border border-[#e2d4c5] text-[10px] font-bold text-[#4a382f]">
-                    #${esc(t)}
-                    <button type="button" onclick="renameTagCatalogFromDetail('${escJs(t)}', '${escJs(cust.id)}')" class="text-[#8c5e43] underline" title="重新命名">改</button>
-                    <button type="button" onclick="deleteTagCatalogFromDetail('${escJs(t)}', '${escJs(cust.id)}')" class="text-rose-600" title="從標籤庫刪除">✕</button>
-                  </span>`).join("");
-              })()}
-            </div>
-            <div class="flex gap-1.5">
-              <input type="text" id="detailTagCatalogInput" maxlength="20" placeholder="新增到標籤庫（不自動套用到會員）"
-                class="flex-1 px-3 py-2 rounded-xl border border-[#decbb9] bg-white text-xs"
-                onkeydown="if(event.key==='Enter'){event.preventDefault();addTagCatalogFromDetail('${escJs(cust.id)}');}" />
-              <button type="button" onclick="addTagCatalogFromDetail('${escJs(cust.id)}')"
-                class="px-3 py-2 rounded-xl bg-[#3a2a22] text-white text-[11px] font-extrabold shrink-0">新增至庫</button>
-            </div>
+            <p class="text-[10px] text-[#9b8577] mt-1.5">自訂標籤會同時加入標籤庫，之後可在其他會員重複使用。</p>
           </div>
         </div>
 
