@@ -7375,8 +7375,20 @@
         const completedCount = bookings.filter(b => b.status === "已完成").length;
         const effectiveVisits = Math.max(completedCount, safeNumber(cust.visitCount, 0));
 
-        document.getElementById("custPortalName").innerHTML = `<span class="text-xl sm:text-2xl font-extrabold tracking-wide text-[#33241d]">${esc(cust.name || "貴賓")}</span>${cust.nickname ? `<span class="inline-flex items-center align-middle ml-2 px-2.5 py-1 rounded-full bg-[#f5eee7] border border-[#eadbc9] text-[11px] font-semibold text-[#8c6b54]">${esc(cust.nickname)}</span>` : ""}`;
-        document.getElementById("custPortalMeta").textContent = `${cust.contact || "尚無電話"} · 生日：${cust.birthday || "未填"}`;
+        const displayName = sanitizeLineDisplayName(cust.lineDisplayName)
+          || state.portalLineDisplayName
+          || cust.nickname
+          || cust.name
+          || "貴賓";
+        const bdayRaw = String(cust.birthday || "").trim();
+        let bdayMD = "未填";
+        if (/^\d{4}-\d{2}-\d{2}$/.test(bdayRaw)) {
+          bdayMD = bdayRaw.slice(5, 7) + "/" + bdayRaw.slice(8, 10);
+        } else if (bdayRaw) {
+          bdayMD = bdayRaw;
+        }
+        document.getElementById("custPortalName").innerHTML = `<span class="text-xl sm:text-2xl font-extrabold tracking-wide text-[#33241d]">${esc(displayName)}</span>${cust.nickname && cust.nickname !== displayName ? `<span class="inline-flex items-center align-middle ml-2 px-2.5 py-1 rounded-full bg-[#f5eee7] border border-[#eadbc9] text-[11px] font-semibold text-[#8c6b54]">${esc(cust.nickname)}</span>` : ""}`;
+        document.getElementById("custPortalMeta").textContent = `${cust.contact || "尚無電話"} · 生日：${bdayMD}`;
         const bal = safeNumber(cust.balance, 0);
         const balWrap = document.getElementById("custPortalBalanceWrap");
         if (balWrap) {
