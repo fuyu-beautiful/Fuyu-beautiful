@@ -1796,6 +1796,7 @@
       portalForceRebind: false,
       portalLineUserId: "",
       portalLineDisplayName: "",
+      portalLineIdToken: "",
       portalData: null,
       isEditingConsultation: false,
       activeCustomerCatalogCategory: "",
@@ -1910,6 +1911,21 @@
 
     async function apiPost(payload) {
       const actionKey = String(payload && payload.action || "req");
+      // 客戶端請求附帶 LIFF ID Token，供 GAS 後端驗證；保留既有欄位以維持舊版 API 相容。
+      const customerAuthActions = [
+        "getCustomerPortalData", "rebindCustomerLineSelf",
+        "submitCustomerConsultation", "submitCustomerBookingRequest",
+        "requestCustomerBookingChange"
+      ];
+      if (state.portalLineIdToken && customerAuthActions.indexOf(actionKey) !== -1) {
+        payload = {
+          ...payload,
+          lineIdToken: state.portalLineIdToken,
+          ...(payload.payload && typeof payload.payload === "object"
+            ? { payload: { ...payload.payload, lineIdToken: state.portalLineIdToken } }
+            : {})
+        };
+      }
       const isWriteAction = [
         "settleBookingAdmin", "saveBookingAdmin", "deleteBookingAdmin",
         "addTopUpAdmin", "refundTopUpAdmin", "transferBalanceAdmin",
@@ -2047,6 +2063,38 @@
       }
     }
 
+    // LIFF 會把原始入口參數包在 liff.state；在入口分流前先還原巢狀 query。
+    function getCustomerRouteParams() {
+      const direct = new URLSearchParams(window.location.search || "");
+      const restored = new URLSearchParams();
+      let rawState = direct.get("liff.state") || "";
+
+      for (let i = 0; i < 3 && rawState; i++) {
+        let decoded = rawState;
+        try { decoded = decodeURIComponent(rawState); } catch (_) {}
+        if (decoded === rawState) break;
+        rawState = decoded;
+      }
+      rawState = String(rawState || "").replace(/^[?#]/, "");
+      if (rawState) {
+        try {
+          const nested = new URLSearchParams(rawState);
+          nested.forEach((value, key) => {
+            if (!restored.has(key)) restored.set(key, value);
+          });
+        } catch (_) {}
+      }
+
+      // 明確網址參數優先；缺少時才採用 liff.state 內還原的值。
+      const get = (key) => direct.has(key) ? direct.get(key) : restored.get(key);
+      return {
+        cid: get("cid") || "",
+        rebind: get("rebind") === "1",
+        mode: get("mode") || "",
+        isCustomer: get("mode") === "customer" || !!(get("cid") || "")
+      };
+    }
+
     window.addEventListener("DOMContentLoaded", async () => {
       document.getElementById("exp_date").value = formatTodayStr();
       document.getElementById("blk_date").value = formatTodayStr();
@@ -2056,13 +2104,14 @@
       initSignaturePad();
       renderConsultationQuestionnaire();
 
-      const params = new URLSearchParams(window.location.search);
-      const cidParam = params.get("cid") || "";
-      const rebindParam = params.get("rebind") === "1";
-      const portalMode = params.get("mode") === "customer";
+      const route = getCustomerRouteParams();
+      const cidParam = route.cid;
+      const rebindParam = route.rebind;
+      const portalMode = route.isCustomer;
       const savedPass = sessionStorage.getItem("fuyu_admin_pass") || "";
 
-      if (savedPass && !cidParam && !portalMode) {
+      // 客戶入口優先於管理員快取，避免 LIFF 帶入 liff.state 時誤入後台。
+      if (!portalMode && savedPass) {
         // 優先從本地快取秒開畫面，再背景執行增量同步檢查
         const cached = loadAdminLocalCache();
         if (cached && cached.snapshot) {
@@ -6699,30 +6748,66 @@
       window.open(url, "_blank");
     }
 
+    let liffInitPromise = null;
+    let customerPortalInitPromise = null;
+
+    function getCustomerLoginRedirectUri() {
+      const url = new URL(window.location.href);
+      url.search = "";
+      url.hash = "";
+      url.searchParams.set("mode", "customer");
+      if (state.portalCid) url.searchParams.set("cid", state.portalCid);
+      if (state.portalForceRebind) url.searchParams.set("rebind", "1");
+      return url.toString();
+    }
+
+    async function ensureLiffInitialized() {
+      if (!window.liff || typeof window.liff.init !== "function") {
+        throw new Error("LINE 登入元件載入失敗，請重新整理頁面後再試。");
+      }
+      if (!liffInitPromise) {
+        liffInitPromise = window.liff.init({ liffId: "2012824784-i6kSt5ow" });
+      }
+      await liffInitPromise;
+    }
+
     async function initCustomerPortal() {
-      document.getElementById("adminLoginPage").classList.add("hidden");
-      document.getElementById("adminView").classList.add("hidden");
-      document.getElementById("customerView").classList.remove("hidden");
-      document.getElementById("modeSubtitle").textContent = "貴賓專屬服務頁面";
+      if (customerPortalInitPromise) return customerPortalInitPromise;
 
-      try {
-        if (window.liff && typeof window.liff.init === "function") {
-await liff.init({ liffId: "2012824784-i6kSt5ow" });
+      customerPortalInitPromise = (async () => {
+        document.getElementById("adminLoginPage").classList.add("hidden");
+        document.getElementById("adminView").classList.add("hidden");
+        document.getElementById("adminHeaderActions").classList.add("hidden");
+        document.getElementById("customerView").classList.remove("hidden");
+        document.getElementById("modeSubtitle").textContent = "LINE 會員登入中...";
 
-if (!liff.isLoggedIn()) {
-  liff.login({
-    redirectUri: window.location.href
-  });
-  return;
-}
+        try {
+          await ensureLiffInitialized();
 
-const prof = await liff.getProfile();
-state.portalLineUserId = prof.userId || "";
-state.portalLineDisplayName = sanitizeLineDisplayName(prof.displayName || "");
+          if (!window.liff.isLoggedIn()) {
+            window.liff.login({ redirectUri: getCustomerLoginRedirectUri() });
+            return;
+          }
+
+          const profile = await window.liff.getProfile();
+          const idToken = window.liff.getIDToken();
+          if (!idToken) {
+            throw new Error("無法取得 LINE 身分識別憑證，請重新登入後再試。");
+          }
+
+          state.portalLineIdToken = idToken;
+          state.portalLineUserId = profile.userId || "";
+          state.portalLineDisplayName = sanitizeLineDisplayName(profile.displayName || "");
+          document.getElementById("modeSubtitle").textContent = "貴賓專屬服務頁面";
+          await loadCustomerPortalData();
+        } catch (err) {
+          console.error("[馥語美學] LIFF 客戶端初始化失敗：", err);
+          document.getElementById("modeSubtitle").textContent = "LINE 登入尚未完成";
+          showToast(err && err.message ? err.message : "LINE 登入初始化失敗，請重新從 LIFF 連結開啟。", true);
         }
-      } catch (_) {}
+      })();
 
-      await loadCustomerPortalData();
+      return customerPortalInitPromise;
     }
 
     async function loadCustomerPortalData() {
