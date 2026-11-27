@@ -199,20 +199,10 @@
   <!-- ==================== 客戶端視圖 ==================== -->
   <main id="customerView" class="max-w-2xl mx-auto px-4 pt-5 hidden">
     <div id="customerRebindBanner" class="glass-card rounded-2xl p-3.5 mb-4 hidden border-l-4 border-l-[#8c5e43]">
-      <div class="flex items-center justify-between gap-2">
-        <div class="text-xs text-[#4a382f]">
-          <span class="font-bold text-[#33241d]">🔄 更換 LINE 帳號或需要重新串連會員資料？</span>
-          <span class="block text-[11px] text-[#8b7365] mt-0.5">輸入原本登記的姓名與電話，即可自動綁回原有儲值金與紀錄。</span>
-        </div>
-        <button type="button" onclick="toggleSelfRebindBox()" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#f3ece5] text-[#6a4f3f] hover:bg-[#e7dcd0] shrink-0">
-          重新串連
-        </button>
+      <div class="text-xs text-[#4a382f]">
+        <span class="font-bold text-[#33241d]">🔄 更換 LINE 帳號或需要重新串連會員資料？</span>
+        <span class="block text-[11px] text-[#8b7365] mt-0.5">為保障會員儲值與個人資料安全，請聯絡馥語美學店家，索取專屬的一次性換機重綁連結。</span>
       </div>
-      <form id="selfRebindForm" onsubmit="handleSelfRebindSubmit(event)" class="hidden mt-3 pt-3 border-t border-[#f0e5da] grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-        <input type="text" id="rb_name" required placeholder="原本登記姓名 *" class="px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
-        <input type="tel" id="rb_phone" placeholder="登記電話（選填驗證）" class="px-3 py-2 rounded-xl border border-[#decbb9] bg-white" />
-        <button type="submit" id="rb_submitBtn" class="py-2 px-3 rounded-xl font-bold btn-primary">確認串連此 LINE</button>
-      </form>
     </div>
 
     <!-- 首次使用強制流程：必須閱讀注意事項並完成諮詢表，才會顯示會員資料 -->
@@ -1307,6 +1297,15 @@
   <div id="customerDetailModal" class="fixed inset-0 z-40 modal-backdrop flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto hidden">
     <div id="customerDetailContent" class="bg-white rounded-t-3xl sm:rounded-2xl max-w-2xl w-full p-4 sm:p-5 shadow-xl my-0 sm:my-8 max-h-[94vh] overflow-y-auto pb-8"></div>
   </div>
+  <div id="customerPersonalPreviewModal" class="fixed inset-0 z-[70] modal-backdrop flex items-center justify-center p-3 sm:p-6 hidden">
+    <div class="bg-[#fbf8f4] rounded-3xl max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl">
+      <div class="sticky top-0 z-10 bg-white/95 backdrop-blur border-b border-[#eee3d8] px-4 py-3 flex items-center justify-between">
+        <div><div class="font-extrabold text-[#33241d]">會員個人畫面預覽</div><div class="text-[10px] text-[#8b7365]">店家預覽模式・不會修改會員資料</div></div>
+        <button type="button" onclick="closeCustomerPersonalPreview()" class="px-3 py-1.5 rounded-lg bg-[#f5eee7] text-[#6a4f3f] font-bold">關閉 ✕</button>
+      </div>
+      <div id="customerPersonalPreviewContent" class="p-4 space-y-3"></div>
+    </div>
+  </div>
 
   
   <div id="packageCatalogItemModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 hidden">
@@ -1817,6 +1816,7 @@
       selectedDate: formatTodayStr(),
       portalCid: "",
       portalForceRebind: false,
+      portalInviteToken: "",
       portalLineUserId: "",
       portalLineDisplayName: "",
       portalLineIdToken: "",
@@ -2117,6 +2117,7 @@
       return {
         cid: get("cid") || "",
         rebind: get("rebind") === "1",
+        invite: get("invite") || "",
         mode: get("mode") || "",
         isCustomer: get("mode") === "customer" || !!(get("cid") || "")
       };
@@ -2134,6 +2135,7 @@
       const route = getCustomerRouteParams();
       const cidParam = route.cid;
       const rebindParam = route.rebind;
+      state.portalInviteToken = route.invite || "";
       const portalMode = route.isCustomer;
       const savedPass = sessionStorage.getItem("fuyu_admin_pass") || "";
 
@@ -4700,11 +4702,21 @@
       }
     }
 
-    function buildCustomerRebindLink(cid, forceRebind = false) {
-      const base = getFrontendBaseUrl();
-      if (!base) return "";
-      const sep = base.indexOf("?") === -1 ? "?" : "&";
-      return `${base}${sep}cid=${encodeURIComponent(cid)}${forceRebind ? "&rebind=1" : ""}`;
+    function buildCustomerRebindLink(cid, forceRebind = false, token = "") {
+      const params = new URLSearchParams({ mode: "customer", cid: String(cid || "") });
+      if (token) params.set("invite", token);
+      if (forceRebind) params.set("rebind", "1");
+      return `https://liff.line.me/2012824784-i6kSt5ow?${params.toString()}`;
+    }
+
+    async function createAndCopyCustomerLink(customerId, linkType) {
+      try {
+        setLoading(true, linkType === "rebind" ? "產生一次性換機連結中..." : "產生首次綁定連結中...");
+        const result = await apiPost({ action: "createCustomerPortalLinkAdmin", password: state.adminPassword, customerId, linkType });
+        const link = buildCustomerRebindLink(customerId, linkType === "rebind", result.token);
+        await copyText(link, linkType === "rebind" ? "已複製一次性換機重綁連結（48 小時內有效）" : "已複製首次綁定連結（48 小時內有效）");
+      } catch (err) { showToast(err.message || "連結產生失敗", true); }
+      finally { setLoading(false); }
     }
 
     /* ==================== 套票管理 Modal 與操作 ==================== */
@@ -5126,8 +5138,7 @@
         .sort((a, b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`));
 
       const lineClean = sanitizeLineDisplayName(cust.lineDisplayName);
-      const normalLink = buildCustomerRebindLink(cust.id, false);
-      const rebindLink = buildCustomerRebindLink(cust.id, true);
+
 
       const modal = document.getElementById("customerDetailModal");
       const content = document.getElementById("customerDetailContent");
@@ -5342,12 +5353,15 @@
               </div>
             </div>
             <div class="flex flex-wrap gap-1.5">
-              <button type="button" onclick="copyText('${escJs(normalLink)}', '已複製會員專屬連結（含諮詢表與預約）')" class="px-2.5 py-1 rounded-lg bg-white border border-[#c5d6ce] text-[#2b4438] font-bold">
-                複製一般連結
-              </button>
-              <button type="button" onclick="copyText('${escJs(rebindLink)}', '已複製【換機強制重綁連結】！請傳給顧客用新 LINE 開啟')" class="px-2.5 py-1 rounded-lg bg-emerald-700 text-white font-bold">
-                複製換機重綁連結
-              </button>
+              ${cust.lineUserId ? `
+                <button type="button" onclick="copyText(buildCustomerRebindLink('${escJs(cust.id)}', false), '已複製會員一般連結（僅原綁定 LINE 可開啟）')" class="px-2.5 py-1 rounded-lg bg-white border border-[#c5d6ce] text-[#2b4438] font-bold">複製一般連結</button>
+              ` : `<span class="px-2.5 py-1 rounded-lg bg-white border border-amber-200 text-amber-700 font-bold">尚未綁定，請先產生首次綁定連結</span>`}
+              ${cust.lineUserId ? `
+                <button type="button" onclick="createAndCopyCustomerLink('${escJs(cust.id)}', 'rebind')" class="px-2.5 py-1 rounded-lg bg-emerald-700 text-white font-bold">產生換機重綁連結</button>
+              ` : `
+                <button type="button" onclick="createAndCopyCustomerLink('${escJs(cust.id)}', 'bind')" class="px-2.5 py-1 rounded-lg bg-emerald-700 text-white font-bold">產生首次綁定連結</button>
+              `}
+              <button type="button" onclick="openCustomerPersonalPreview('${escJs(cust.id)}')" class="px-2.5 py-1 rounded-lg bg-[#6b5143] text-white font-bold">預覽會員畫面</button>
               ${cust.lineUserId ? `
                 <button type="button" onclick="handleAdminUnbindLine('${escJs(cust.id)}')" class="px-2.5 py-1 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 font-bold">
                   解除舊綁定
@@ -5356,7 +5370,7 @@
             </div>
           </div>
           <p class="text-[11px] text-[#687d73]">
-            💡 若顧客更換手機或重新註冊 LINE，傳送「換機重綁連結」給她開啟，系統會自動覆蓋舊綁定並保留所有儲值與紀錄。
+            💡 一般連結僅供已綁定的 LINE 帳號使用；首次綁定／換機連結為一次性憑證，48 小時有效。換機成功後會保留原會員儲值與紀錄。
           </p>
         </div>
 
@@ -5364,6 +5378,35 @@
 
       modal.classList.remove("hidden");
     }
+
+    function openCustomerPersonalPreview(customerId) {
+      const cust = state.customers.find(c => String(c.id) === String(customerId));
+      if (!cust) return;
+      const bookings = (state.bookings || []).filter(b => String(b.customerId || "") === String(cust.id) || (!b.customerId && String(b.customerName || "").trim() === String(cust.name || "").trim())).sort((a,b) => `${b.date} ${b.startTime}`.localeCompare(`${a.date} ${a.startTime}`));
+      const packages = (state.packages || []).filter(x => String(x.customerId) === String(cust.id) && Number(x.remainingSessions || 0) > 0);
+      const coupons = getVisibleCoupons().filter(x => String(x.customerId) === String(cust.id) && String(x.status || "") === "可使用");
+      const next = bookings.filter(b => ["尚未到來", "已報到", "待審核", "改期申請中", "取消申請中"].includes(String(b.status || ""))).slice().sort((a,b) => `${a.date} ${a.startTime}`.localeCompare(`${b.date} ${b.startTime}`));
+      const done = bookings.filter(b => String(b.status || "") === "已完成");
+      const balance = safeNumber(cust.balance, 0);
+      const content = document.getElementById("customerPersonalPreviewContent");
+      content.innerHTML = `
+        <div class="rounded-3xl bg-white border border-[#eee3d8] p-5 shadow-sm">
+          <div class="text-[11px] text-[#9a7d68] font-bold tracking-widest">F U Y U  B E A U T Y</div>
+          <div class="mt-2 text-xl font-extrabold text-[#33241d]">${esc(cust.nickname || cust.name || "貴賓")}，您好 💛</div>
+          <div class="text-xs text-[#8b7365] mt-1">${esc(cust.contact || "尚無電話")} · 生日：${esc(cust.birthday || "未填寫")}</div>
+          <div class="grid grid-cols-2 gap-2 mt-4">
+            <div class="rounded-2xl bg-[#f8f2ec] p-3"><div class="text-[10px] text-[#8b7365]">我的儲值餘額</div><div class="text-2xl font-extrabold text-[#6a4f3f]">$${balance.toLocaleString()}</div></div>
+            <div class="rounded-2xl bg-[#f8f2ec] p-3"><div class="text-[10px] text-[#8b7365]">累計完成來店</div><div class="text-2xl font-extrabold text-[#6a4f3f]">${Math.max(done.length, safeNumber(cust.visitCount,0))} 次</div></div>
+          </div>
+        </div>
+        ${packages.length ? `<div class="rounded-2xl bg-white border border-[#eee3d8] p-4"><div class="font-extrabold text-sm text-[#4a382f] mb-2">🎫 我的套票方案</div>${packages.map(x=>`<div class="text-xs py-1.5 flex justify-between gap-2"><b>${esc(x.name)}</b><span>剩 ${safeNumber(x.remainingSessions,0)}/${safeNumber(x.totalSessions,3)} 堂</span></div>`).join("")}</div>` : ""}
+        ${coupons.length ? `<div class="rounded-2xl bg-white border border-[#eee3d8] p-4"><div class="font-extrabold text-sm text-[#4a382f] mb-2">🎟️ 我的可用優惠券</div>${coupons.map(x=>`<div class="text-xs py-1">${esc(x.title)}（折抵 $${safeNumber(x.discountAmount,0)}）</div>`).join("")}</div>` : ""}
+        <div class="rounded-2xl bg-white border border-[#eee3d8] p-4"><div class="font-extrabold text-sm text-[#4a382f] mb-2">📅 我的預約紀錄</div>${next.length ? next.slice(0,5).map(b=>`<div class="text-xs py-2 border-t border-[#f2ebe5] flex justify-between gap-2"><span>${esc(b.date)} ${esc(b.startTime)}<br><span class="text-[#8b7365]">${esc(b.service || "服務")}</span></span><b>${esc(b.status || "")}</b></div>`).join("") : `<div class="text-xs text-[#8b7365]">目前沒有待到店預約</div>`}</div>
+        <div class="text-center text-[10px] text-[#a18a79] py-2">此畫面為店家預覽，實際顯示仍依會員登入狀態與資料設定為準</div>
+      `;
+      document.getElementById("customerPersonalPreviewModal").classList.remove("hidden");
+    }
+    function closeCustomerPersonalPreview() { document.getElementById("customerPersonalPreviewModal").classList.add("hidden"); }
 
     function closeCustomerDetailModal() {
       document.getElementById("customerDetailModal").classList.add("hidden");
@@ -6785,6 +6828,7 @@
       url.searchParams.set("mode", "customer");
       if (state.portalCid) url.searchParams.set("cid", state.portalCid);
       if (state.portalForceRebind) url.searchParams.set("rebind", "1");
+      if (state.portalInviteToken) url.searchParams.set("invite", state.portalInviteToken);
       return url.toString();
     }
 
@@ -6845,7 +6889,8 @@
           cid: state.portalCid,
           lineUserId: state.portalLineUserId,
           lineDisplayName: state.portalLineDisplayName,
-          forceRebind: state.portalForceRebind
+          forceRebind: state.portalForceRebind,
+          inviteToken: state.portalInviteToken
         });
         state.portalForceRebind = false;
         state.portalData = data;
