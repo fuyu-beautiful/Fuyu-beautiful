@@ -201,21 +201,18 @@
         </div>
       </div>
 
-      <div id="adminHeaderActions" class="hidden flex flex-wrap items-center gap-2">
-        <span id="lastSyncBadge" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#f8f3ee] text-[#6a4f3f] border border-[#e7d9cb]">
+      <div id="adminHeaderActions" class="hidden flex flex-wrap items-center gap-1.5">
+        <span id="lastSyncBadge" class="hidden sm:inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-[#f8f3ee] text-[#6a4f3f] border border-[#e7d9cb]" title="上次成功更新畫面的時間">
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-          <span id="lastSyncTimeText">尚未同步</span>
+          <span id="lastSyncTimeText">未更新</span>
         </span>
-        <button type="button" onclick="refreshAdminData(false)" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 whitespace-nowrap flex items-center gap-1" title="與伺服器比對版本：有其他人改過或版本不同才下載；自己剛存檔通常不必按">
-          <span>⚡</span><span>智能同步</span>
+        <button type="button" onclick="refreshAdminData(false)" class="px-2.5 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 whitespace-nowrap" title="快速檢查是否有新資料；有變動才下載">
+          ⚡ 同步
         </button>
-        <button type="button" onclick="refreshAdminData(true)" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white text-[#5c4638] border border-[#decbb9] hover:bg-[#f5eee7] whitespace-nowrap" title="略過快取，強制重讀試算表。畫面與實際不符、或智能同步仍不對時使用">
-          🔄 強制重載
+        <button type="button" onclick="refreshAdminData(true)" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white text-[#5c4638] border border-[#decbb9] hover:bg-[#f5eee7] whitespace-nowrap" title="略過快取，重新讀取完整資料（畫面不對時用）">
+          🔄 重整
         </button>
-        <button type="button" onclick="openCustomerPortalPreview()" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#f5eee7] text-[#6a4f3f] hover:bg-[#ebe0d5] whitespace-nowrap">
-          客戶端預覽
-        </button>
-        <button type="button" onclick="logoutAdmin()" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#fdf2f2] text-[#b42318] hover:bg-[#fae3e3] whitespace-nowrap">
+        <button type="button" onclick="logoutAdmin()" class="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-[#fdf2f2] text-[#b42318] hover:bg-[#fae3e3] whitespace-nowrap">
           登出
         </button>
       </div>
@@ -2065,7 +2062,7 @@
         });
       } catch (netErr) {
         const e2 = new Error(netErr && netErr.name === "AbortError"
-          ? "連線逾時，請先點右上角「⚡ 智能同步」確認是否已入帳，再決定是否重送"
+          ? "連線逾時，請先點右上角「⚡ 同步」確認是否已入帳，再決定是否重送"
           : "網路連線失敗，請檢查網路後再試");
         e2.code = "NETWORK_ERROR";
         throw e2;
@@ -2170,7 +2167,7 @@
       const txt = document.getElementById("lastSyncTimeText");
       if (badge && txt) {
         badge.classList.remove("hidden");
-        txt.textContent = `最後同步 ${state.lastSyncAt}`;
+        txt.textContent = state.lastSyncAt ? `已更新 ${state.lastSyncAt}` : "未更新";
       }
     }
 
@@ -2329,7 +2326,7 @@
       if (!state.adminPassword) return;
       try {
         if (!silent) {
-          setLoading(true, forceRefresh ? "強制重載試算表完整資料中..." : "正在比對資料版本...");
+          setLoading(true, forceRefresh ? "重新讀取完整資料..." : "檢查更新中...");
         }
         const res = await apiPost({
           action: "getAdminDeltaSync",
@@ -2339,11 +2336,11 @@
         });
         if (res && res.unchanged) {
           updateLastSyncDisplay(formatNowTimeStr());
-          if (!silent) showToast("目前畫面已是最新資料（無需重複下載）");
+          if (!silent) showToast("已是最新，無需更新");
           return;
         }
         applyAdminSnapshot(res);
-        if (!silent) showToast(forceRefresh ? "已強制重載最新資料" : "已同步最新資料");
+        if (!silent) showToast(forceRefresh ? "已重整完成" : "已是最新");
       } catch (err) {
         if (!silent) showToast(err.message || "同步失敗", true);
       } finally {
