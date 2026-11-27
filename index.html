@@ -6707,15 +6707,18 @@
 
       try {
         if (window.liff && typeof window.liff.init === "function") {
-          const liffId = new URLSearchParams(window.location.search).get("liffId");
-          if (liffId) {
-            await liff.init({ liffId });
-            if (liff.isLoggedIn()) {
-              const prof = await liff.getProfile();
-              state.portalLineUserId = prof.userId || "";
-              state.portalLineDisplayName = sanitizeLineDisplayName(prof.displayName || "");
-            }
-          }
+await liff.init({ liffId: "2012824784-i6kSt5ow" });
+
+if (!liff.isLoggedIn()) {
+  liff.login({
+    redirectUri: window.location.href
+  });
+  return;
+}
+
+const prof = await liff.getProfile();
+state.portalLineUserId = prof.userId || "";
+state.portalLineDisplayName = sanitizeLineDisplayName(prof.displayName || "");
         }
       } catch (_) {}
 
