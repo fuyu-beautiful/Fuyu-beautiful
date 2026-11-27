@@ -149,6 +149,52 @@
     body.admin-preview #customerView select {
       pointer-events:none !important;
     }
+
+    #adminMainNav {
+      position: sticky;
+      top: 3.4rem;
+      z-index: 25;
+      background: rgba(255, 253, 250, 0.96);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid #eadfd4;
+      border-radius: 1rem;
+      box-shadow: 0 6px 20px rgba(124, 92, 72, 0.08);
+      padding: 0.35rem;
+      margin-bottom: 0.9rem;
+    }
+    @media (min-width: 640px) {
+      #adminMainNav { top: 3.65rem; padding: 0.4rem; }
+    }
+    #adminMainNav button { transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease; }
+    #adminMainNav button:active { transform: scale(0.97); }
+
+    #customerDetailContent {
+      display: flex;
+      flex-direction: column;
+      max-height: min(94vh, 920px);
+      overflow: hidden;
+      padding: 0 !important;
+    }
+    #customerDetailHeader {
+      flex-shrink: 0;
+      background: #fff;
+      border-bottom: 1px solid #f0e5da;
+      padding: 0.85rem 1rem 0.75rem;
+      border-radius: 1.5rem 1.5rem 0 0;
+    }
+    @media (min-width: 640px) {
+      #customerDetailHeader { border-radius: 1rem 1rem 0 0; padding: 1rem 1.15rem 0.85rem; }
+    }
+    #customerDetailBody {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 0.85rem 1rem 1.75rem;
+    }
+    @media (min-width: 640px) {
+      #customerDetailBody { padding: 0.9rem 1.15rem 1.75rem; }
+    }
 </style>
 </head>
 <body class="min-h-screen pb-14">
@@ -510,20 +556,20 @@
 
   <!-- ==================== 店家管理後台視圖 ==================== -->
   <main id="adminView" class="max-w-6xl mx-auto px-4 pt-4 hidden">
-    <nav class="flex items-center gap-1.5 overflow-x-auto pb-2 mb-3 -mx-1 px-1 sticky top-0 z-20 bg-[#faf7f4]/95 backdrop-blur pt-1">
-      <button id="nav-home" onclick="switchAdminTab('home')" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tab-active whitespace-nowrap shrink-0">
+    <nav id="adminMainNav" class="flex items-center gap-1 overflow-x-auto">
+      <button id="nav-home" onclick="switchAdminTab('home')" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold tab-active whitespace-nowrap shrink-0">
         🏠 排程
       </button>
-      <button id="nav-customers" onclick="switchAdminTab('customers')" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tab-inactive whitespace-nowrap shrink-0">
+      <button id="nav-customers" onclick="switchAdminTab('customers')" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold tab-inactive whitespace-nowrap shrink-0">
         👥 會員
       </button>
-      <button id="nav-coupons" onclick="switchAdminTab('coupons')" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tab-inactive whitespace-nowrap shrink-0">
+      <button id="nav-coupons" onclick="switchAdminTab('coupons')" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold tab-inactive whitespace-nowrap shrink-0">
         🎟️ 優惠券
       </button>
-      <button id="nav-finance" onclick="switchAdminTab('finance')" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tab-inactive whitespace-nowrap shrink-0">
+      <button id="nav-finance" onclick="switchAdminTab('finance')" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold tab-inactive whitespace-nowrap shrink-0">
         💰 帳務
       </button>
-      <button id="nav-management" onclick="switchAdminTab('management')" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold tab-inactive whitespace-nowrap shrink-0">
+      <button id="nav-management" onclick="switchAdminTab('management')" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold tab-inactive whitespace-nowrap shrink-0">
         ⚙️ 管理
       </button>
     </nav>
@@ -825,7 +871,10 @@
             ⚙️ 前台顯示與注意事項
           </button>
           <button id="subtab-consult-btn" onclick="switchManagementSubTab('consult')" class="px-3 py-2 rounded-xl text-xs font-bold subtab-inactive whitespace-nowrap shrink-0">
-            📝 諮詢表管理
+            📝 諮詢表
+          </button>
+          <button id="subtab-logs-btn" onclick="switchManagementSubTab('logs')" class="px-3 py-2 rounded-xl text-xs font-bold subtab-inactive whitespace-nowrap shrink-0">
+            🗒️ 操作紀錄
           </button>
           <!-- 保留 id 以免舊程式參照失效（已併入上方分頁，不顯示） -->
           <button id="subtab-pkgcat-btn" type="button" class="hidden" aria-hidden="true"></button>
@@ -940,16 +989,33 @@
               <div class="text-[11px] text-[#8b7365] mt-0.5">日期、項目、金額、付款、狀態</div>
             </button>
           </div>
-          <div class="p-3.5 rounded-2xl bg-[#faf7f4] border border-[#eee3d8] space-y-2">
-            <div class="font-extrabold text-[#33241d] text-sm">📝 永久操作紀錄（完整歷史保存在試算表；此處顯示最近 300 筆）</div>
-            <div id="operationLogsList" class="max-h-48 overflow-y-auto space-y-1 text-[11px]"></div>
-            <p class="text-[10px] text-[#8b7365]">完整紀錄持續追加保存於 Google 試算表「永久操作紀錄」工作表；此處僅顯示最近 300 筆，不會自動清除舊紀錄。</p>
-          </div>
           <div class="p-3.5 rounded-2xl bg-indigo-50 border border-indigo-200 space-y-2">
             <div class="font-extrabold text-indigo-950 text-sm">完整資料備份（JSON）</div>
             <p class="text-[11px] text-indigo-900">一次下載會員、套票、儲值異動、預約、優惠券、價目等重要資料，建議每月備份一次。</p>
             <button type="button" onclick="exportAdminFullBackup()" class="px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-extrabold shadow">下載完整備份 JSON</button>
           </div>
+        </div>
+      </div>
+
+
+      <div id="subtab-logs" class="space-y-4 hidden">
+        <div class="glass-card rounded-3xl p-5 space-y-3">
+          <div class="flex flex-wrap items-start justify-between gap-2 pb-3 border-b border-[#efe5da]">
+            <div>
+              <h3 class="text-base font-extrabold text-[#33241d]">🗒️ 操作紀錄</h3>
+              <p class="text-[11px] text-[#8b7365] mt-0.5">近期後台操作摘要。完整歷史在試算表「永久操作紀錄」，此處不一次載入全部。</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2 items-center">
+            <input type="search" id="operationLogsSearch" oninput="renderOperationLogs()" placeholder="搜尋動作、會員、說明…" class="flex-1 min-w-[10rem] px-3 py-2 rounded-xl border border-[#decbb9] text-xs bg-white" />
+            <select id="operationLogsLimit" onchange="renderOperationLogs()" class="px-3 py-2 rounded-xl border border-[#decbb9] text-xs font-bold bg-white">
+              <option value="30">顯示 30 筆</option>
+              <option value="50" selected>顯示 50 筆</option>
+              <option value="80">顯示 80 筆</option>
+            </select>
+          </div>
+          <div id="operationLogsList" class="max-h-[28rem] overflow-y-auto space-y-1.5 text-xs"></div>
+          <p id="operationLogsFoot" class="text-[10px] text-[#8b7365]"></p>
         </div>
       </div>
 
@@ -1316,8 +1382,8 @@
   </div>
 
   <!-- ==================== 彈窗 4：會員詳情（含套票堂數管理 + 諮詢表紅旗 + 簽名按需載入） ==================== -->
-  <div id="customerDetailModal" class="fixed inset-0 z-40 modal-backdrop flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto hidden">
-    <div id="customerDetailContent" class="bg-white rounded-t-3xl sm:rounded-2xl max-w-2xl w-full p-4 sm:p-5 shadow-xl my-0 sm:my-8 max-h-[94vh] overflow-y-auto pb-8"></div>
+  <div id="customerDetailModal" class="fixed inset-0 z-40 modal-backdrop flex items-end sm:items-center justify-center p-0 sm:p-4 hidden" onclick="if(event.target===this)closeCustomerDetailModal()">
+    <div id="customerDetailContent" class="bg-white rounded-t-3xl sm:rounded-2xl max-w-2xl w-full shadow-xl my-0 sm:my-6" onclick="event.stopPropagation()"></div>
   </div>
   <div id="customerPersonalPreviewModal" class="fixed inset-0 z-[70] modal-backdrop flex items-center justify-center p-3 sm:p-6 hidden">
     <div class="bg-[#fbf8f4] rounded-3xl max-w-lg w-full max-h-[92vh] overflow-y-auto shadow-2xl">
@@ -2396,7 +2462,7 @@
       tabs.forEach(t => {
         document.getElementById(`tab-${t}`).classList.toggle("hidden", t !== tabName);
         const btn = document.getElementById(`nav-${t}`);
-        if (btn) btn.className = `px-3 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 ${t === tabName ? "tab-active" : "tab-inactive"}`;
+        if (btn) btn.className = `px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold whitespace-nowrap shrink-0 ${t === tabName ? "tab-active" : "tab-inactive"}`;
       });
       if (tabName === "management" && typeof switchManagementSubTab === "function") {
         // 預設開「價目」（含套票品項），並同步頂部按鈕顯示
@@ -2471,26 +2537,29 @@
     }
 
     function switchManagementSubTab(sub) {
-      // 管理分頁：價目／禁約／前台顯示與注意事項／諮詢表管理
+      // 管理分頁：價目／禁約／前台顯示／諮詢表／操作紀錄
       if (sub === "pkgcat") sub = "catalog";
       if (sub === "reports") sub = "settings";
       const isCatalog = sub === "catalog";
       const isBlocked = sub === "blocked";
       const isSettings = sub === "settings";
       const isConsult = sub === "consult";
+      const isLogs = sub === "logs";
       document.getElementById("subtab-catalog").classList.toggle("hidden", !isCatalog);
       document.getElementById("subtab-blocked").classList.toggle("hidden", !isBlocked);
       const pkgcatEl = document.getElementById("subtab-pkgcat");
-      // 套票品項併入「價目」
       if (pkgcatEl) pkgcatEl.classList.toggle("hidden", !isCatalog);
       const settingsEl = document.getElementById("subtab-settings");
       if (settingsEl) settingsEl.classList.toggle("hidden", !isSettings);
       const consultEl = document.getElementById("subtab-consult");
       if (consultEl) consultEl.classList.toggle("hidden", !isConsult);
+      const logsEl = document.getElementById("subtab-logs");
+      if (logsEl) logsEl.classList.toggle("hidden", !isLogs);
       const consultBtn = document.getElementById("subtab-consult-btn");
       if (consultBtn) consultBtn.className = "px-3 py-2 rounded-xl text-xs font-bold " + (isConsult ? "subtab-active" : "subtab-inactive") + " whitespace-nowrap shrink-0";
+      const logsBtn = document.getElementById("subtab-logs-btn");
+      if (logsBtn) logsBtn.className = "px-3 py-2 rounded-xl text-xs font-bold " + (isLogs ? "subtab-active" : "subtab-inactive") + " whitespace-nowrap shrink-0";
       const reportsEl = document.getElementById("subtab-reports");
-      // 報表備份併入「設定與備份」
       if (reportsEl) reportsEl.classList.toggle("hidden", !isSettings);
       const catBtn = document.getElementById("subtab-catalog-btn");
       const blkBtn = document.getElementById("subtab-blocked-btn");
@@ -2498,7 +2567,6 @@
       if (catBtn) catBtn.className = `px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 ${isCatalog ? "subtab-active" : "subtab-inactive"}`;
       if (blkBtn) blkBtn.className = `px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 ${isBlocked ? "subtab-active" : "subtab-inactive"}`;
       if (setBtn) setBtn.className = `px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 ${isSettings ? "subtab-active" : "subtab-inactive"}`;
-      // 頂部快捷按鈕：跟子頁走
       const btnSvc = document.getElementById("btnOpenCatalogServiceModal");
       const btnProd = document.getElementById("btnOpenCatalogProductModal");
       const btnBlk = document.getElementById("btnOpenBlockedModal");
@@ -2513,10 +2581,10 @@
       if (isSettings) {
         if (typeof fillSettingsForm === "function") fillSettingsForm();
         if (typeof renderTagCatalogManager === "function") renderTagCatalogManager();
-        if (typeof renderOperationLogs === "function") renderOperationLogs();
         switchSiteSettingsChild("line");
       }
       if (isConsult) renderConsultQuestionEditor();
+      if (isLogs) renderOperationLogs();
     }
 
     function fillSettingsForm() { loadSiteSettingsToForm(); }
@@ -4502,10 +4570,42 @@
     function renderOperationLogs() {
       const box = document.getElementById("operationLogsList");
       if (!box) return;
-      const logs = state.operationLogs || [];
-      box.innerHTML = logs.length
-        ? logs.map(l => `<div class="px-2.5 py-2 rounded-lg bg-white border border-[#efe5da]"><div><span class="font-bold text-[#6a4f3f]">${esc(l.time || "")}</span> · <span class="font-extrabold">${esc(l.action || "")}</span></div><div class="text-[#8b7365] mt-0.5">${esc(l.detail || "")}</div>${l.customerId ? `<div class="text-[10px] text-[#9b8879] mt-0.5">會員：${esc(l.customerName || "")}（${esc(l.customerId)}）${l.beforeValue || l.afterValue ? `｜${esc(l.beforeValue || "")} → ${esc(l.afterValue || "")}` : ""}</div>` : ""}</div>`).join("")
-        : `<div class="text-[#8b7365]">尚無操作紀錄</div>`;
+      const q = ((document.getElementById("operationLogsSearch") || {}).value || "").trim().toLowerCase();
+      const limitEl = document.getElementById("operationLogsLimit");
+      const limit = Math.max(10, Math.min(80, Number(limitEl && limitEl.value ? limitEl.value : 50) || 50));
+      let logs = state.operationLogs || [];
+      if (q) {
+        logs = logs.filter(l => {
+          const blob = [l.time, l.action, l.detail, l.customerName, l.customerId, l.beforeValue, l.afterValue, l.operator]
+            .map(x => String(x || "").toLowerCase()).join(" ");
+          return blob.indexOf(q) !== -1;
+        });
+      }
+      const totalMatched = logs.length;
+      const view = logs.slice(0, limit);
+      box.innerHTML = view.length
+        ? view.map(l => {
+            const action = String(l.action || "");
+            const isDanger = /刪除|作廢|解除|退/.test(action);
+            const isMoney = /儲值|結算|轉帳|套票|優惠/.test(action);
+            const tone = isDanger ? "border-rose-200 bg-rose-50/50" : isMoney ? "border-emerald-200 bg-emerald-50/40" : "border-[#efe5da] bg-white";
+            return `<div class="px-3 py-2.5 rounded-xl border ${tone}">
+              <div class="flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+                <span class="font-extrabold text-[#33241d]">${esc(action)}</span>
+                <span class="text-[10px] font-bold text-[#9b8879] tabular-nums">${esc(l.time || "")}</span>
+              </div>
+              ${l.detail ? `<div class="text-[#6a4f3f] mt-0.5 leading-snug">${esc(l.detail)}</div>` : ""}
+              ${l.customerId || l.customerName ? `<div class="text-[10px] text-[#9b8879] mt-1">會員：${esc(l.customerName || "")}${l.customerId ? `（${esc(l.customerId)}）` : ""}</div>` : ""}
+              ${l.beforeValue || l.afterValue ? `<div class="text-[10px] text-[#8b7365] mt-0.5">${esc(l.beforeValue || "—")} → ${esc(l.afterValue || "—")}</div>` : ""}
+            </div>`;
+          }).join("")
+        : `<div class="text-center py-8 text-[#8b7365]">${q ? "沒有符合搜尋的紀錄" : "尚無操作紀錄"}</div>`;
+      const foot = document.getElementById("operationLogsFoot");
+      if (foot) {
+        foot.textContent = totalMatched
+          ? `顯示 ${view.length} / ${totalMatched} 筆（伺服器本次最多提供 ${(state.operationLogs || []).length} 筆近期紀錄；更早請看試算表「永久操作紀錄」）`
+          : "尚無資料";
+      }
     }
 
     function renderTagCatalogManager() {
@@ -5265,7 +5365,7 @@
       const content = document.getElementById("customerDetailContent");
 
       content.innerHTML = `
-        <div class="sticky top-0 z-10 -mx-4 sm:-mx-5 px-4 sm:px-5 pt-1 pb-3 mb-1 bg-white/95 backdrop-blur border-b border-[#f0e5da]">
+        <div id="customerDetailHeader">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0 flex-1">
               <div class="flex items-center gap-2 flex-wrap">
@@ -5276,8 +5376,8 @@
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
               <button type="button" onclick="closeCustomerDetailModal(); openCustomerEditModal('${escJs(cust.id)}')" class="px-2.5 py-1.5 rounded-lg bg-[#f3ece5] text-[11px] font-bold text-[#5c4638]">編輯</button>
-              <button type="button" onclick="handleDeleteCustomer('${escJs(cust.id)}')" class="px-2.5 py-1.5 rounded-lg bg-[#fdf2f2] text-[11px] font-bold text-[#b42318] border border-[#f0caca]">刪除會員</button>
-              <button type="button" onclick="closeCustomerDetailModal()" class="w-8 h-8 rounded-full bg-[#f3ece5] text-[#6a4f3f] font-bold flex items-center justify-center">✕</button>
+              <button type="button" onclick="handleDeleteCustomer('${escJs(cust.id)}')" class="px-2.5 py-1.5 rounded-lg bg-[#fdf2f2] text-[11px] font-bold text-[#b42318] border border-[#f0caca]">刪除</button>
+              <button type="button" onclick="closeCustomerDetailModal()" class="w-9 h-9 rounded-full bg-[#2f2622] text-white text-sm font-bold flex items-center justify-center shadow" title="關閉" aria-label="關閉">✕</button>
             </div>
           </div>
           <div class="mt-2.5 grid grid-cols-2 gap-2">
@@ -5295,7 +5395,8 @@
           ${cust.privateNote ? `<p class="text-[11px] text-[#9c5733] mt-1.5 font-semibold leading-snug">📌 ${esc(cust.privateNote)}</p>` : ""}
         </div>
 
-        <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+        <div id="customerDetailBody">
+        <div class="grid grid-cols-2 gap-2 text-xs">
           <button type="button" onclick="closeCustomerDetailModal(); openBookingModal(state.selectedDate || formatTodayStr(), '${escJs(cust.id)}')" class="py-2.5 rounded-xl btn-primary font-extrabold shadow">📅 幫她預約</button>
           <button type="button" onclick="openTopUpModal('${escJs(cust.id)}', 'topup')" class="py-2.5 rounded-xl bg-emerald-600 text-white font-extrabold shadow">💰 儲值入帳</button>
           <button type="button" onclick="openPackageModal('${escJs(cust.id)}', '${escJs(cust.name)}')" class="py-2 rounded-xl bg-indigo-50 text-indigo-800 border border-indigo-200 font-bold">🎫 新增套票</button>
@@ -5495,10 +5596,14 @@
             💡 一般連結僅供已綁定的 LINE 帳號使用；首次綁定／換機連結為一次性憑證，24 小時有效。換機成功後會保留原會員儲值與紀錄。
           </p>
         </div>
+        </div>
 
       `;
 
       modal.classList.remove("hidden");
+      // 每次打開從內容頂部開始，避免停留在上次捲動位置
+      const bodyEl = document.getElementById("customerDetailBody");
+      if (bodyEl) bodyEl.scrollTop = 0;
     }
 
     let adminPreviewPreviousState = null;
