@@ -1965,7 +1965,7 @@
       // 客戶端請求附帶 LIFF ID Token，供 GAS 後端驗證；保留既有欄位以維持舊版 API 相容。
       const customerAuthActions = [
         "getCustomerPortalData", "rebindCustomerLineSelf",
-        "submitCustomerConsultation",
+        "submitCustomerConsultation", "submitCustomerBookingRequest",
         "requestCustomerBookingChange"
       ];
       if (state.portalLineIdToken && customerAuthActions.indexOf(actionKey) !== -1) {
@@ -2114,36 +2114,32 @@
       }
     }
 
-    // LIFF 會把原始入口參數包在 liff.state；在入口分流前先還原巢狀 query。
+    // 必須在 liff.init() 完成後讀取網址；LIFF SDK 會自行把 liff.state 還原成原始路徑／參數。
+    // 這裡保留 liff.state fallback，兼容部分 LINE 版本或特殊轉址情況，但不主動改寫網址。
     function getCustomerRouteParams() {
       const direct = new URLSearchParams(window.location.search || "");
       const restored = new URLSearchParams();
-      let rawState = direct.get("liff.state") || "";
+      const rawState = direct.get("liff.state") || "";
 
-      for (let i = 0; i < 3 && rawState; i++) {
-        let decoded = rawState;
-        try { decoded = decodeURIComponent(rawState); } catch (_) {}
-        if (decoded === rawState) break;
-        rawState = decoded;
-      }
-      rawState = String(rawState || "").replace(/^[?#]/, "");
       if (rawState) {
         try {
-          const nested = new URLSearchParams(rawState);
+          const nested = new URLSearchParams(String(rawState).replace(/^[?#]/, ""));
           nested.forEach((value, key) => {
             if (!restored.has(key)) restored.set(key, value);
           });
         } catch (_) {}
       }
 
-      // 明確網址參數優先；缺少時才採用 liff.state 內還原的值。
+      // 明確網址參數優先；缺少時才採用 liff.state 內的參數。
       const get = (key) => direct.has(key) ? direct.get(key) : restored.get(key);
+      const mode = get("mode") || "";
+      const cid = get("cid") || "";
       return {
-        cid: get("cid") || "",
+        cid,
         rebind: get("rebind") === "1",
         invite: get("invite") || "",
-        mode: get("mode") || "",
-        isCustomer: get("mode") === "customer" || !!(get("cid") || "")
+        mode,
+        isCustomer: mode === "customer" || !!cid
       };
     }
 
@@ -2155,6 +2151,25 @@
       document.getElementById("financeMonthPicker").value = formatTodayStr().slice(0, 7);
       initSignaturePad();
       renderConsultationQuestionnaire();
+
+      // LIFF 入口會先把附加參數暫存在 liff.state。
+      // 若偵測到 LIFF state，先完成 SDK 初始化，再讀取還原後的 mode／cid，避免過早分流。
+      const initialParams = new URLSearchParams(window.location.search || "");
+      const hasCustomerRouteHint =
+        initialParams.get("mode") === "customer" ||
+        initialParams.has("cid") ||
+        initialParams.has("liff.state");
+
+      if (hasCustomerRouteHint && initialParams.has("liff.state")) {
+        try {
+          await ensureLiffInitialized();
+        } catch (err) {
+          console.error("[馥語美學] LIFF 入口初始化失敗：", err);
+          showAdminLoginPage();
+          showToast(err && err.message ? err.message : "LINE 入口初始化失敗，請重新從 LINE 連結開啟。", true);
+          return;
+        }
+      }
 
       const route = getCustomerRouteParams();
       const cidParam = route.cid;
@@ -6924,7 +6939,12 @@
         throw new Error("LINE 登入元件載入失敗，請重新整理頁面後再試。");
       }
       if (!liffInitPromise) {
-        liffInitPromise = window.liff.init({ liffId: "2012824784-i6kSt5ow" });
+        // 共用同一個初始化 Promise；若初始化失敗，清除 Promise 以便使用者重試。
+        liffInitPromise = window.liff.init({ liffId: "2012824784-i6kSt5ow" })
+          .catch((err) => {
+            liffInitPromise = null;
+            throw err;
+          });
       }
       await liffInitPromise;
     }
@@ -6943,6 +6963,11 @@
           await ensureLiffInitialized();
 
           if (!window.liff.isLoggedIn()) {
+            // LINE 內建 LIFF 瀏覽器會由 liff.init() 自動完成登入，不可再呼叫 liff.login()。
+            // 只有外部瀏覽器才需要主動導向 LINE Login，避免重複登入／重新導向循環。
+            if (window.liff.isInClient()) {
+              throw new Error("LINE 內建瀏覽器尚未完成登入。請關閉此頁面後，重新點選 LINE 預約連結；若仍失敗，請確認 LINE Login Channel 測試權限。");
+            }
             window.liff.login({ redirectUri: getCustomerLoginRedirectUri() });
             return;
           }
