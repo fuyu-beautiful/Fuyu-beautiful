@@ -150,24 +150,15 @@
       pointer-events:none !important;
     }
 
-    #adminMainNav {
-      position: sticky;
-      top: 3.4rem;
-      z-index: 25;
-      background: rgba(255, 253, 250, 0.96);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid #eadfd4;
-      border-radius: 1rem;
-      box-shadow: 0 6px 20px rgba(124, 92, 72, 0.08);
-      padding: 0.35rem;
-      margin-bottom: 0.9rem;
+    #adminMainNavWrap {
+      box-shadow: 0 4px 14px rgba(90, 60, 40, 0.06);
     }
-    @media (min-width: 640px) {
-      #adminMainNav { top: 3.65rem; padding: 0.4rem; }
+    #adminMainNav button {
+      transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
     }
-    #adminMainNav button { transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease; }
     #adminMainNav button:active { transform: scale(0.97); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
     #customerDetailContent {
       display: flex;
@@ -227,6 +218,28 @@
         <button type="button" onclick="logoutAdmin()" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#fdf2f2] text-[#b42318] hover:bg-[#fae3e3] whitespace-nowrap">
           登出
         </button>
+      </div>
+    </div>
+    <!-- 後台分頁列：放在 sticky header 內，捲動時一定跟著釘在上方 -->
+    <div id="adminMainNavWrap" class="hidden border-t border-[#f0e5da] bg-[#fffdfb]/98">
+      <div class="max-w-6xl mx-auto px-3 sm:px-4 py-1.5">
+        <nav id="adminMainNav" class="flex items-center gap-1 overflow-x-auto no-scrollbar" aria-label="後台分頁">
+          <button id="nav-home" type="button" onclick="switchAdminTab('home')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold tab-active whitespace-nowrap shrink-0">
+            🏠 排程
+          </button>
+          <button id="nav-customers" type="button" onclick="switchAdminTab('customers')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold tab-inactive whitespace-nowrap shrink-0">
+            👥 會員
+          </button>
+          <button id="nav-coupons" type="button" onclick="switchAdminTab('coupons')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold tab-inactive whitespace-nowrap shrink-0">
+            🎟️ 優惠券
+          </button>
+          <button id="nav-finance" type="button" onclick="switchAdminTab('finance')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold tab-inactive whitespace-nowrap shrink-0">
+            💰 帳務
+          </button>
+          <button id="nav-management" type="button" onclick="switchAdminTab('management')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold tab-inactive whitespace-nowrap shrink-0">
+            ⚙️ 管理
+          </button>
+        </nav>
       </div>
     </div>
   </header>
@@ -555,24 +568,7 @@
   </main>
 
   <!-- ==================== 店家管理後台視圖 ==================== -->
-  <main id="adminView" class="max-w-6xl mx-auto px-4 pt-4 hidden">
-    <nav id="adminMainNav" class="flex items-center gap-1 overflow-x-auto">
-      <button id="nav-home" onclick="switchAdminTab('home')" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold tab-active whitespace-nowrap shrink-0">
-        🏠 排程
-      </button>
-      <button id="nav-customers" onclick="switchAdminTab('customers')" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold tab-inactive whitespace-nowrap shrink-0">
-        👥 會員
-      </button>
-      <button id="nav-coupons" onclick="switchAdminTab('coupons')" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold tab-inactive whitespace-nowrap shrink-0">
-        🎟️ 優惠券
-      </button>
-      <button id="nav-finance" onclick="switchAdminTab('finance')" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold tab-inactive whitespace-nowrap shrink-0">
-        💰 帳務
-      </button>
-      <button id="nav-management" onclick="switchAdminTab('management')" class="px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold tab-inactive whitespace-nowrap shrink-0">
-        ⚙️ 管理
-      </button>
-    </nav>
+  <main id="adminView" class="max-w-6xl mx-auto px-4 pt-3 pb-8 hidden">
 
     <!-- ---------- 分頁 1：首頁排程 ---------- -->
     <section id="tab-home" class="space-y-4">
@@ -2254,6 +2250,7 @@
           document.getElementById("adminLoginPage").classList.add("hidden");
           document.getElementById("customerView").classList.add("hidden");
           document.getElementById("adminView").classList.remove("hidden");
+          try { const _w = document.getElementById("adminMainNavWrap"); if (_w) _w.classList.remove("hidden"); } catch (_) {}
           document.getElementById("adminHeaderActions").classList.remove("hidden");
           document.getElementById("modeSubtitle").textContent = "管理員模式（Ruby）";
           switchAdminTab("home");
@@ -2285,6 +2282,7 @@
 
     function showAdminLoginPage() {
       document.getElementById("adminView").classList.add("hidden");
+          try { const _w = document.getElementById("adminMainNavWrap"); if (_w) _w.classList.add("hidden"); } catch (_) {}
       document.getElementById("customerView").classList.add("hidden");
       document.getElementById("adminHeaderActions").classList.add("hidden");
       document.getElementById("adminLoginPage").classList.remove("hidden");
@@ -2320,6 +2318,7 @@
       document.getElementById("adminLoginPage").classList.add("hidden");
       document.getElementById("customerView").classList.add("hidden");
       document.getElementById("adminView").classList.remove("hidden");
+          try { const _w = document.getElementById("adminMainNavWrap"); if (_w) _w.classList.remove("hidden"); } catch (_) {}
       document.getElementById("adminHeaderActions").classList.remove("hidden");
       document.getElementById("modeSubtitle").textContent = "管理員模式（Ruby）";
       switchAdminTab("home");
@@ -5596,6 +5595,12 @@
             💡 一般連結僅供已綁定的 LINE 帳號使用；首次綁定／換機連結為一次性憑證，24 小時有效。換機成功後會保留原會員儲值與紀錄。
           </p>
         </div>
+
+          <div class="mt-5 pt-4 border-t border-[#f0e5da] flex flex-col sm:flex-row gap-2 sm:justify-end">
+            <button type="button" onclick="closeCustomerDetailModal()" class="w-full sm:w-auto px-5 py-3 rounded-2xl text-sm font-extrabold bg-[#2f2622] text-white shadow">
+              關閉
+            </button>
+          </div>
         </div>
 
       `;
@@ -5648,6 +5653,7 @@
         state.custShowAllPastBookings = false;
 
         document.getElementById("adminView")?.classList.add("hidden");
+      try { document.getElementById("adminMainNavWrap")?.classList.add("hidden"); } catch (_) {}
         document.getElementById("adminHeaderActions")?.classList.add("hidden");
         document.getElementById("adminLoginPage")?.classList.add("hidden");
         const customerView = document.getElementById("customerView");
@@ -5681,6 +5687,7 @@
       document.getElementById("adminCustomerPreviewBanner")?.remove();
       document.getElementById("customerView")?.classList.add("hidden");
       document.getElementById("adminView")?.classList.remove("hidden");
+      try { document.getElementById("adminMainNavWrap")?.classList.remove("hidden"); } catch (_) {}
       document.getElementById("adminHeaderActions")?.classList.remove("hidden");
       state.portalData = adminPreviewPreviousState.portalData;
       state.portalLineUserId = adminPreviewPreviousState.portalLineUserId;
@@ -7139,6 +7146,7 @@
       customerPortalInitPromise = (async () => {
         document.getElementById("adminLoginPage").classList.add("hidden");
         document.getElementById("adminView").classList.add("hidden");
+          try { const _w = document.getElementById("adminMainNavWrap"); if (_w) _w.classList.add("hidden"); } catch (_) {}
         document.getElementById("adminHeaderActions").classList.add("hidden");
         document.getElementById("customerView").classList.remove("hidden");
         document.getElementById("modeSubtitle").textContent = "LINE 會員登入中...";
