@@ -169,10 +169,10 @@
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
           <span id="lastSyncTimeText">尚未同步</span>
         </span>
-        <button type="button" onclick="refreshAdminData(false)" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 whitespace-nowrap flex items-center gap-1" title="智能增量檢查，有異動才下載快照">
+        <button type="button" onclick="refreshAdminData(false)" class="px-3 py-1.5 rounded-lg text-xs font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 whitespace-nowrap flex items-center gap-1" title="與伺服器比對版本：有其他人改過或版本不同才下載；自己剛存檔通常不必按">
           <span>⚡</span><span>智能同步</span>
         </button>
-        <button type="button" onclick="refreshAdminData(true)" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white text-[#5c4638] border border-[#decbb9] hover:bg-[#f5eee7] whitespace-nowrap" title="強制重新讀取試算表完整資料">
+        <button type="button" onclick="refreshAdminData(true)" class="px-2.5 py-1.5 rounded-lg text-xs font-bold bg-white text-[#5c4638] border border-[#decbb9] hover:bg-[#f5eee7] whitespace-nowrap" title="略過快取，強制重讀試算表。畫面與實際不符、或智能同步仍不對時使用">
           🔄 強制重載
         </button>
         <button type="button" onclick="openCustomerPortalPreview()" class="px-3 py-1.5 rounded-lg text-xs font-medium bg-[#f5eee7] text-[#6a4f3f] hover:bg-[#ebe0d5] whitespace-nowrap">
@@ -2317,28 +2317,32 @@
     }
 
     function applyAdminSnapshot(snap, fromLocalCache = false) {
+      if (!snap || typeof snap !== "object") return false;
       setTimeout(() => bindMoneyInputs(document), 0);
       if (snap.dataVersion) state.dataVersion = String(snap.dataVersion);
       state.webAppUrl = snap.webAppUrl || state.webAppUrl || "";
-      state.catalog = snap.catalog || [];
-      state.customers = (snap.customers || []).map(c => ({
-        ...c,
-        lineDisplayName: sanitizeLineDisplayName(c.lineDisplayName)
-      }));
-      state.bookings = snap.bookings || [];
-      state.transactions = snap.transactions || [];
-      state.expenses = snap.expenses || [];
-      state.packages = snap.packages || [];
-      state.packageCatalog = snap.packageCatalog || [];
-      state.tagCatalog = snap.tagCatalog || state.tagCatalog || [];
-      state.blockedSlots = snap.blockedSlots || [];
-      state.siteSettings = snap.siteSettings || { onlineBookingEnabled: false, noticeText: "" };
-      state.consultQuestions = snap.consultQuestions || state.consultQuestions || [];
-      state.consultations = snap.consultations || [];
-      state.consultationLogs = snap.consultationLogs || [];
-      state.operationLogs = snap.operationLogs || [];
-      state.coupons = getVisibleCoupons(snap.coupons || []);
-      state.couponRules = snap.couponRules || {};
+      // 寫入成功後回傳的完整快照應含 bookings／customers；若缺核心欄位視為不完整
+      if (Object.prototype.hasOwnProperty.call(snap, "catalog")) state.catalog = snap.catalog || [];
+      if (Object.prototype.hasOwnProperty.call(snap, "customers")) {
+        state.customers = (snap.customers || []).map(c => ({
+          ...c,
+          lineDisplayName: sanitizeLineDisplayName(c.lineDisplayName)
+        }));
+      }
+      if (Object.prototype.hasOwnProperty.call(snap, "bookings")) state.bookings = snap.bookings || [];
+      if (Object.prototype.hasOwnProperty.call(snap, "transactions")) state.transactions = snap.transactions || [];
+      if (Object.prototype.hasOwnProperty.call(snap, "expenses")) state.expenses = snap.expenses || [];
+      if (Object.prototype.hasOwnProperty.call(snap, "packages")) state.packages = snap.packages || [];
+      if (Object.prototype.hasOwnProperty.call(snap, "packageCatalog")) state.packageCatalog = snap.packageCatalog || [];
+      if (Object.prototype.hasOwnProperty.call(snap, "tagCatalog")) state.tagCatalog = snap.tagCatalog || state.tagCatalog || [];
+      if (Object.prototype.hasOwnProperty.call(snap, "blockedSlots")) state.blockedSlots = snap.blockedSlots || [];
+      if (Object.prototype.hasOwnProperty.call(snap, "siteSettings")) state.siteSettings = snap.siteSettings || { onlineBookingEnabled: false, noticeText: "" };
+      if (Object.prototype.hasOwnProperty.call(snap, "consultQuestions")) state.consultQuestions = snap.consultQuestions || state.consultQuestions || [];
+      if (Object.prototype.hasOwnProperty.call(snap, "consultations")) state.consultations = snap.consultations || [];
+      if (Object.prototype.hasOwnProperty.call(snap, "consultationLogs")) state.consultationLogs = snap.consultationLogs || [];
+      if (Object.prototype.hasOwnProperty.call(snap, "operationLogs")) state.operationLogs = snap.operationLogs || [];
+      if (Object.prototype.hasOwnProperty.call(snap, "coupons")) state.coupons = getVisibleCoupons(snap.coupons || []);
+      if (Object.prototype.hasOwnProperty.call(snap, "couponRules")) state.couponRules = snap.couponRules || {};
       renderOperationLogs();
       if (document.getElementById("consultQuestionEditorList")) renderConsultQuestionEditor();
 
@@ -2358,6 +2362,33 @@
       renderFinanceTab();
       renderCatalogTab();
       renderBlockedSlotsTab();
+      // 維持目前選取的日期明細，避免存檔後右側當日列表看起來「沒更新」
+      if (state.selectedDate) {
+        try {
+          if (typeof renderCalendarGrid === "function") renderCalendarGrid();
+          if (typeof renderDayBookings === "function") renderDayBookings();
+        } catch (_) {}
+      }
+      return true;
+    }
+
+    /** 寫入後若快照看起來沒帶入完整資料，自動強制重載一次 */
+    async function ensureSnapshotFresh(snap, probe) {
+      applyAdminSnapshot(snap);
+      if (!probe) return;
+      let ok = true;
+      if (probe.bookingId) {
+        ok = (state.bookings || []).some(b => String(b.id) === String(probe.bookingId));
+      }
+      if (ok && probe.customerId) {
+        ok = (state.customers || []).some(c => String(c.id) === String(probe.customerId));
+      }
+      if (ok && probe.expectBookingGone) {
+        ok = !(state.bookings || []).some(b => String(b.id) === String(probe.expectBookingGone));
+      }
+      if (!ok) {
+        await refreshAdminData(true, true);
+      }
     }
 
     function switchAdminTab(tabName) {
@@ -4368,7 +4399,7 @@
         setButtonBusy(btn, true, "儲存中...");
         setLoading(true, "儲存預約中...");
         const snap = await apiPost({ action: "saveBookingAdmin", password: state.adminPassword, payload });
-        applyAdminSnapshot(snap);
+        await ensureSnapshotFresh(snap, { bookingId: payload.id });
 
         const becameCompleted = newStatus === "已完成" && (!prevBooking || prevBooking.status !== "已完成");
         closeBookingModal();
@@ -4444,7 +4475,7 @@
       try {
         setLoading(true, "刪除預約中...");
         const snap = await apiPost({ action: "deleteBookingAdmin", password: state.adminPassword, bookingId: bkId });
-        applyAdminSnapshot(snap);
+        await ensureSnapshotFresh(snap, { expectBookingGone: bkId });
         closeBookingModal();
         showToast("已刪除預約");
       } catch (err) {
@@ -4740,7 +4771,7 @@
         setButtonBusy(btn, true, "儲存中...");
         setLoading(true, "儲存會員資料中...");
         const snap = await apiPost({ action: "saveCustomerAdmin", password: state.adminPassword, data });
-        applyAdminSnapshot(snap);
+        await ensureSnapshotFresh(snap, { customerId: data.id });
         closeCustomerEditModal();
         showToast("已儲存會員資料");
       } catch (err) {
@@ -4776,7 +4807,11 @@
           password: state.adminPassword,
           payload: { customerId: cust.id, confirmName: String(cust.name || "").trim() }
         });
-        applyAdminSnapshot(snap);
+        await ensureSnapshotFresh(snap, { customerId: null });
+        // 刪除後不應再找到該會員
+        if ((state.customers || []).some(c => String(c.id) === String(cust.id))) {
+          await refreshAdminData(true, true);
+        }
         closeCustomerDetailModal();
         closeCustomerEditModal();
         showToast("已刪除會員「" + (cust.name || "") + "」");
