@@ -597,9 +597,7 @@
             <h2 class="text-base font-extrabold text-[#33241d]">👥 會員檔案中心</h2>
             <p id="customersSummaryStats" class="text-xs text-[#8b7365] mt-0.5">共 0 位會員</p>
           </div>
-          <button onclick="openCustomerEditModal()" class="px-4 py-2 rounded-xl text-xs font-bold btn-primary shadow whitespace-nowrap">
-            + 新增會員
-          </button>
+          <p class="text-[11px] text-[#8b7365] text-right max-w-[14rem] leading-snug">會員僅能由官方 LINE 完成諮詢表後自動建檔</p>
         </div>
 
         <div class="flex flex-col sm:flex-row gap-2 pt-1">
@@ -1262,7 +1260,7 @@
   <div id="customerEditModal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl">
       <div class="flex items-center justify-between mb-3">
-        <h3 id="customerEditTitle" class="text-base font-bold text-[#33241d]">新增／編輯會員</h3>
+        <h3 id="customerEditTitle" class="text-base font-bold text-[#33241d]">編輯會員</h3>
         <button onclick="closeCustomerEditModal()" class="text-sm text-[#8b7365] font-bold">✕</button>
       </div>
       <form onsubmit="handleSaveCustomer(event)" class="space-y-2.5 text-xs">
@@ -4697,16 +4695,20 @@
 
     function openCustomerEditModal(customerId = "") {
       const cust = customerId ? state.customers.find(c => String(c.id) === String(customerId)) : null;
-      document.getElementById("customerEditTitle").textContent = cust ? "編輯會員資料" : "新增會員";
-      document.getElementById("ce_id").value = cust ? cust.id : "";
-      document.getElementById("ce_name").value = cust ? cust.name : "";
-      document.getElementById("ce_lineDisplayName").value = cust ? sanitizeLineDisplayName(cust.lineDisplayName) : "";
-      document.getElementById("ce_nickname").value = cust ? cust.nickname : "";
-      document.getElementById("ce_contact").value = cust ? cust.contact : "";
-      document.getElementById("ce_birthday").value = cust ? cust.birthday : "";
-      document.getElementById("ce_address").value = cust ? cust.address : "";
-      document.getElementById("ce_privateNote").value = cust ? cust.privateNote : "";
-      document.getElementById("ce_tags").value = cust ? (cust.tags || "") : "";
+      if (!cust) {
+        showToast("後台已關閉手動新增會員。請請客人從官方 LINE 開啟會員頁完成諮詢表", true);
+        return;
+      }
+      document.getElementById("customerEditTitle").textContent = "編輯會員資料";
+      document.getElementById("ce_id").value = cust.id;
+      document.getElementById("ce_name").value = cust.name || "";
+      document.getElementById("ce_lineDisplayName").value = cust.lineDisplayName || "";
+      document.getElementById("ce_nickname").value = cust.nickname || "";
+      document.getElementById("ce_contact").value = cust.contact || "";
+      document.getElementById("ce_birthday").value = cust.birthday || "";
+      document.getElementById("ce_address").value = cust.address || "";
+      document.getElementById("ce_privateNote").value = cust.privateNote || "";
+      document.getElementById("ce_tags").value = cust.tags || "";
       renderCustomerEditTagPills();
       document.getElementById("customerEditModal").classList.remove("hidden");
     }
@@ -4717,8 +4719,13 @@
 
     async function handleSaveCustomer(e) {
       e.preventDefault();
+      const id = document.getElementById("ce_id").value.trim();
+      if (!id) {
+        showToast("後台已關閉手動新增會員", true);
+        return;
+      }
       const data = {
-        id: document.getElementById("ce_id").value,
+        id,
         name: document.getElementById("ce_name").value.trim(),
         lineDisplayName: document.getElementById("ce_lineDisplayName").value.trim(),
         nickname: document.getElementById("ce_nickname").value.trim(),
@@ -4740,6 +4747,42 @@
         showToast(err.message || "儲存失敗", true);
       } finally {
         setButtonBusy(btn, false);
+        setLoading(false);
+      }
+    }
+
+    async function handleDeleteCustomer(customerId) {
+      const cust = state.customers.find(c => String(c.id) === String(customerId));
+      if (!cust) return showToast("找不到會員資料，請先同步", true);
+      const bal = Number(cust.balance || 0);
+      const warnLines = [
+        "將永久刪除此會員主檔（無法復原）。",
+        "若仍有儲值餘額、剩餘套票、進行中預約或可用優惠券，系統會拒絕刪除。",
+        "歷史預約與儲值異動會保留在報表中，但不再對應此會員主檔。"
+      ];
+      if (bal > 0) warnLines.push("目前餘額 $" + bal.toLocaleString() + " → 需先退／轉完才能刪。");
+      if (!confirm("刪除會員「" + (cust.name || "") + "」？\n\n" + warnLines.join("\n"))) return;
+      const typed = prompt("防呆確認：請完整輸入會員姓名\n「" + (cust.name || "") + "」");
+      if (typed === null) return;
+      if (String(typed).trim() !== String(cust.name || "").trim()) {
+        showToast("姓名不符，已取消刪除", true);
+        return;
+      }
+      if (!confirm("最後確認：確定永久刪除「" + (cust.name || "") + "」？")) return;
+      try {
+        setLoading(true, "刪除會員中...");
+        const snap = await apiPost({
+          action: "deleteCustomerAdmin",
+          password: state.adminPassword,
+          payload: { customerId: cust.id, confirmName: String(cust.name || "").trim() }
+        });
+        applyAdminSnapshot(snap);
+        closeCustomerDetailModal();
+        closeCustomerEditModal();
+        showToast("已刪除會員「" + (cust.name || "") + "」");
+      } catch (err) {
+        showToast(err.message || "刪除失敗", true);
+      } finally {
         setLoading(false);
       }
     }
@@ -5198,6 +5241,7 @@
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
               <button type="button" onclick="closeCustomerDetailModal(); openCustomerEditModal('${escJs(cust.id)}')" class="px-2.5 py-1.5 rounded-lg bg-[#f3ece5] text-[11px] font-bold text-[#5c4638]">編輯</button>
+              <button type="button" onclick="handleDeleteCustomer('${escJs(cust.id)}')" class="px-2.5 py-1.5 rounded-lg bg-[#fdf2f2] text-[11px] font-bold text-[#b42318] border border-[#f0caca]">刪除會員</button>
               <button type="button" onclick="closeCustomerDetailModal()" class="w-8 h-8 rounded-full bg-[#f3ece5] text-[#6a4f3f] font-bold flex items-center justify-center">✕</button>
             </div>
           </div>
