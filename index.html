@@ -215,6 +215,29 @@
       </form>
     </div>
 
+    <!-- 首次使用強制流程：必須閱讀注意事項並完成諮詢表，才會顯示會員資料 -->
+    <section id="customerOnboardingGate" class="hidden mb-5 space-y-4">
+      <div class="glass-card rounded-3xl p-5 sm:p-6 space-y-4">
+        <div class="flex items-center gap-3 pb-3 border-b border-[#efe5da]">
+          <div class="w-11 h-11 rounded-2xl bg-[#f5ebe1] border border-[#e6d1be] flex items-center justify-center text-xl">📌</div>
+          <div>
+            <h2 class="text-lg font-extrabold text-[#33241d]">首次使用｜請先閱讀注意事項</h2>
+            <p class="text-xs text-[#8b7365] mt-0.5">完成閱讀及諮詢資料填寫後，才能進入會員中心</p>
+          </div>
+        </div>
+        <div id="customerOnboardingNoticeScroll" onscroll="handleCustomerOnboardingNoticeScroll()" class="max-h-[42vh] min-h-[180px] overflow-y-auto overscroll-contain rounded-2xl border border-[#eadfd4] bg-[#fcfaf8] p-4 text-sm text-[#4a382f] leading-relaxed whitespace-pre-wrap">
+          <div id="customerOnboardingNoticeText"></div>
+          <div class="pt-4 mt-4 border-t border-[#eadfd4] text-center text-xs font-bold text-[#8c5e43]">— 注意事項閱讀完畢 —</div>
+        </div>
+        <label class="flex items-start gap-2.5 text-sm text-[#4a382f]">
+          <input id="customerOnboardingNoticeCheck" type="checkbox" disabled onchange="updateCustomerOnboardingContinueButton()" class="mt-0.5 h-4 w-4 accent-[#8c5e43]" />
+          <span>我已完整閱讀並了解以上注意事項，願意遵守相關規範。</span>
+        </label>
+        <p id="customerOnboardingScrollHint" class="text-[11px] text-[#9b7560]">請將注意事項滑動至最底部，閱讀完成後才能勾選確認。</p>
+        <button id="customerOnboardingContinueBtn" type="button" disabled onclick="continueCustomerOnboarding()" class="w-full py-3 rounded-2xl text-sm font-extrabold btn-primary shadow">我已閱讀，前往填寫諮詢表</button>
+      </div>
+    </section>
+
     <!-- 會員資料與我的預約、套票堂數、過去預約 -->
     <div id="customerProfileCard" class="glass-card rounded-2xl p-5 mb-4 hidden">
       <div class="flex items-start justify-between gap-2">
@@ -1798,6 +1821,10 @@
       portalLineDisplayName: "",
       portalLineIdToken: "",
       portalData: null,
+      portalOnboardingRequired: false,
+      portalOnboardingNoticeReadToEnd: false,
+      portalOnboardingNoticeAccepted: false,
+      portalOnboardingFormInitialized: false,
       isEditingConsultation: false,
       activeCustomerCatalogCategory: "",
       selectedCustomerServiceIds: [],
@@ -6822,6 +6849,17 @@
         });
         state.portalForceRebind = false;
         state.portalData = data;
+        state.portalOnboardingRequired = !!data.onboardingRequired;
+        if (state.portalOnboardingRequired && !state.portalOnboardingFormInitialized) {
+          state.portalOnboardingNoticeReadToEnd = false;
+          state.portalOnboardingNoticeAccepted = false;
+          state.qAnswers = {};
+        }
+        if (!state.portalOnboardingRequired) {
+          state.portalOnboardingNoticeReadToEnd = false;
+          state.portalOnboardingNoticeAccepted = false;
+          state.portalOnboardingFormInitialized = false;
+        }
         if (Array.isArray(data.consultQuestions)) state.consultQuestions = data.consultQuestions;
         if (data.customer && data.customer.id) {
           state.portalCid = data.customer.id;
@@ -6869,8 +6907,113 @@
       }
     }
 
+    function handleCustomerOnboardingNoticeScroll() {
+      const box = document.getElementById("customerOnboardingNoticeScroll");
+      if (!box || state.portalOnboardingNoticeReadToEnd) return;
+      if (box.scrollTop + box.clientHeight >= box.scrollHeight - 8) {
+        state.portalOnboardingNoticeReadToEnd = true;
+        const check = document.getElementById("customerOnboardingNoticeCheck");
+        if (check) check.disabled = false;
+        const hint = document.getElementById("customerOnboardingScrollHint");
+        if (hint) hint.textContent = "已閱讀至最底部，請勾選確認後繼續。";
+        updateCustomerOnboardingContinueButton();
+      }
+    }
+
+    function updateCustomerOnboardingContinueButton() {
+      const check = document.getElementById("customerOnboardingNoticeCheck");
+      const btn = document.getElementById("customerOnboardingContinueBtn");
+      if (btn) btn.disabled = !(state.portalOnboardingNoticeReadToEnd && check && check.checked);
+    }
+
+    function continueCustomerOnboarding() {
+      const check = document.getElementById("customerOnboardingNoticeCheck");
+      if (!state.portalOnboardingNoticeReadToEnd || !check || !check.checked) {
+        showToast("請先閱讀完整注意事項並勾選確認", true);
+        return;
+      }
+      state.portalOnboardingNoticeAccepted = true;
+      renderCustomerOnboardingView(state.portalData || {});
+      const form = document.getElementById("customerConsultSection");
+      if (form) form.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function renderCustomerOnboardingView(data) {
+      const gate = document.getElementById("customerOnboardingGate");
+      const profile = document.getElementById("customerProfileCard");
+      const tabs = document.getElementById("customerSubTabs");
+      const notice = document.getElementById("customerNoticeSection");
+      const history = document.getElementById("customerHistorySection");
+      const consult = document.getElementById("customerConsultSection");
+      const booking = document.getElementById("customerBookSection");
+      if (gate) gate.classList.remove("hidden");
+      if (profile) profile.classList.add("hidden");
+      if (tabs) tabs.classList.add("hidden");
+      if (notice) notice.classList.add("hidden");
+      if (history) history.classList.add("hidden");
+      if (booking) booking.classList.add("hidden");
+
+      const hasCustomer = !!(data.customer && data.customer.id);
+      const rebind = document.getElementById("customerRebindBanner");
+      if (rebind) rebind.classList.toggle("hidden", hasCustomer || !state.portalLineUserId);
+
+      const noticeText = (data.siteSettings && data.siteSettings.noticeText) || DEFAULT_NOTICE_TEXT;
+      const noticeBox = document.getElementById("customerOnboardingNoticeText");
+      if (noticeBox) noticeBox.textContent = noticeText;
+
+      const scrollBox = document.getElementById("customerOnboardingNoticeScroll");
+      if (scrollBox && !state.portalOnboardingNoticeReadToEnd) {
+        const check = document.getElementById("customerOnboardingNoticeCheck");
+        if (check) { check.checked = false; check.disabled = true; }
+        const hint = document.getElementById("customerOnboardingScrollHint");
+        if (scrollBox.scrollHeight <= scrollBox.clientHeight + 8) {
+          state.portalOnboardingNoticeReadToEnd = true;
+          if (check) check.disabled = false;
+          if (hint) hint.textContent = "注意事項已完整顯示，請勾選確認後繼續。";
+        } else if (hint) {
+          hint.textContent = "請將注意事項滑動至最底部，閱讀完成後才能勾選確認。";
+        }
+      }
+      updateCustomerOnboardingContinueButton();
+
+      if (consult) consult.classList.toggle("hidden", !state.portalOnboardingNoticeAccepted);
+      const hiddenNotice = document.getElementById("customerConsultHiddenNotice");
+      const lockedCard = document.getElementById("customerConsultLockedCard");
+      const formBox = document.getElementById("customerConsultFormBox");
+      if (hiddenNotice) hiddenNotice.classList.add("hidden");
+      if (lockedCard) lockedCard.classList.add("hidden");
+      if (formBox) formBox.classList.remove("hidden");
+
+      const cancelBtn = document.getElementById("cancelConsultEditBtn");
+      if (cancelBtn) cancelBtn.classList.add("hidden");
+      const headerTitle = document.getElementById("consultFormHeaderTitle");
+      if (headerTitle) headerTitle.textContent = "首次使用會員資料與諮詢表";
+
+      if (!state.portalOnboardingFormInitialized) {
+        const name = document.getElementById("cf_name");
+        const nickname = document.getElementById("cf_nickname");
+        const phone = document.getElementById("cf_phone");
+        const birthday = document.getElementById("cf_birthday");
+        const address = document.getElementById("cf_address");
+        if (name) name.value = state.portalLineDisplayName || "";
+        if (nickname) nickname.value = "";
+        if (phone) phone.value = "";
+        if (birthday) birthday.value = "";
+        if (address) address.value = "";
+        state.qAnswers = {};
+        state.portalOnboardingFormInitialized = true;
+      }
+      renderConsultationQuestionnaire();
+    }
+
     function renderCustomerPortalView() {
       const data = state.portalData || {};
+      const onboardingGate = document.getElementById("customerOnboardingGate");
+      if (data.onboardingRequired) {
+        renderCustomerOnboardingView(data);
+        return;
+      }
+      if (onboardingGate) onboardingGate.classList.add("hidden");
       const cust = data.customer;
       const cons = data.consultation;
       const isHidden = !!data.consultationHidden;
@@ -7112,6 +7255,7 @@
     }
 
     function switchCustomerTab(tab) {
+      if (state.portalOnboardingRequired) return;
       const noticeEl = document.getElementById("customerNoticeSection");
       const consultEl = document.getElementById("customerConsultSection");
       const historyEl = document.getElementById("customerHistorySection");
@@ -7417,6 +7561,10 @@
 
     async function handleConsultationSubmit(e) {
       e.preventDefault();
+      if (state.portalOnboardingRequired && !state.portalOnboardingNoticeAccepted) {
+        showToast("請先完整閱讀並確認注意事項，才能送出諮詢表", true);
+        return;
+      }
       const q = state.qAnswers;
       const questions = getActiveConsultQuestions();
       for (const item of questions) {
@@ -7444,7 +7592,9 @@
         address: document.getElementById("cf_address").value.trim(),
         answers: q,
         signatureDataUrl: sigData,
-        signatureUpdated: sigHasStroke
+        signatureUpdated: sigHasStroke,
+        noticeAccepted: !!state.portalOnboardingRequired && !!state.portalOnboardingNoticeAccepted,
+        noticeReadToEnd: !!state.portalOnboardingRequired && !!state.portalOnboardingNoticeReadToEnd
       };
 
       const btn = document.getElementById("consultSubmitBtn");
@@ -7456,9 +7606,11 @@
         state.isEditingConsultation = false;
         clearSignature();
         await loadCustomerPortalData();
-        showToast(res.welcomeCouponIssued
-          ? "諮詢表已完成歸檔！並已自動發送「新客見面禮」至您的帳戶 🎉"
-          : "諮詢表與同意書已歸檔！");
+        showToast(res.onboardingCompleted
+          ? "首次使用資料已完成！歡迎進入馥語美學會員中心 💛"
+          : (res.welcomeCouponIssued
+            ? "諮詢表已完成歸檔！並已自動發送「新客見面禮」至您的帳戶 🎉"
+            : "諮詢表與同意書已歸檔！"));
         switchCustomerTab("consult");
       } catch (err) {
         showToast(err.message || "送出失敗", true);
